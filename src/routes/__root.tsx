@@ -10,8 +10,6 @@ import { TanStackDevtools } from "@tanstack/react-devtools";
 
 import { ThemeProvider } from "@/components/theme-provider";
 
-import Header from "../components/Header";
-
 import appCss from "../styles.css?url";
 
 import { createServerFn } from "@tanstack/react-start";
@@ -85,9 +83,7 @@ function RootComponent() {
       authClient={authClient}
     >
       <RootDocument>
-        <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-          <Outlet />
-        </ThemeProvider>
+        <Outlet />
       </RootDocument>
     </ConvexBetterAuthProvider>
   );
@@ -100,8 +96,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        <Header />
-        {children}
+        <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+          {children}
+        </ThemeProvider>
         <TanStackDevtools
           config={{
             position: "bottom-right",
