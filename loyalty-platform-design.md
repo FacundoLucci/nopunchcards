@@ -1778,79 +1778,169 @@ On desktop (≥768px): Displays as centered modal OR side panel
 
 ---
 
-## SPA Configuration
+## Selective SSR Configuration (Hybrid Rendering)
 
-### TanStack Start SPA Mode
+### TanStack Start Selective SSR
 
-**vite.config.ts**
+**Architecture Decision**: Use [Selective SSR](https://tanstack.com/start/latest/docs/framework/react/guide/selective-ssr) instead of pure SPA mode for optimal performance and SEO.
 
-```typescript
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import { tanStackStartPlugin } from "@netlify/vite-plugin-tanstack-start";
+**Route Rendering Strategy:**
 
-export default defineConfig({
-  plugins: [
-    react(),
-    tanStackStartPlugin({
-      // Enable SPA mode
-      ssr: false,
-      // Or use hybrid approach
-      renderMode: "spa",
-    }),
-  ],
-});
+```
+┌─────────────────────────────────────────────────────┐
+│ SSR Enabled (ssr: true)                             │
+│ • Landing page (/)                                  │
+│ • Public business pages (/join/[slug])              │
+│ • 404/error pages                                   │
+│                                                     │
+│ Benefits:                                           │
+│ ✓ SEO optimization                                  │
+│ ✓ Social media preview cards (Open Graph)          │
+│ ✓ Instant content visibility                        │
+│ ✓ Better first paint performance                    │
+└─────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────┐
+│ SSR Disabled (ssr: false)                           │
+│ • Signup/login flows                                │
+│ • Consumer dashboard                                │
+│ • Business dashboard                                │
+│ • All authenticated routes                          │
+│                                                     │
+│ Benefits:                                           │
+│ ✓ SPA-like instant navigation                       │
+│ ✓ Perfect for PWA                                   │
+│ ✓ No hydration issues                               │
+│ ✓ Better for complex interactive UIs                │
+└─────────────────────────────────────────────────────┘
 ```
 
-**Benefits of SPA Mode for Loyalty Platform:**
-
-1. **Instant Navigation**
-
-   - No server round trips between screens
-   - Smooth multistep forms
-   - Better for gesture-based navigation
-
-2. **Offline Support**
-
-   - View cached reward progress
-   - Queue actions when offline
-   - Better PWA experience
-
-3. **Simpler Deployment**
-
-   - Static hosting (Netlify, Vercel)
-   - No server runtime needed for frontend
-   - Convex handles all backend logic
-
-4. **Mobile App Feel**
-   - Instant transitions
-   - No page flicker
-   - Smooth animations
-
-**Trade-offs:**
-
-- Initial load slightly larger
-- SEO less important (logged-in app)
-- Landing page could use SSR for better SEO
-
-**Hybrid Approach (Recommended):**
+**Implementation:**
 
 ```typescript
-// Landing page: SSR for SEO
-// App pages: SPA for performance
-
 // src/routes/__root.tsx
-export const Route = createRootRouteWithContext()({
-  // SSR for landing
-  ssr: true,
+import { createRootRoute, Outlet, Scripts } from "@tanstack/react-router";
+
+export const Route = createRootRoute({
+  // Default ssr: true (inherited by children)
+  component: RootComponent,
 });
 
-// src/routes/app/__root.tsx (app shell)
-export const Route = createRootRoute({
-  // SPA for app
-  ssr: false,
+function RootComponent() {
+  return (
+    <html>
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="manifest" href="/manifest.json" />
+      </head>
+      <body>
+        <Outlet />
+        <Scripts />
+      </body>
+    </html>
+  );
+}
+```
+
+```typescript
+// src/routes/index.tsx - Landing page
+export const Route = createFileRoute("/")({
+  // Inherits ssr: true from root
+  component: LandingPage,
 });
 ```
+
+```typescript
+// src/routes/join/$slug.tsx - Public business page
+export const Route = createFileRoute("/join/$slug")({
+  // Inherits ssr: true for Open Graph previews
+  loader: async ({ params }) => {
+    // Fetch business data server-side
+    return await getBusinessData(params.slug);
+  },
+  meta: ({ loaderData }) => [
+    { property: "og:title", content: `${loaderData.business.name}` },
+    { property: "og:image", content: loaderData.business.logoUrl },
+  ],
+  component: PublicBusinessPage,
+});
+```
+
+```typescript
+// src/routes/(authenticated)/_layout.tsx - App shell
+export const Route = createFileRoute("/(authenticated)/_layout")({
+  // Disable SSR for all app routes
+  ssr: false,
+  beforeLoad: async () => {
+    // Runs client-side only
+    await requireAuth();
+  },
+  component: AuthenticatedLayout,
+});
+```
+
+**Benefits of Selective SSR (vs Pure SPA):**
+
+1. **Best of Both Worlds**
+
+   - Marketing pages: SSR for SEO & social sharing
+   - App routes: Client-only for SPA experience
+   - No compromise needed
+
+2. **Social Media Sharing**
+
+   - `/join/[slug]` pages render server-side
+   - Instagram/Facebook show proper preview cards
+   - Critical for viral growth strategy
+
+3. **PWA Compatibility**
+
+   - PWA works perfectly with `ssr: false` routes
+   - Service worker caches client-side app
+   - Offline support for authenticated routes
+
+4. **Performance Optimization**
+   - Landing page: Fast first paint with SSR
+   - App routes: Instant navigation after login
+   - Progressive enhancement
+
+**Why NOT Pure SPA Mode:**
+
+According to [TanStack Start docs](https://tanstack.com/start/latest/docs/framework/react/guide/selective-ssr#how-does-this-compare-to-spa-mode):
+
+- Pure SPA mode disables ALL SSR globally
+- Loses SEO benefits on landing page
+- No Open Graph previews for `/join/[slug]` pages
+- Selective SSR provides per-route control
+
+**Route Inheritance:**
+
+From the [TanStack docs](https://tanstack.com/start/latest/docs/framework/react/guide/selective-ssr#inheritance), child routes inherit parent SSR config but can only become MORE restrictive:
+
+```
+root { ssr: true }
+├── index { ssr: true } ← Inherits, keeps SSR
+├── join/[slug] { ssr: true } ← Inherits, keeps SSR
+└── (authenticated) { ssr: false } ← Disables SSR
+    ├── consumer/dashboard ← Inherits ssr: false
+    └── business/dashboard ← Inherits ssr: false
+```
+
+**PWA Manifest (works with Selective SSR):**
+
+```json
+{
+  "name": "No Punch Cards",
+  "short_name": "NoPunchCards",
+  "start_url": "/consumer/dashboard",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
+```
+
+The `start_url` points to an `ssr: false` route, ensuring instant app experience after PWA install.
 
 ---
 
@@ -2008,4 +2098,4 @@ function ConsumerDashboard() {
 
 ---
 
-_Last updated: 2025-11-08T22:00:00Z_
+_Last updated: 2025-11-08T22:30:00Z_

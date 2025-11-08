@@ -2251,75 +2251,227 @@ return await resendComponent.handleResendEventWebhook(ctx, req);
   - **Copy**: "Linked Cards" section (NOT "Bank Accounts")
   - **AC**: Manage push notifications, linked accounts, disconnect Plaid
 
-### Route Protection (TanStack Start)
+### Route Protection & Selective SSR (TanStack Start)
 
-Use `beforeLoad` in route definitions to protect routes by role:
+**Architecture Decision**: Use [Selective SSR](https://tanstack.com/start/latest/docs/framework/react/guide/selective-ssr) for hybrid rendering:
 
-**`src/routes/consumer/dashboard.tsx`**:
+- **SSR enabled**: Landing page, public business pages (`/join/[slug]`) for SEO & social previews
+- **SSR disabled**: Authenticated app routes for SPA-like experience + PWA
+
+**Route Structure**:
+
+```
+root (ssr: true, default)
+├── index.tsx (ssr: true) - Landing page with SEO
+├── join/
+│   └── [slug].tsx (ssr: true) - Public business pages with Open Graph
+├── signup.tsx (ssr: false) - Client-only signup flow
+├── login.tsx (ssr: false) - Client-only login
+└── (authenticated) (ssr: false) - All app routes client-only
+    ├── consumer/
+    │   ├── dashboard.tsx
+    │   ├── merchants.tsx
+    │   └── rewards/
+    └── business/
+        ├── dashboard.tsx
+        ├── programs/
+        └── analytics.tsx
+```
+
+**`src/routes/__root.tsx`**: Root configuration
 
 ```tsx
-import { createFileRoute, redirect } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
-import { authComponent } from "../../convex/auth";
+import { createRootRoute } from "@tanstack/react-router";
+import { Outlet, Scripts } from "@tanstack/react-router";
 
-const requireConsumer = createServerFn({ method: "GET" }).handler(async () => {
-  const { getCurrentUser } = await import("../../convex/auth");
-  const user = await getCurrentUser(/* ctx from request */);
+export const Route = createRootRoute({
+  // Root uses SSR by default (ssr: true)
+  // Children can selectively disable
+  component: RootComponent,
+});
+
+function RootComponent() {
+  return (
+    <html>
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        {/* PWA manifest */}
+        <link rel="manifest" href="/manifest.json" />
+      </head>
+      <body>
+        <Outlet />
+        <Scripts />
+      </body>
+    </html>
+  );
+}
+```
+
+**`src/routes/index.tsx`**: Landing page (SSR enabled)
+
+```tsx
+import { createFileRoute } from "@tanstack/react-router";
+
+export const Route = createFileRoute("/")({
+  // ssr: true is inherited from root (default behavior)
+  // This enables SSR for SEO, social previews
+  component: LandingPage,
+});
+
+function LandingPage() {
+  return (
+    <div className="max-w-7xl mx-auto">
+      {/* Full-width landing page with SEO */}
+      <h1>No Punch Cards</h1>
+      <p>Loyalty without the cards</p>
+    </div>
+  );
+}
+```
+
+**`src/routes/join/$slug.tsx`**: Public business page (SSR enabled)
+
+```tsx
+import { createFileRoute } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
+import { api } from "../../../convex/_generated/api";
+
+// Server function to fetch business data (runs on server during SSR)
+const getBusinessData = createServerFn({ method: "GET" })
+  .validator((slug: string) => slug)
+  .handler(async ({ data: slug }) => {
+    // Fetch from Convex public queries
+    const convex = getConvexClient();
+    const business = await convex.query(api.businesses.public.getBySlug, {
+      slug,
+    });
+    if (!business) throw new Error("Business not found");
+
+    const programs = await convex.query(
+      api.businesses.public.getActivePrograms,
+      {
+        businessId: business._id,
+      }
+    );
+    const stats = await convex.query(api.businesses.public.getStats, {
+      businessId: business._id,
+    });
+
+    return { business, programs, stats };
+  });
+
+export const Route = createFileRoute("/join/$slug")({
+  // ssr: true is inherited - enables SSR for Open Graph previews
+  loader: async ({ params }) => {
+    return await getBusinessData({ data: params.slug });
+  },
+  // SEO meta tags for social media
+  meta: ({ loaderData }) => [
+    { title: `Earn rewards at ${loaderData.business.name} | No Punch Cards` },
+    {
+      property: "og:title",
+      content: `Earn rewards at ${loaderData.business.name}`,
+    },
+    {
+      property: "og:description",
+      content: "Sign up once, get loyalty everywhere",
+    },
+    {
+      property: "og:image",
+      content: loaderData.business.logoUrl || "/og-default.png",
+    },
+  ],
+  component: PublicBusinessPage,
+});
+
+function PublicBusinessPage() {
+  const { business, programs, stats } = Route.useLoaderData();
+
+  return (
+    <div className="max-w-[480px] mx-auto px-4">
+      {/* Public business page with SSR */}
+      <h1>{business.name}</h1>
+      <h2>Sign up once, get loyalty everywhere</h2>
+      {/* ... */}
+    </div>
+  );
+}
+```
+
+**`src/routes/(authenticated)/_layout.tsx`**: Authenticated app layout (SSR disabled)
+
+```tsx
+import { createFileRoute, redirect, Outlet } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
+
+// Auth check server function
+const requireAuth = createServerFn({ method: "GET" }).handler(async () => {
+  const { getCurrentUser } = await import("../../../convex/auth");
+  const user = await getCurrentUser();
 
   if (!user) {
     throw redirect({ to: "/login" });
   }
 
-  if (user.profile?.role !== "consumer") {
-    throw redirect({ to: "/business/dashboard" });
-  }
-
   return user;
 });
 
-export const Route = createFileRoute("/consumer/dashboard")({
+export const Route = createFileRoute("/(authenticated)/_layout")({
+  // Disable SSR for all authenticated routes (SPA mode for app)
+  ssr: false,
   beforeLoad: async () => {
-    await requireConsumer();
+    // This runs client-side only due to ssr: false
+    await requireAuth();
   },
+  component: AuthenticatedLayout,
+});
+
+function AuthenticatedLayout() {
+  return (
+    <div className="max-w-[480px] mx-auto">
+      {/* App chrome: header, bottom nav */}
+      <Outlet />
+    </div>
+  );
+}
+```
+
+**`src/routes/(authenticated)/consumer/dashboard.tsx`**: Consumer dashboard (inherits SSR disabled)
+
+```tsx
+import { createFileRoute } from "@tanstack/react-router";
+
+export const Route = createFileRoute("/(authenticated)/consumer/dashboard")({
+  // Inherits ssr: false from parent - pure client-side rendering
   component: ConsumerDashboard,
 });
 
 function ConsumerDashboard() {
-  // Component implementation
+  // This component only renders on client
+  // Perfect for PWA app experience
+  return (
+    <div>
+      <h1>Hey Alex,</h1>
+      {/* ... */}
+    </div>
+  );
 }
 ```
 
-**`src/routes/business/dashboard.tsx`**:
+**Key Benefits of This Approach**:
 
-```tsx
-// Similar pattern but check for role: "business_owner"
-// Redirect to /consumer/dashboard if not business owner
-```
+1. **SEO where it matters**: Landing page + public business pages get SSR for search engines and social media
+2. **App-like experience**: Authenticated routes behave like SPA - instant navigation, perfect for PWA
+3. **Best of both worlds**: No compromise on performance or discoverability
+4. **Route inheritance**: Child routes inherit `ssr: false` from authenticated layout automatically
 
-**Shared helper** (`src/lib/routeProtection.ts`):
+**Why NOT pure SPA mode**:
 
-```ts
-import { createServerFn } from "@tanstack/react-start";
-import { redirect } from "@tanstack/react-router";
-
-export const requireRole = (
-  allowedRoles: Array<"consumer" | "business_owner" | "admin">
-) =>
-  createServerFn({ method: "GET" }).handler(async () => {
-    const { getCurrentUser } = await import("../../convex/auth");
-    const user = await getCurrentUser(/* ctx */);
-
-    if (!user) {
-      throw redirect({ to: "/login" });
-    }
-
-    if (!user.profile || !allowedRoles.includes(user.profile.role)) {
-      throw redirect({ to: "/unauthorized" });
-    }
-
-    return user;
-  });
-```
+- Pure SPA mode (`defaultSsr: false`) disables SSR globally
+- You'd lose SEO benefits on landing page
+- Public business pages wouldn't have Open Graph previews for social sharing
+- According to [TanStack docs](https://tanstack.com/start/latest/docs/framework/react/guide/selective-ssr#how-does-this-compare-to-spa-mode), Selective SSR gives per-route control vs all-or-nothing
 
 ## PWA & Push Notifications
 
@@ -2975,6 +3127,18 @@ cd ../..
 
 ## Changelog
 
+### 2025-11-08T22:30:00Z
+
+- **Updated Architecture to Selective SSR**:
+  - Changed from pure SPA mode to Selective SSR (per [TanStack Start docs](https://tanstack.com/start/latest/docs/framework/react/guide/selective-ssr))
+  - Landing page + `/join/[slug]` use `ssr: true` for SEO & Open Graph
+  - Authenticated routes use `ssr: false` for SPA-like PWA experience
+  - Route structure with `(authenticated)` layout inheriting `ssr: false`
+  - Added complete route examples with loaders and meta tags
+  - Documented route inheritance behavior (can only become MORE restrictive)
+  - PWA manifest `start_url` points to client-only route
+  - Best of both worlds: SEO where needed, instant navigation in app
+
 ### 2025-11-08T22:00:00Z
 
 - **Added Business Public Pages (Viral Growth Feature)**:
@@ -3035,4 +3199,4 @@ cd ../..
 - Added currency field to transactions
 - Added syncCursor to plaidAccounts for pagination
 
-Playbook last updated: 2025-11-08T22:00:00Z
+Playbook last updated: 2025-11-08T22:30:00Z
