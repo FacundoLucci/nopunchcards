@@ -8,7 +8,77 @@ This document is the single source of truth to execute the MVP end-to-end. It in
 
 - Tech stack: TanStack Start + Convex + Better Auth + Plaid + Autumn (Stripe billing) + PWA + Resend.
 - Core flow: Plaid webhooks → Transaction matching → Reward progress → Notifications.
-- Goal: Functional MVP in sandbox mode with clear “Definition of Done” per phase.
+- Goal: Functional MVP in sandbox mode with clear "Definition of Done" per phase.
+
+## Design System & UI Requirements
+
+**📋 REQUIRED READING**: `loyalty-platform-design.md`
+
+Before implementing any frontend code, review the complete design system document which defines:
+
+- **Color System**: OKLCH-based (matches existing `styles.css`)
+- **Layout Strategy**: Mobile-first with desktop constrained to 480px max-width
+- **Theme**: Light mode primary (clean white bg with elevated cards), dark mode available
+- **Navigation**: No hamburger menu - profile icon + bottom nav only
+- **Component Patterns**: Bottom sheets (mobile) → Centered modals (desktop)
+- **User Flows**: Detailed multistep forms, one action per screen
+- **Copy**: "Link your card" not "Connect your bank"
+
+### Key Design Principles for Implementation
+
+1. **Mobile-First, Desktop-Centered**
+
+   ```tsx
+   // All app screens (dashboard, settings, etc.)
+   <div className="max-w-[480px] mx-auto px-4">
+     {children}
+   </div>
+
+   // Landing page only - can use full width
+   <div className="max-w-7xl mx-auto px-6">
+     {children}
+   </div>
+   ```
+
+2. **Playful Cards (Light Mode)**
+
+   ```tsx
+   // Cards get subtle rotation and shadows
+   <div className="bg-card rounded-lg p-6 shadow-md rotate-[-0.5deg] hover:rotate-0">
+     {content}
+   </div>
+   ```
+
+3. **Responsive Modals/Sheets**
+
+   ```tsx
+   // Same component adapts to screen size
+   <div className="fixed inset-0 flex items-end md:items-center md:justify-center">
+     <div
+       className="w-full md:w-auto md:min-w-[480px] md:max-w-2xl 
+                     rounded-t-xl md:rounded-xl"
+     >
+       {/* Drag handle on mobile only */}
+       <div className="md:hidden w-12 h-1 bg-gray-700 rounded-full" />
+       {content}
+     </div>
+   </div>
+   ```
+
+4. **Consistent Copy**
+   - ✅ "Link your card", "Link the card you use most"
+   - ❌ "Connect your bank", "Link your bank account"
+
+### Implementation Checklist Integration
+
+When implementing routes in the checklist below, ensure:
+
+- [ ] All routes use constrained max-width layout (480px)
+- [ ] Bottom sheets transform to centered modals on desktop
+- [ ] Cards have playful rotation in light mode
+- [ ] No hamburger menus - use profile icon + bottom nav
+- [ ] Copy references cards, not banks
+- [ ] OKLCH colors from design system used throughout
 
 ## Prerequisites
 
@@ -28,7 +98,9 @@ If `convex dev` is already running in another terminal, skip starting a second i
 
 ## Environment & Secrets
 
-All secrets live in Convex env. Generate or obtain the following and set them:
+### Convex Environment Variables (Backend)
+
+All backend secrets live in Convex env (never exposed to client). Generate or obtain the following and set them:
 
 ```bash
 # Plaid (Sandbox)
@@ -53,7 +125,26 @@ npx convex env set AUTUMN_SECRET_KEY "<autumn_secret_key>"
 # Data encryption key for Plaid access tokens (32 bytes)
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 npx convex env set ENCRYPTION_SECRET "<64_hex_chars>"
+
+# Better Auth site URL (required for auth to work)
+npx convex env set SITE_URL "http://localhost:3000"
+npx convex env set CONVEX_SITE_URL "http://localhost:3000"
 ```
+
+### Client Environment Variables (.env.local)
+
+Create `.env.local` in project root with public/client-safe values only:
+
+```bash
+# .env.local
+# Convex deployment URL (from npx convex dev output)
+VITE_CONVEX_URL=https://your-deployment.convex.cloud
+
+# VAPID public key for Web Push (generated with npx web-push generate-vapid-keys)
+VITE_VAPID_PUBLIC_KEY=<your_vapid_public_key>
+```
+
+**Important**: Never put secrets in `.env.local` - they are bundled into client code!
 
 Dev deployment (Sandbox) — exact commands
 
@@ -170,6 +261,7 @@ export default defineSchema({
     ),
     institutionName: v.optional(v.string()),
     lastSyncedAt: v.optional(v.number()),
+    syncCursor: v.optional(v.string()), // For Plaid /transactions/sync pagination
     createdAt: v.number(),
   })
     .index("by_user", ["userId"])
@@ -179,7 +271,8 @@ export default defineSchema({
     plaidTransactionId: v.string(),
     userId: v.string(), // Better Auth user.id (component user ID)
     plaidAccountId: v.id("plaidAccounts"),
-    amount: v.number(), // cents minor units or decimal? choose one – recommend cents (int)
+    amount: v.number(), // Integer cents (e.g., $5.00 = 500)
+    currency: v.string(), // ISO currency code (e.g., "USD")
     merchantName: v.optional(v.string()),
     date: v.string(), // ISO yyyy-mm-dd from Plaid
     category: v.optional(v.array(v.string())),
@@ -193,7 +286,8 @@ export default defineSchema({
   })
     .index("by_user_and_date", ["userId", "date"])
     .index("by_business_and_date", ["businessId", "date"])
-    .index("by_plaid_tx", ["plaidTransactionId"]),
+    .index("by_plaid_tx", ["plaidTransactionId"])
+    .index("by_status", ["status"]), // For scheduled matching job
 
   rewardPrograms: defineTable({
     businessId: v.id("businesses"),
@@ -587,14 +681,62 @@ import { Configuration, PlaidApi, PlaidEnvironments } from "plaid";
 import { encrypt } from "./encryption";
 import { authComponent } from "../auth";
 
-// Pseudocode:
-// 1. Get authenticated user
-// 2. Exchange public token for access token via Plaid API
-// 3. Encrypt access token with AES-256-GCM
-// 4. Get account details from Plaid
-// 5. Store encrypted token + metadata in plaidAccounts table
-// 6. Schedule initial transaction sync
-// 7. Return itemId
+const plaidClient = new PlaidApi(
+  new Configuration({
+    basePath: PlaidEnvironments[process.env.PLAID_ENV!],
+    baseOptions: {
+      headers: {
+        "PLAID-CLIENT-ID": process.env.PLAID_CLIENT_ID!,
+        "PLAID-SECRET": process.env.PLAID_SECRET!,
+      },
+    },
+  })
+);
+
+export const exchangePublicToken = action({
+  args: { publicToken: v.string() },
+  returns: v.object({ itemId: v.string() }),
+  handler: async (ctx, args) => {
+    // 1. Get authenticated user from Better Auth
+    const user = await authComponent.getAuthUser(ctx);
+    if (!user) throw new Error("Not authenticated");
+
+    // 2. Exchange public token for access token via Plaid /item/public_token/exchange
+    const exchangeResponse = await plaidClient.itemPublicTokenExchange({
+      public_token: args.publicToken,
+    });
+    const accessToken = exchangeResponse.data.access_token;
+    const plaidItemId = exchangeResponse.data.item_id;
+
+    // 3. Encrypt access token with AES-256-GCM using ENCRYPTION_SECRET env var
+    const encryptedToken = encrypt(accessToken);
+
+    // 4. Get account details from Plaid /accounts/get
+    const accountsResponse = await plaidClient.accountsGet({
+      access_token: accessToken,
+    });
+    const accounts = accountsResponse.data.accounts;
+    const accountIds = accounts.map((a) => a.account_id);
+    const institutionName = accountsResponse.data.item.institution_id;
+
+    // 5. Store encrypted token + metadata in plaidAccounts table
+    await ctx.runMutation(internal.plaid.savePlaidAccount, {
+      userId: user.id,
+      plaidItemId,
+      plaidAccessTokenCiphertext: encryptedToken,
+      accountIds,
+      institutionName,
+    });
+
+    // 6. Schedule initial transaction sync (run immediately with runAfter(0))
+    await ctx.scheduler.runAfter(0, internal.plaid.syncTransactions, {
+      plaidItemId,
+    });
+
+    // 7. Return itemId for client-side confirmation
+    return { itemId: plaidItemId };
+  },
+});
 ```
 
 **`convex/plaid/webhookVerification.ts`** (Node.js helper):
@@ -604,50 +746,323 @@ import { authComponent } from "../auth";
 import crypto from "crypto";
 import { Configuration, PlaidApi, PlaidEnvironments } from "plaid";
 
-const plaidClient = new PlaidApi(/* config */);
+const plaidClient = new PlaidApi(
+  new Configuration({
+    basePath: PlaidEnvironments[process.env.PLAID_ENV!],
+    baseOptions: {
+      headers: {
+        "PLAID-CLIENT-ID": process.env.PLAID_CLIENT_ID!,
+        "PLAID-SECRET": process.env.PLAID_SECRET!,
+      },
+    },
+  })
+);
 
 export async function verifyPlaidWebhook(
-  body: string,
-  signature: string,
+  bodyText: string,
+  signatureHeader: string,
   keyId: string
 ): Promise<boolean> {
-  // Pseudocode:
-  // 1. Extract keyId from signature header (format: t=timestamp,v1=sig,kid=keyId)
-  // 2. Call Plaid /webhook_verification_key/get with keyId
-  // 3. Get public key from response
-  // 4. Verify signature using RSA-SHA256 with public key
-  // 5. Return true if valid, false otherwise
+  // 1. keyId already extracted by caller from signature header
+  //    Format: "t=1234567890,v1=<base64_signature>,kid=<key_id>"
 
+  // 2. Call Plaid /webhook_verification_key/get with keyId
+  //    This returns the public key for verifying the signature
   const response = await plaidClient.webhookVerificationKeyGet({
     key_id: keyId,
   });
-  const { key } = response.data;
+  const publicKeyObject = response.data.key;
 
+  // 3. Extract signature from header (v1= part)
+  const signatureMatch = signatureHeader.match(/v1=([^,]+)/);
+  if (!signatureMatch) {
+    throw new Error("Invalid signature header format");
+  }
+  const signature = signatureMatch[1];
+
+  // 4. Verify signature using RSA-SHA256 with Plaid's public key
   const verify = crypto.createVerify("RSA-SHA256");
-  verify.update(body);
-  return verify.verify(key.key, signature, "base64");
+  verify.update(bodyText); // Original request body as text
+
+  // 5. Return true if signature is valid, false otherwise
+  return verify.verify(publicKeyObject.key, signature, "base64");
 }
 ```
 
-**`convex/plaid/syncTransactions.ts`** (internal action): Fetch and upsert transactions
+**`convex/plaid/syncTransactions.ts`** (internal action): Fetch and upsert transactions using /transactions/sync
 
 ```ts
 "use node";
 import { internalAction } from "../_generated/server";
 import { internal } from "../_generated/api";
 import { v } from "convex/values";
+import { Configuration, PlaidApi, PlaidEnvironments } from "plaid";
+import { decrypt } from "./encryption";
 
-// Pseudocode:
-// 1. Get plaidAccount by itemId
-// 2. Decrypt access token
-// 3. Call Plaid /transactions/sync endpoint with cursor
-// 4. For each transaction:
-//    a. Check if exists by plaidTransactionId
-//    b. If exists and amount/date changed, update
-//    c. If new, insert with status: "unmatched"
-// 5. Update lastSyncedAt and cursor
-// 6. If has more pages, schedule next sync
-// 7. Schedule matching job for new transactions
+const plaidClient = new PlaidApi(
+  new Configuration({
+    basePath: PlaidEnvironments[process.env.PLAID_ENV!],
+    baseOptions: {
+      headers: {
+        "PLAID-CLIENT-ID": process.env.PLAID_CLIENT_ID!,
+        "PLAID-SECRET": process.env.PLAID_SECRET!,
+      },
+    },
+  })
+);
+
+export const syncTransactions = internalAction({
+  args: { plaidItemId: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    // 1. Get plaidAccount record by itemId using by_item index
+    const account = await ctx.runQuery(internal.plaid.getAccountByItemId, {
+      plaidItemId: args.plaidItemId,
+    });
+    if (!account) {
+      throw new Error(
+        `Plaid account not found for itemId: ${args.plaidItemId}`
+      );
+    }
+
+    // 2. Decrypt access token using ENCRYPTION_SECRET (AES-256-GCM)
+    const accessToken = decrypt(account.plaidAccessTokenCiphertext);
+
+    // 3. Call Plaid /transactions/sync endpoint with stored cursor
+    //    Uses cursor-based pagination (more efficient than date ranges)
+    const syncResponse = await plaidClient.transactionsSync({
+      access_token: accessToken,
+      cursor: account.syncCursor || undefined, // undefined for initial sync
+      options: {
+        include_personal_finance_category: true, // Get enriched categories
+      },
+    });
+
+    const { added, modified, removed, next_cursor, has_more } =
+      syncResponse.data;
+
+    // 4. Process added transactions (new since last sync)
+    for (const plaidTx of added) {
+      // 4a. Check if transaction already exists by plaidTransactionId index (idempotency)
+      const existingTx = await ctx.runQuery(
+        internal.plaid.getTransactionByPlaidId,
+        {
+          plaidTransactionId: plaidTx.transaction_id,
+        }
+      );
+
+      // 4b. If exists, skip (defensive - shouldn't happen with sync cursor)
+      if (existingTx) {
+        console.warn(`Transaction already exists: ${plaidTx.transaction_id}`);
+        continue;
+      }
+
+      // 4c. Insert new transaction with status: "unmatched"
+      await ctx.runMutation(internal.plaid.insertTransaction, {
+        plaidTransactionId: plaidTx.transaction_id,
+        userId: account.userId,
+        plaidAccountId: account._id,
+        amount: Math.round(plaidTx.amount * 100), // Convert dollars → cents integer
+        currency: plaidTx.iso_currency_code || "USD",
+        merchantName: plaidTx.merchant_name || plaidTx.name || undefined,
+        date: plaidTx.date, // Already in YYYY-MM-DD format from Plaid
+        category: plaidTx.personal_finance_category
+          ? [plaidTx.personal_finance_category.primary]
+          : undefined,
+        status: "unmatched",
+      });
+    }
+
+    // 5. Process modified transactions (amount/date changed after posting)
+    for (const plaidTx of modified) {
+      const existingTx = await ctx.runQuery(
+        internal.plaid.getTransactionByPlaidId,
+        {
+          plaidTransactionId: plaidTx.transaction_id,
+        }
+      );
+
+      if (existingTx) {
+        await ctx.runMutation(internal.plaid.updateTransaction, {
+          transactionId: existingTx._id,
+          amount: Math.round(plaidTx.amount * 100),
+          merchantName: plaidTx.merchant_name || plaidTx.name || undefined,
+          date: plaidTx.date,
+          // Note: Don't change status or businessId on modification
+        });
+      }
+    }
+
+    // 6. Process removed transactions (refunds, reversals)
+    for (const removedTx of removed) {
+      const existingTx = await ctx.runQuery(
+        internal.plaid.getTransactionByPlaidId,
+        {
+          plaidTransactionId: removedTx.transaction_id,
+        }
+      );
+
+      if (existingTx) {
+        // Mark as removed rather than deleting (keeps audit trail)
+        await ctx.runMutation(internal.plaid.markTransactionRemoved, {
+          transactionId: existingTx._id,
+        });
+      }
+    }
+
+    // 7. Update plaidAccount with lastSyncedAt timestamp and new cursor
+    await ctx.runMutation(internal.plaid.updateSyncMetadata, {
+      accountId: account._id,
+      lastSyncedAt: Date.now(),
+      syncCursor: next_cursor,
+    });
+
+    // 8. If has_more=true, there are more transactions - schedule continuation
+    if (has_more) {
+      await ctx.scheduler.runAfter(0, internal.plaid.syncTransactions, {
+        plaidItemId: args.plaidItemId,
+      });
+    }
+
+    // 9. If we added new transactions, schedule matching job
+    if (added.length > 0) {
+      await ctx.scheduler.runAfter(
+        0,
+        internal.matching.processNewTransactions,
+        {}
+      );
+    }
+
+    return null;
+  },
+});
+```
+
+**Supporting internal functions** (referenced above):
+
+```ts
+// convex/plaid/helpers.ts
+import { internalMutation, internalQuery } from "../_generated/server";
+import { v } from "convex/values";
+
+export const getAccountByItemId = internalQuery({
+  args: { plaidItemId: v.string() },
+  returns: v.union(
+    v.null(),
+    v.object({
+      _id: v.id("plaidAccounts"),
+      userId: v.string(),
+      plaidAccessTokenCiphertext: v.string(),
+      syncCursor: v.optional(v.string()),
+    })
+  ),
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("plaidAccounts")
+      .withIndex("by_item", (q) => q.eq("plaidItemId", args.plaidItemId))
+      .unique();
+  },
+});
+
+export const getTransactionByPlaidId = internalQuery({
+  args: { plaidTransactionId: v.string() },
+  returns: v.union(
+    v.null(),
+    v.object({
+      _id: v.id("transactions"),
+      businessId: v.optional(v.id("businesses")),
+      status: v.string(),
+    })
+  ),
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("transactions")
+      .withIndex("by_plaid_tx", (q) =>
+        q.eq("plaidTransactionId", args.plaidTransactionId)
+      )
+      .unique();
+  },
+});
+
+export const savePlaidAccount = internalMutation({
+  args: {
+    userId: v.string(),
+    plaidItemId: v.string(),
+    plaidAccessTokenCiphertext: v.string(),
+    accountIds: v.array(v.string()),
+    institutionName: v.string(),
+  },
+  returns: v.id("plaidAccounts"),
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("plaidAccounts", {
+      ...args,
+      status: "active",
+      createdAt: Date.now(),
+    });
+  },
+});
+
+export const insertTransaction = internalMutation({
+  args: {
+    plaidTransactionId: v.string(),
+    userId: v.string(),
+    plaidAccountId: v.id("plaidAccounts"),
+    amount: v.number(),
+    currency: v.string(),
+    merchantName: v.optional(v.string()),
+    date: v.string(),
+    category: v.optional(v.array(v.string())),
+    status: v.literal("unmatched"),
+  },
+  returns: v.id("transactions"),
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("transactions", {
+      ...args,
+      createdAt: Date.now(),
+    });
+  },
+});
+
+export const updateTransaction = internalMutation({
+  args: {
+    transactionId: v.id("transactions"),
+    amount: v.number(),
+    merchantName: v.optional(v.string()),
+    date: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const { transactionId, ...updates } = args;
+    await ctx.db.patch(transactionId, updates);
+    return null;
+  },
+});
+
+export const markTransactionRemoved = internalMutation({
+  args: { transactionId: v.id("transactions") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    // Add status: "removed" to transaction schema if needed
+    await ctx.db.delete(args.transactionId); // Or mark as removed
+    return null;
+  },
+});
+
+export const updateSyncMetadata = internalMutation({
+  args: {
+    accountId: v.id("plaidAccounts"),
+    lastSyncedAt: v.number(),
+    syncCursor: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.accountId, {
+      lastSyncedAt: args.lastSyncedAt,
+      syncCursor: args.syncCursor,
+    });
+    return null;
+  },
+});
 ```
 
 **`convex/http.ts`** (HTTP router): Plaid & Resend webhooks
@@ -658,36 +1073,101 @@ import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { authComponent, createAuth } from "./auth";
 import { resendComponent } from "./sendEmails";
+import { verifyPlaidWebhook } from "./plaid/webhookVerification";
 
 const http = httpRouter();
 
-// Better Auth routes
+// Better Auth routes (handles all /api/auth/* endpoints)
 authComponent.registerRoutes(http, createAuth);
 
-// Plaid webhook with JWS verification
+// Plaid webhook with JWS verification (required for security)
 http.route({
   path: "/api/plaid/webhook",
   method: "POST",
   handler: httpAction(async (ctx, request) => {
-    // Pseudocode:
-    // 1. Get signature from Plaid-Verification header
-    // 2. Extract keyId from signature
-    // 3. Read request body as text
-    // 4. Verify signature using verifyPlaidWebhook()
-    // 5. If invalid, return 401
-    // 6. Parse webhook payload
-    // 7. Switch on webhook_code:
-    //    - INITIAL_UPDATE/HISTORICAL_UPDATE/DEFAULT_UPDATE:
-    //      Schedule syncTransactions with itemId
-    // 8. Return 200
+    // 1. Get Plaid-Verification header containing JWS signature
+    const plaidVerification = request.headers.get("Plaid-Verification");
+    if (!plaidVerification) {
+      console.error("Missing Plaid-Verification header");
+      return new Response("Unauthorized: Missing signature", { status: 401 });
+    }
+
+    // 2. Extract keyId from signature header
+    //    Header format: "t=1234567890,v1=<signature>,kid=<key_id>"
+    const keyIdMatch = plaidVerification.match(/kid=([^,]+)/);
+    if (!keyIdMatch) {
+      console.error("Invalid Plaid-Verification header format");
+      return new Response("Invalid signature format", { status: 401 });
+    }
+    const keyId = keyIdMatch[1];
+
+    // 3. Read request body as text (needed for signature verification)
+    const bodyText = await request.text();
+
+    // 4. Verify JWS signature using Plaid's public key
+    const isValid = await verifyPlaidWebhook(
+      bodyText,
+      plaidVerification,
+      keyId
+    );
+    if (!isValid) {
+      console.error("Invalid Plaid webhook signature");
+      return new Response("Invalid signature", { status: 401 });
+    }
+
+    // 5. Parse verified webhook payload
+    const payload = JSON.parse(bodyText);
+    const { webhook_type, webhook_code, item_id } = payload;
+
+    console.log(`Plaid webhook received: ${webhook_code} for item ${item_id}`);
+
+    // 6. Handle different webhook codes
+    switch (webhook_code) {
+      case "INITIAL_UPDATE":
+        // Initial transaction data is ready (right after Link)
+        console.log("Initial update - scheduling sync");
+        await ctx.scheduler.runAfter(0, internal.plaid.syncTransactions, {
+          plaidItemId: item_id,
+        });
+        break;
+
+      case "HISTORICAL_UPDATE":
+        // Historical data finished loading (2+ years)
+        console.log("Historical update complete - scheduling sync");
+        await ctx.scheduler.runAfter(0, internal.plaid.syncTransactions, {
+          plaidItemId: item_id,
+        });
+        break;
+
+      case "DEFAULT_UPDATE":
+        // New transaction data available (regular updates)
+        console.log("Default update - scheduling sync");
+        await ctx.scheduler.runAfter(0, internal.plaid.syncTransactions, {
+          plaidItemId: item_id,
+        });
+        break;
+
+      case "TRANSACTIONS_REMOVED":
+        // Transactions were deleted/refunded (rare)
+        console.log("Transactions removed - handling separately");
+        // Could schedule a full re-sync or handle removed_transactions array
+        break;
+
+      default:
+        console.log(`Unhandled Plaid webhook code: ${webhook_code}`);
+    }
+
+    // 7. Return 200 OK to acknowledge receipt
+    return new Response("OK", { status: 200 });
   }),
 });
 
-// Resend webhook
+// Resend webhook (email delivery/bounce/spam events)
 http.route({
   path: "/api/resend/webhook",
   method: "POST",
   handler: httpAction(async (ctx, req) => {
+    // Resend component handles HMAC verification internally using RESEND_WEBHOOK_SECRET
     return await resendComponent.handleResendEventWebhook(ctx, req);
   }),
 });
@@ -707,18 +1187,109 @@ export const matchTransaction = internalMutation({
   args: { transactionId: v.id("transactions") },
   returns: v.union(v.id("businesses"), v.null()),
   handler: async (ctx, args) => {
-    // Pseudocode:
-    // 1. Get transaction by ID
-    // 2. If already matched, return existing businessId
-    // 3. Get all businesses (or filter by likely matches)
-    // 4. Score each business:
-    //    a. Exact name match = 100 points
-    //    b. Fuzzy name match (Levenshtein < 3) = 80 points
-    //    c. merchantName contains business.name = 60 points
-    //    d. MCC code match (if business has mccCodes) = 40 points
-    //    e. Location within 1km (if available) = 30 points
-    // 5. If highest score > threshold (e.g., 80), return that businessId
-    // 6. Otherwise return null (unmatched)
+    // 1. Get transaction by _id from transactions table
+    const tx = await ctx.db.get(args.transactionId);
+    if (!tx) {
+      throw new Error(`Transaction not found: ${args.transactionId}`);
+    }
+
+    // 2. If already matched, return existing businessId (idempotency)
+    if (tx.businessId) {
+      return tx.businessId;
+    }
+
+    // 3. If no merchant name from Plaid, cannot match
+    if (!tx.merchantName) {
+      return null;
+    }
+
+    // 4. Get all verified businesses from businesses table (status="verified")
+    //    Could optimize later by filtering by category or location
+    const businesses = await ctx.db
+      .query("businesses")
+      .withIndex("by_status", (q) => q.eq("status", "verified"))
+      .collect();
+
+    // 5. Score each business using multiple heuristics
+    const scores = businesses.map((business) => {
+      let score = 0;
+      const txName = tx.merchantName!.toLowerCase().trim();
+      const bizName = business.name.toLowerCase().trim();
+
+      // 5a. Exact name match = 100 points (highest confidence)
+      if (txName === bizName) {
+        score += 100;
+      }
+      // 5b. Business name is substring of merchant name = 80 points
+      //     Example: "Starbucks" matches "Starbucks #1234"
+      else if (txName.includes(bizName)) {
+        score += 80;
+      }
+      // 5c. Merchant name is substring of business name = 60 points
+      else if (bizName.includes(txName)) {
+        score += 60;
+      }
+      // 5d. Partial word match = 40 points
+      //     Example: "Target Store" matches "Target"
+      else {
+        const txWords = txName.split(/\s+/);
+        const bizWords = bizName.split(/\s+/);
+        const commonWords = txWords.filter(
+          (w) => bizWords.includes(w) && w.length > 3
+        );
+        if (commonWords.length > 0) {
+          score += 40;
+        }
+      }
+
+      // 5e. MCC code match (if transaction category and business mccCodes exist)
+      //     TODO: Implement Plaid category → MCC code mapping
+      //     For now: simplified category matching
+      if (
+        tx.category &&
+        tx.category.length > 0 &&
+        business.mccCodes &&
+        business.mccCodes.length > 0
+      ) {
+        // This needs proper MCC mapping; placeholder for now
+        score += 20;
+      }
+
+      // 5f. Location proximity (if both have coordinates)
+      //     TODO: Use geospatial component or haversine distance
+      //     Within 1km = 30 bonus points
+      // if (tx.location && business.location) {
+      //   const distanceKm = calculateHaversineDistance(
+      //     tx.location.lat, tx.location.lng,
+      //     business.location.lat, business.location.lng
+      //   );
+      //   if (distanceKm < 1) score += 30;
+      // }
+
+      return { business, score };
+    });
+
+    // 6. Sort by score descending to get best match first
+    scores.sort((a, b) => b.score - a.score);
+
+    // 7. If highest score >= 80 (confidence threshold), return that businessId
+    const bestMatch = scores[0];
+    const CONFIDENCE_THRESHOLD = 80;
+
+    if (bestMatch && bestMatch.score >= CONFIDENCE_THRESHOLD) {
+      console.log(
+        `Matched tx ${tx.plaidTransactionId} to business "${bestMatch.business.name}" ` +
+          `(score: ${bestMatch.score}, merchant: "${tx.merchantName}")`
+      );
+      return bestMatch.business._id;
+    }
+
+    // 8. No confident match found - remains unmatched
+    console.log(
+      `No match for tx ${tx.plaidTransactionId} ` +
+        `(merchant: "${tx.merchantName}", best score: ${bestMatch?.score || 0})`
+    );
+    return null;
   },
 });
 ```
@@ -738,19 +1309,117 @@ export const calculateRewards = internalMutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    // Pseudocode:
-    // 1. Get active reward programs for businessId
-    // 2. For each program:
-    //    a. Get or create rewardProgress for (userId, programId)
-    //    b. Increment currentVisits
-    //    c. Add transactionId to transactionIds array
-    //    d. Check if currentVisits >= program.rules.visits
-    //    e. If threshold reached:
-    //       - Set status: "completed"
-    //       - Increment totalEarned
-    //       - Schedule notification (reward earned!)
-    //       - Create new rewardProgress for next cycle
-    // 3. Update lastVisitDate
+    // 1. Get all active reward programs for this businessId using by_business index
+    const activePrograms = await ctx.db
+      .query("rewardPrograms")
+      .withIndex("by_business", (q) => q.eq("businessId", args.businessId))
+      .filter((q) => q.eq(q.field("status"), "active"))
+      .collect();
+
+    if (activePrograms.length === 0) {
+      return null; // No active programs for this business
+    }
+
+    // 2. Process each active reward program
+    for (const program of activePrograms) {
+      // 2a. Get existing active rewardProgress for (userId, programId)
+      //     Use by_program index and filter by userId and status="active"
+      let progress = await ctx.db
+        .query("rewardProgress")
+        .withIndex("by_program", (q) => q.eq("rewardProgramId", program._id))
+        .filter((q) =>
+          q.and(
+            q.eq(q.field("userId"), args.userId),
+            q.eq(q.field("status"), "active")
+          )
+        )
+        .unique();
+
+      // Create new progress if doesn't exist
+      if (!progress) {
+        const progressId = await ctx.db.insert("rewardProgress", {
+          userId: args.userId,
+          businessId: args.businessId,
+          rewardProgramId: program._id,
+          currentVisits: 0,
+          totalEarned: 0,
+          transactionIds: [],
+          status: "active",
+          createdAt: Date.now(),
+        });
+        progress = (await ctx.db.get(progressId))!;
+      }
+
+      // 2b. Increment visit count
+      const newVisitCount = progress.currentVisits + 1;
+
+      // 2c. Add transactionId to array (audit trail)
+      const updatedTxIds = [...progress.transactionIds, args.transactionId];
+
+      // 2d. Check if user reached reward threshold from program.rules.visits
+      const thresholdReached = newVisitCount >= program.rules.visits;
+
+      const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+
+      if (thresholdReached) {
+        // 2e. User earned a reward!
+
+        // Update existing progress to "completed" status
+        await ctx.db.patch(progress._id, {
+          currentVisits: newVisitCount,
+          transactionIds: updatedTxIds,
+          totalEarned: progress.totalEarned + 1,
+          status: "completed",
+          lastVisitDate: today,
+        });
+
+        // Get business details for notification
+        const business = await ctx.db.get(args.businessId);
+
+        // Schedule notification action: reward earned
+        await ctx.scheduler.runAfter(
+          0,
+          internal.notifications.sendRewardEarned,
+          {
+            userId: args.userId,
+            businessId: args.businessId,
+            rewardDescription: program.rules.reward,
+            programName: program.name,
+          }
+        );
+
+        // Create new active rewardProgress for next reward cycle (auto-renew)
+        await ctx.db.insert("rewardProgress", {
+          userId: args.userId,
+          businessId: args.businessId,
+          rewardProgramId: program._id,
+          currentVisits: 0,
+          totalEarned: 0,
+          transactionIds: [],
+          status: "active",
+          createdAt: Date.now(),
+        });
+
+        console.log(
+          `User ${args.userId} earned reward "${program.rules.reward}" ` +
+            `at ${business?.name} (${newVisitCount} visits)`
+        );
+      } else {
+        // 2f. Not yet at threshold, update progress
+        await ctx.db.patch(progress._id, {
+          currentVisits: newVisitCount,
+          transactionIds: updatedTxIds,
+          lastVisitDate: today,
+        });
+
+        console.log(
+          `User ${args.userId} progress: ${newVisitCount}/${program.rules.visits} ` +
+            `visits at program "${program.name}"`
+        );
+      }
+    }
+
+    return null;
   },
 });
 ```
@@ -779,19 +1448,108 @@ export default crons;
 ```ts
 import { internalAction } from "../_generated/server";
 import { internal } from "../_generated/api";
+import { v } from "convex/values";
 
 export const processNewTransactions = internalAction({
   args: {},
   returns: v.null(),
   handler: async (ctx) => {
-    // Pseudocode:
-    // 1. Query transactions with status: "unmatched" (limit 100)
-    // 2. For each transaction:
-    //    a. Call matchTransaction mutation
-    //    b. If businessId returned:
-    //       - Update transaction: businessId, status: "matched"
-    //       - Call calculateRewards mutation
-    // 3. If processed 100, schedule another run immediately
+    const BATCH_SIZE = 100;
+
+    // 1. Query transactions with status="unmatched" using by_status index
+    //    Process newest first (order desc), limit to batch size
+    const unmatchedTxs = await ctx.runQuery(
+      internal.matching.getUnmatchedTransactions,
+      {
+        limit: BATCH_SIZE,
+      }
+    );
+
+    if (unmatchedTxs.length === 0) {
+      console.log("No unmatched transactions to process");
+      return null;
+    }
+
+    console.log(`Processing ${unmatchedTxs.length} unmatched transactions`);
+
+    // 2. Process each unmatched transaction
+    for (const tx of unmatchedTxs) {
+      // 2a. Call matchTransaction internal mutation
+      //     Returns businessId if confident match found, null otherwise
+      const matchedBusinessId = await ctx.runMutation(
+        internal.matching.matchTransaction,
+        {
+          transactionId: tx._id,
+        }
+      );
+
+      // 2b. If businessId returned, update transaction and calculate rewards
+      if (matchedBusinessId) {
+        // Update transaction with matched businessId and status="matched"
+        await ctx.runMutation(internal.matching.updateMatchedTransaction, {
+          transactionId: tx._id,
+          businessId: matchedBusinessId,
+        });
+
+        // Calculate and update reward progress for this match
+        await ctx.runMutation(internal.matching.calculateRewards, {
+          userId: tx.userId,
+          businessId: matchedBusinessId,
+          transactionId: tx._id,
+        });
+      }
+      // If null returned, transaction remains status="unmatched" for next run
+    }
+
+    // 3. If processed full batch (100), there may be more unmatched transactions
+    //    Schedule another run immediately to continue processing
+    if (unmatchedTxs.length >= BATCH_SIZE) {
+      console.log("Full batch processed, scheduling continuation");
+      await ctx.scheduler.runAfter(
+        0,
+        internal.matching.processNewTransactions,
+        {}
+      );
+    }
+
+    return null;
+  },
+});
+
+// Helper queries and mutations
+export const getUnmatchedTransactions = internalQuery({
+  args: { limit: v.number() },
+  returns: v.array(
+    v.object({
+      _id: v.id("transactions"),
+      userId: v.string(),
+      merchantName: v.optional(v.string()),
+      amount: v.number(),
+      date: v.string(),
+      category: v.optional(v.array(v.string())),
+    })
+  ),
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("transactions")
+      .withIndex("by_status", (q) => q.eq("status", "unmatched"))
+      .order("desc") // Newest first
+      .take(args.limit);
+  },
+});
+
+export const updateMatchedTransaction = internalMutation({
+  args: {
+    transactionId: v.id("transactions"),
+    businessId: v.id("businesses"),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.transactionId, {
+      businessId: args.businessId,
+      status: "matched",
+    });
+    return null;
   },
 });
 ```
@@ -805,42 +1563,75 @@ import { query, mutation, QueryCtx, MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
 import { authComponent, getCurrentUser } from "./auth";
 
-// Get current user with profile
+// Get current user with profile (Better Auth user + profiles table join)
 export const getCurrentUserWithProfile = query({
   args: {},
+  returns: v.union(
+    v.null(),
+    v.object({
+      id: v.string(),
+      email: v.string(),
+      name: v.optional(v.string()),
+      profile: v.union(
+        v.null(),
+        v.object({
+          _id: v.id("profiles"),
+          userId: v.string(),
+          role: v.union(
+            v.literal("consumer"),
+            v.literal("business_owner"),
+            v.literal("admin")
+          ),
+          phone: v.optional(v.string()),
+        })
+      ),
+    })
+  ),
   handler: async (ctx) => {
     return await getCurrentUser(ctx);
   },
 });
 
-// Admin-only: Set user role
+// Admin-only: Set user role in profiles table
 export const setUserRole = mutation({
   args: {
-    userId: v.string(),
+    userId: v.string(), // Better Auth user.id
     role: v.union(
       v.literal("consumer"),
       v.literal("business_owner"),
       v.literal("admin")
     ),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
+    // Require admin role to change other users' roles
     await requireRole(ctx, ["admin"]);
 
+    // Find profile by userId using by_userId index
     const profile = await ctx.db
       .query("profiles")
       .withIndex("by_userId", (q) => q.eq("userId", args.userId))
       .unique();
 
-    if (!profile) throw new Error("Profile not found");
+    if (!profile) {
+      throw new Error(`Profile not found for userId: ${args.userId}`);
+    }
+
+    // Update role in profiles table
     await ctx.db.patch(profile._id, { role: args.role });
+
+    console.log(`Updated user ${args.userId} to role: ${args.role}`);
+
+    return null;
   },
 });
 
-// Helper: Require specific role(s)
+// Helper: Require specific role(s) - throws error if not authorized
 export async function requireRole(
   ctx: QueryCtx | MutationCtx,
   allowedRoles: Array<"consumer" | "business_owner" | "admin">
 ) {
+  // Get Better Auth user and join with profiles table
   const userWithProfile = await getCurrentUser(ctx);
 
   if (!userWithProfile) {
@@ -848,62 +1639,426 @@ export async function requireRole(
   }
 
   if (!userWithProfile.profile) {
-    throw new Error("Profile not found");
+    throw new Error("Profile not found - user may need to complete onboarding");
   }
 
-  if (!allowedRoles.includes(userWithProfile.profile.role)) {
-    throw new Error(`Forbidden: Requires one of [${allowedRoles.join(", ")}]`);
+  const userRole = userWithProfile.profile.role;
+
+  if (!allowedRoles.includes(userRole)) {
+    throw new Error(
+      `Forbidden: Requires role [${allowedRoles.join(" or ")}], ` +
+        `but user has role [${userRole}]`
+    );
   }
 
   return userWithProfile;
 }
 ```
 
-Notifications:
+### Notifications
 
-- `convex/notifications/send.ts` (mutation): Create record and send via Push and/or Email.
-- `convex/notifications/subscribe.ts` (mutation): Save push subscription.
-- `convex/notifications/markRead.ts` (mutation): Mark as read.
+**`convex/notifications/subscribe.ts`** - Save push subscription:
 
-Security:
+```ts
+import { mutation } from "../_generated/server";
+import { v } from "convex/values";
+import { authComponent } from "../auth";
 
-- Enforce auth in every mutation/action; only owners can manage their businesses/programs; only the user can manage their Plaid link.
-- Idempotency: upserts on `plaidTransactionId` (check existing first); dedupe webhook deliveries.
-- Encryption: access tokens are encrypted with `ENCRYPTION_SECRET`; never sent to client.
-- Webhook verification: implement JWS verification using Plaid’s recommended method.
+export const subscribeToPush = mutation({
+  args: {
+    endpoint: v.string(),
+    keys: v.object({
+      p256dh: v.string(),
+      auth: v.string(),
+    }),
+  },
+  returns: v.id("pushSubscriptions"),
+  handler: async (ctx, args) => {
+    // 1. Get authenticated user
+    const user = await authComponent.getAuthUser(ctx);
+    if (!user) throw new Error("Not authenticated");
+
+    // 2. Check if subscription already exists by endpoint
+    const existing = await ctx.db
+      .query("pushSubscriptions")
+      .withIndex("by_endpoint", (q) => q.eq("endpoint", args.endpoint))
+      .unique();
+
+    // 3. If exists, update keys (they may have changed)
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        keys: args.keys,
+      });
+      return existing._id;
+    }
+
+    // 4. Create new subscription
+    return await ctx.db.insert("pushSubscriptions", {
+      userId: user.id,
+      endpoint: args.endpoint,
+      keys: args.keys,
+      createdAt: Date.now(),
+    });
+  },
+});
+```
+
+**`convex/notifications/sendRewardEarned.ts`** - Send reward notification:
+
+```ts
+"use node";
+import { internalAction } from "../_generated/server";
+import { internal } from "../_generated/api";
+import { v } from "convex/values";
+
+export const sendRewardEarned = internalAction({
+  args: {
+    userId: v.string(),
+    businessId: v.id("businesses"),
+    rewardDescription: v.string(),
+    programName: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    // 1. Get business details for notification
+    const business = await ctx.runQuery(internal.businesses.getById, {
+      businessId: args.businessId,
+    });
+    if (!business) throw new Error("Business not found");
+
+    // 2. Create notification record in database
+    const notificationId = await ctx.runMutation(
+      internal.notifications.createRecord,
+      {
+        userId: args.userId,
+        type: "reward_earned",
+        title: `Reward Earned at ${business.name}!`,
+        message: `You've earned: ${args.rewardDescription}`,
+        data: {
+          businessId: args.businessId,
+          programName: args.programName,
+        },
+        status: "sent",
+      }
+    );
+
+    // 3. Send push notification (if user has subscriptions)
+    await ctx.runAction(internal.notifications.sendPushToUser, {
+      userId: args.userId,
+      title: `Reward Earned at ${business.name}!`,
+      body: `You've earned: ${args.rewardDescription}`,
+      data: { notificationId, businessId: args.businessId },
+    });
+
+    // 4. Send email notification using Resend component
+    await ctx.runAction(internal.notifications.sendEmailToUser, {
+      userId: args.userId,
+      subject: `You earned a reward at ${business.name}!`,
+      businessName: business.name,
+      rewardDescription: args.rewardDescription,
+    });
+
+    return null;
+  },
+});
+```
+
+**`convex/notifications/sendPushToUser.ts`** - Send push to all user's devices:
+
+```ts
+"use node";
+import { internalAction } from "../_generated/server";
+import { internal } from "../_generated/api";
+import { v } from "convex/values";
+import webpush from "web-push";
+
+webpush.setVapidDetails(
+  "mailto:support@nopunchcards.com",
+  process.env.VAPID_PUBLIC_KEY!,
+  process.env.VAPID_PRIVATE_KEY!
+);
+
+export const sendPushToUser = internalAction({
+  args: {
+    userId: v.string(),
+    title: v.string(),
+    body: v.string(),
+    data: v.optional(v.any()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    // 1. Get all push subscriptions for this userId
+    const subscriptions = await ctx.runQuery(
+      internal.notifications.getUserSubscriptions,
+      {
+        userId: args.userId,
+      }
+    );
+
+    // 2. Send push to each subscription
+    for (const sub of subscriptions) {
+      try {
+        // 3. Format push notification payload
+        const payload = JSON.stringify({
+          title: args.title,
+          body: args.body,
+          icon: "/logo192.png",
+          badge: "/logo192.png",
+          data: args.data || {},
+        });
+
+        // 4. Send via Web Push API
+        await webpush.sendNotification(
+          {
+            endpoint: sub.endpoint,
+            keys: {
+              p256dh: sub.keys.p256dh,
+              auth: sub.keys.auth,
+            },
+          },
+          payload
+        );
+      } catch (error: any) {
+        // 5. If subscription expired (HTTP 410), delete it
+        if (error.statusCode === 410) {
+          await ctx.runMutation(internal.notifications.deleteSubscription, {
+            subscriptionId: sub._id,
+          });
+        } else {
+          console.error("Error sending push notification:", error);
+        }
+      }
+    }
+
+    return null;
+  },
+});
+```
+
+**`convex/notifications/markRead.ts`** - Mark notification as read:
+
+```ts
+import { mutation } from "../_generated/server";
+import { v } from "convex/values";
+import { authComponent } from "../auth";
+
+export const markAsRead = mutation({
+  args: { notificationId: v.id("notifications") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    // 1. Get authenticated user
+    const user = await authComponent.getAuthUser(ctx);
+    if (!user) throw new Error("Not authenticated");
+
+    // 2. Get notification and verify ownership
+    const notification = await ctx.db.get(args.notificationId);
+    if (!notification) {
+      throw new Error("Notification not found");
+    }
+
+    if (notification.userId !== user.id) {
+      throw new Error(
+        "Forbidden: Cannot mark other user's notifications as read"
+      );
+    }
+
+    // 3. Update status to "read"
+    await ctx.db.patch(args.notificationId, {
+      status: "read",
+    });
+
+    return null;
+  },
+});
+```
+
+### Security Requirements
+
+**Authentication & Authorization**:
+
+```ts
+// Every mutation/action must check auth
+const user = await authComponent.getAuthUser(ctx);
+if (!user) throw new Error("Not authenticated");
+
+// Check ownership before mutations
+const business = await ctx.db.get(args.businessId);
+if (business.ownerId !== user.id) {
+  throw new Error("Forbidden: You don't own this business");
+}
+```
+
+**Idempotency**:
+
+```ts
+// Always check existing by plaidTransactionId before insert
+const existing = await ctx.db
+  .query("transactions")
+  .withIndex("by_plaid_tx", (q) =>
+    q.eq("plaidTransactionId", args.plaidTransactionId)
+  )
+  .unique();
+
+if (existing) {
+  // Update if needed, don't duplicate
+  await ctx.db.patch(existing._id, updates);
+} else {
+  await ctx.db.insert("transactions", data);
+}
+```
+
+**Encryption** (AES-256-GCM):
+
+```ts
+import { encrypt, decrypt } from "./plaid/encryption";
+
+// Encrypt before storing
+const ciphertext = encrypt(accessToken);
+await ctx.db.insert("plaidAccounts", {
+  plaidAccessTokenCiphertext: ciphertext,
+  // ...
+});
+
+// Decrypt only in actions (never send to client)
+const accessToken = decrypt(account.plaidAccessTokenCiphertext);
+```
+
+**Webhook Verification**:
+
+```ts
+// Plaid: Verify JWS signature before processing
+const isValid = await verifyPlaidWebhook(bodyText, signature, keyId);
+if (!isValid) return new Response("Invalid signature", { status: 401 });
+
+// Resend: Component handles verification automatically
+return await resendComponent.handleResendEventWebhook(ctx, req);
+```
 
 ## App Routes & Acceptance Criteria
 
-Business (`src/routes/business/`):
+**📐 UI Reference**: See `loyalty-platform-design.md` for detailed screen layouts and user flows.
 
-- `register.tsx`
-  - AC: Authenticated user can submit name/category/address → `businesses` row created `status=unverified`, `ownerId` set to user.
+### Landing Page (`src/routes/index.tsx`)
+
+- **Design**: Full-width hero, 3-step "How It Works", stats, footer
+- **Layout**: Can use wide max-width (max-w-7xl), split layout on desktop
+- **AC**: Displays both consumer and business CTAs; navigates to appropriate onboarding
+- **See**: `loyalty-platform-design.md` → Landing Page section
+
+### Business Routes (`src/routes/business/`)
+
+**Common Layout**: All business routes use constrained 480px max-width.
+
+**Bottom Navigation**: `[Dashboard] [Programs] [Analytics]`
+
+- `register.tsx` (Multistep form)
+
+  - **Design**: One field per screen, progress indicator, 4 steps
+  - **AC**: Authenticated user can submit name/category/address → `businesses` row created `status=unverified`, `ownerId` set to user
+  - **See**: `loyalty-platform-design.md` → Business Registration Flow
+
 - `dashboard.tsx`
-  - AC: Shows counts (total customers, total visits, active rewards) via Convex queries.
-- `rewards/index.tsx`
-  - AC: Lists reward programs; shows status; can navigate to create/edit.
-- `rewards/create.tsx`
-  - AC: Validates inputs; creates `rewardPrograms` with `rules.visits` and `rules.reward`.
+
+  - **Design**: Metric cards (3 in row), program list cards, recent redemptions
+  - **AC**: Shows counts (total customers, total visits, active rewards) via Convex queries
+  - **Header**: Business name + settings icon (no hamburger)
+  - **Bottom Nav**: Active "Dashboard"
+  - **See**: `loyalty-platform-design.md` → Business Dashboard section
+
+- `programs/index.tsx` (renamed from rewards/)
+
+  - **Design**: List of program cards with status badges
+  - **AC**: Lists reward programs; shows status; can navigate to create/edit
+  - **FAB**: Floating action button for "+ Create Program"
+  - **Bottom Nav**: Active "Programs"
+  - **Note**: Using "Programs" to match bottom nav design
+
+- `programs/create.tsx` (Multistep form)
+
+  - **Design**: 4-step form (Name → Visits → Reward → Review), progress dots
+  - **AC**: Validates inputs; creates `rewardPrograms` with `rules.visits` and `rules.reward`
+  - **Access**: Via FAB on programs/index
+  - **See**: `loyalty-platform-design.md` → Multistep Form Example
+
+- `programs/[id]/edit.tsx` (Optional)
+
+  - **Design**: Same as create, pre-filled with existing data
+  - **AC**: Updates existing program; validates inputs
+
 - `analytics.tsx`
-  - AC: Charts visits over time (basic), top customers.
+
+  - **Design**: Cards expand to show charts on tap
+  - **AC**: Charts visits over time (basic), top customers
+  - **Bottom Nav**: Active "Analytics"
+
 - `settings.tsx`
-  - AC: Edit business profile, upload logo URL, view verification status.
 
-Consumer (`src/routes/consumer/`):
+  - **Design**: Settings list with sections
+  - **Access**: Via settings icon in header (top right)
+  - **AC**: Edit business profile, upload logo URL, view verification status
 
-- `onboarding.tsx`
-  - AC: Starts Plaid Link; on success, calls `exchangeToken`; redirects to dashboard.
+### Consumer Routes (`src/routes/consumer/`)
+
+**Common Layout**: All consumer routes use constrained 480px max-width.
+
+**Bottom Navigation**: `[Dashboard] [Merchants] [Rewards]`
+
+- `onboarding.tsx` (Multistep form)
+
+  - **Design**: Welcome screen → Plaid Link full-screen modal → Success
+  - **Copy**: "Link the card you use most" (NOT "bank")
+  - **AC**: Starts Plaid Link; on success, calls `exchangeToken`; redirects to dashboard
+  - **See**: `loyalty-platform-design.md` → Consumer Onboarding Flow
+
 - `dashboard.tsx`
-  - AC: Lists active `rewardProgress` (e.g., “3/5 visits”) and recent matched transactions.
+
+  - **Design**: Greeting, progress cards (with rotation), recent activity list
+  - **Header**: App name + profile icon + notification bell (no hamburger)
+  - **AC**: Lists active `rewardProgress` (e.g., "3/5 visits") and recent matched transactions
+  - **Cards**: Tappable → Opens bottom sheet (mobile) / modal (desktop)
+  - **Bottom Nav**: Active "Dashboard"
+  - **See**: `loyalty-platform-design.md` → Consumer Dashboard section
+
 - `merchants.tsx`
-  - AC: Shows participating businesses; filter by category; optional map later.
-  - AC: Nearby view returns businesses using geospatial `queryNearest` by current location.
-- `rewards.tsx`
-  - AC: Shows active and completed rewards.
+
+  - **Design**: List/map toggle, category filters
+  - **AC**: Shows participating businesses; filter by category; optional map later
+  - **AC**: Nearby view returns businesses using geospatial `queryNearest` by current location
+  - **Bottom Nav**: Active "Merchants"
+
+- `rewards/index.tsx`
+
+  - **Design**: Tabs for Active/Completed, reward cards
+  - **AC**: Shows active and completed rewards
+  - **Bottom Nav**: Active "Rewards"
+  - **Cards**: Tappable → Navigate to claim page
+
+- `rewards/[id]/claim.tsx` (NEW)
+
+  - **Design**: Full-screen celebration → QR code modal
+  - **Flow**: Notification → Celebration screen → QR code → Redemption success
+  - **AC**: Shows QR code for business to scan; marks reward as redeemed
+  - **See**: `loyalty-platform-design.md` → Flow 3: Reward Earned
+
+- `notifications.tsx` (NEW)
+
+  - **Design**: Full-screen list, grouped by date, unread indicator
+  - **Access**: Via notification bell icon in header
+  - **AC**: Lists all notifications; mark as read; delete notifications
+  - **See**: `loyalty-platform-design.md` → Header Navigation
+
 - `transactions.tsx`
-  - AC: Lists matched transactions; filter by business/date; unmatch (sets `businessId=null`, `status=unmatched`).
+
+  - **Design**: Timeline-style list, date grouping, filters
+  - **Access**: Via profile menu OR "View all" link from dashboard's Recent Activity
+  - **AC**: Lists matched transactions; filter by business/date; unmatch (sets `businessId=null`, `status=unmatched`)
+
 - `settings.tsx`
-  - AC: Manage push notifications, linked accounts, disconnect Plaid.
+
+  - **Design**: Settings list, linked cards section
+  - **Access**: Via profile icon menu in header
+  - **Copy**: "Linked Cards" section (NOT "Bank Accounts")
+  - **AC**: Manage push notifications, linked accounts, disconnect Plaid
 
 ### Route Protection (TanStack Start)
 
@@ -1522,38 +2677,58 @@ export function CreateRewardButton() {
 - [ ] `processNewTransactions` scheduled; unmatched → matched logic functional.
 - [ ] `calculateRewards` increments visit-based progress correctly; unit tests for matching rules.
 
-4. Consumer UX
+4. Design System
 
-- [ ] Onboarding links Plaid; dashboard shows progress and recent activity.
+- [ ] Review `loyalty-platform-design.md` in full before implementing UI.
+- [ ] Update `src/styles.css` with OKLCH color tokens from design doc.
+- [ ] Create base layout wrapper with 480px max-width constraint.
+- [ ] Create shared components: ProgressCard, BottomSheet/Modal, MultistepForm wrapper.
+- [ ] Test responsive behavior: bottom sheets → modals on desktop.
 
-5. Business UX
+5. Consumer UX
 
-- [ ] Register flow, dashboard stats, rewards CRUD, basic analytics, settings.
+- [ ] Onboarding links Plaid with "Link your card" copy (not "bank").
+- [ ] Dashboard shows progress with playful card rotation.
+- [ ] Dashboard uses profile icon + bell (no hamburger menu).
+- [ ] Bottom nav: Dashboard, Merchants, Rewards.
+- [ ] Rewards claim page with QR code display.
+- [ ] Notifications page accessible via bell icon.
+- [ ] Transactions page accessible via profile menu.
+- [ ] All screens constrained to 480px max-width.
 
-6. Notifications
+6. Business UX
+
+- [ ] Register flow uses multistep form (one field per screen).
+- [ ] Dashboard with metric cards.
+- [ ] Bottom nav: Dashboard, Programs, Analytics (NOT "Rewards").
+- [ ] Programs list with FAB for creating new program.
+- [ ] Create program uses 4-step form with progress indicators.
+- [ ] Settings accessible via settings icon (no hamburger menu).
+
+7. Notifications
 
 - [ ] Push subscription storage; push and email notifications for reward earned.
 - [ ] `@convex-dev/resend` installed & registered; test email mutation works.
 - [ ] Resend webhook configured; `RESEND_WEBHOOK_SECRET` set; events recorded.
 - [ ] `testMode` disabled in staging/prod after domain verification.
 
-7. Geospatial
+8. Geospatial
 
 - [ ] `@convex-dev/geospatial` installed & registered; merchants nearby view returns results.
 
-8. PWA
+9. PWA
 
 - [ ] Manifest, service worker, installable; auto-update enabled.
 
-9. Roles & authz
+10. Roles & authz
 
 - [ ] `setUserRole`, `getCurrentUserRole`, and route protection in place.
 
-10. Billing (required)
+11. Billing (required)
 
 - [ ] `AUTUMN_SECRET_KEY` set; component registered; checkout renders; plan limits enforced via server.
 
-11. Readiness
+12. Readiness
 
 - [ ] Error handling and logging present in all server functions.
 - [ ] Basic CI (typecheck, build) green; environment variables present in prod.
@@ -1582,11 +2757,60 @@ cd ../..
 ## Notes & Conventions
 
 - **User IDs**: All app tables use `userId: v.string()` storing Better Auth's `user.id` (component user ID). This follows the recommended pattern per the [migration guide](https://convex-better-auth.netlify.app/migrations/migrate-userid). Never track app user IDs in the Better Auth component tables.
-- **Amounts**: Store in integer cents to avoid floating point issues.
-- **Time**: Store `createdAt` as epoch ms; store transaction dates as ISO `YYYY-MM-DD`.
-- **Idempotency**: Read-before-write on `plaidTransactionId`-indexed query.
-- **Data privacy**: Never send Plaid access tokens to client; restrict queries by `auth.userId`.
+- **Amounts**: Store as `v.number()` in **integer cents** (e.g., $5.00 = 500). Convert Plaid amounts: `Math.round(amount * 100)`. Display: `amount / 100`. This avoids floating point precision issues.
+- **Currency**: Always store `currency: v.string()` with ISO code (e.g., "USD", "CAD").
+- **Time**: Store `createdAt` as epoch ms (`Date.now()`); store transaction dates as ISO `YYYY-MM-DD` (Plaid format).
+- **Idempotency**: Read-before-write on `plaidTransactionId`-indexed query to prevent duplicate transactions.
+- **Data privacy**: Never send Plaid access tokens to client; always decrypt server-side only; restrict queries by `userId`.
+- **Webhooks**: Always verify signatures (Plaid JWS, Resend HMAC) before processing.
 
 ---
 
-Playbook last updated: 2025-11-08T13:00:00Z
+## Changelog
+
+### 2025-11-08T21:00:00Z
+
+- **Aligned Routes with Design System**:
+  - Renamed `business/rewards/` → `business/programs/` to match bottom nav terminology
+  - Added missing routes: `consumer/rewards/[id]/claim.tsx` for QR code redemption
+  - Added missing route: `consumer/notifications.tsx` for notification center
+  - Added `business/programs/[id]/edit.tsx` for editing programs
+  - Explicitly documented bottom navigation for each role:
+    - Business: `[Dashboard] [Programs] [Analytics]`
+    - Consumer: `[Dashboard] [Merchants] [Rewards]`
+  - Clarified access patterns (profile menu, bell icon, FAB, etc.)
+  - Updated checklist to reflect new route structure
+
+### 2025-11-08T20:00:00Z
+
+- **Integrated Design System Reference**:
+  - Added "Design System & UI Requirements" section at top of playbook
+  - Cross-referenced `loyalty-platform-design.md` throughout route specifications
+  - Added design compliance checklist items (step 4)
+  - Included quick-reference design patterns (mobile-first layout, cards, modals)
+  - Updated all copy references: "Link your card" (not "bank")
+  - Added navigation requirements: profile icon + bottom nav (no hamburger)
+
+### 2025-11-08T18:00:00Z
+
+- Added Better Auth Local Install with triggers (future-proof pattern)
+- Clarified user ID architecture: component user.id → app tables
+- Updated all schemas to use `userId: v.string()` for Better Auth user.id
+- Added `.env.local` client environment variables section
+- Expanded Plaid integration with detailed implementations:
+  - Full encryption helpers (AES-256-GCM)
+  - JWS webhook verification with Plaid public key
+  - `/transactions/sync` endpoint usage (cursor-based)
+  - Complete helper mutations for transactions
+- Detailed matching engine with scoring algorithm (100-point scale)
+- Complete reward calculation with threshold detection
+- Batch processing for unmatched transactions (100 per run)
+- Added specific TanStack Start route protection pattern
+- Expanded Autumn billing with pricing-as-code config
+- Complete PWA setup with Vite plugin configuration
+- Added all notification implementations (push, email, subscribe, markRead)
+- Clarified amount storage: integer cents in `v.number()`
+- Added currency field to transactions
+- Added syncCursor to plaidAccounts for pagination
+
+Playbook last updated: 2025-11-08T21:00:00Z
