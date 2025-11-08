@@ -1,4 +1,5 @@
 <!-- Playbook generated: 2025-11-08T00:00:00Z -->
+<!-- Last updated: 2025-11-08T22:00:00Z -->
 
 # Loyalty Platform MVP — Execution Playbook (All-in-One)
 
@@ -8,6 +9,7 @@ This document is the single source of truth to execute the MVP end-to-end. It in
 
 - Tech stack: TanStack Start + Convex + Better Auth + Plaid + Autumn (Stripe billing) + PWA + Resend.
 - Core flow: Plaid webhooks → Transaction matching → Reward progress → Notifications.
+- **Viral growth**: Business public pages for social sharing (sign up once, get loyalty everywhere).
 - Goal: Functional MVP in sandbox mode with clear "Definition of Done" per phase.
 
 ## Design System & UI Requirements
@@ -237,6 +239,7 @@ export default defineSchema({
   businesses: defineTable({
     ownerId: v.string(), // Better Auth user.id (component user ID)
     name: v.string(),
+    slug: v.string(), // Unique URL identifier for public page (e.g., "joes-coffee")
     description: v.optional(v.string()),
     category: v.string(),
     address: v.optional(v.string()),
@@ -247,7 +250,8 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_owner", ["ownerId"])
-    .index("by_status", ["status"]),
+    .index("by_status", ["status"])
+    .index("by_slug", ["slug"]), // For public page lookups
 
   plaidAccounts: defineTable({
     userId: v.string(), // Better Auth user.id (component user ID)
@@ -1554,6 +1558,159 @@ export const updateMatchedTransaction = internalMutation({
 });
 ```
 
+### Business Public Pages
+
+**`convex/businesses/public.ts`** - Public queries for business pages:
+
+```ts
+import { query } from "../_generated/server";
+import { v } from "convex/values";
+
+// Get business by slug (public - no auth required)
+export const getBySlug = query({
+  args: { slug: v.string() },
+  returns: v.union(
+    v.null(),
+    v.object({
+      _id: v.id("businesses"),
+      name: v.string(),
+      slug: v.string(),
+      description: v.optional(v.string()),
+      category: v.string(),
+      address: v.optional(v.string()),
+      logoUrl: v.optional(v.string()),
+      status: v.string(),
+    })
+  ),
+  handler: async (ctx, args) => {
+    // 1. Look up business by slug using by_slug index
+    const business = await ctx.db
+      .query("businesses")
+      .withIndex("by_slug", (q) => q.eq("slug", args.slug))
+      .unique();
+
+    // 2. Return null if not found or not verified
+    if (!business || business.status !== "verified") {
+      return null;
+    }
+
+    // 3. Return public fields only (no ownerId, mccCodes, etc.)
+    return {
+      _id: business._id,
+      name: business.name,
+      slug: business.slug,
+      description: business.description,
+      category: business.category,
+      address: business.address,
+      logoUrl: business.logoUrl,
+      status: business.status,
+    };
+  },
+});
+
+// Get active reward programs for a business (public - no auth required)
+export const getActivePrograms = query({
+  args: { businessId: v.id("businesses") },
+  returns: v.array(
+    v.object({
+      _id: v.id("rewardPrograms"),
+      name: v.string(),
+      description: v.optional(v.string()),
+      type: v.string(),
+      rules: v.object({ visits: v.number(), reward: v.string() }),
+    })
+  ),
+  handler: async (ctx, args) => {
+    // 1. Get all active programs for this business
+    const programs = await ctx.db
+      .query("rewardPrograms")
+      .withIndex("by_business", (q) => q.eq("businessId", args.businessId))
+      .filter((q) => q.eq(q.field("status"), "active"))
+      .collect();
+
+    // 2. Return public fields only
+    return programs.map((p) => ({
+      _id: p._id,
+      name: p.name,
+      description: p.description,
+      type: p.type,
+      rules: p.rules,
+    }));
+  },
+});
+
+// Get stats for business public page (public - no auth required)
+export const getStats = query({
+  args: { businessId: v.id("businesses") },
+  returns: v.object({
+    totalCustomers: v.number(),
+    totalRewards: v.number(),
+  }),
+  handler: async (ctx, args) => {
+    // 1. Count unique customers (distinct userId in rewardProgress)
+    const progressRecords = await ctx.db
+      .query("rewardProgress")
+      .withIndex("by_business", (q) => q.eq("businessId", args.businessId))
+      .collect();
+
+    const uniqueCustomers = new Set(progressRecords.map((p) => p.userId)).size;
+
+    // 2. Sum total rewards earned (completed progress records)
+    const totalRewards = progressRecords
+      .filter((p) => p.status === "completed")
+      .reduce((sum, p) => sum + p.totalEarned, 0);
+
+    return {
+      totalCustomers: uniqueCustomers,
+      totalRewards,
+    };
+  },
+});
+```
+
+**`convex/businesses/generateSlug.ts`** - Helper to generate unique slugs:
+
+```ts
+import { internalMutation } from "../_generated/server";
+import { v } from "convex/values";
+
+// Generate unique slug from business name
+export const generateUniqueSlug = internalMutation({
+  args: {
+    businessId: v.id("businesses"),
+    name: v.string(),
+  },
+  returns: v.string(),
+  handler: async (ctx, args) => {
+    // 1. Create base slug from name
+    //    "Joe's Coffee Shop" → "joes-coffee-shop"
+    let baseSlug = args.name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "") // Remove special chars
+      .trim()
+      .replace(/\s+/g, "-") // Replace spaces with hyphens
+      .replace(/-+/g, "-"); // Collapse multiple hyphens
+
+    // 2. Check if slug exists
+    const existing = await ctx.db
+      .query("businesses")
+      .withIndex("by_slug", (q) => q.eq("slug", baseSlug))
+      .unique();
+
+    // 3. If exists, append random suffix
+    if (existing && existing._id !== args.businessId) {
+      const suffix = Math.random().toString(36).substring(2, 6);
+      baseSlug = `${baseSlug}-${suffix}`;
+    }
+
+    // 4. Update business with slug
+    await ctx.db.patch(args.businessId, { slug: baseSlug });
+
+    return baseSlug;
+  },
+});
+```
+
 ### Users & Roles
 
 **`convex/users.ts`**:
@@ -1938,6 +2095,37 @@ return await resendComponent.handleResendEventWebhook(ctx, req);
 
 **📐 UI Reference**: See `loyalty-platform-design.md` for detailed screen layouts and user flows.
 
+### Public Routes (No auth required)
+
+**Public Business Page** (`src/routes/join/[slug].tsx`)
+
+- **URL Format**: `/join/joes-coffee-shop`
+- **Purpose**: Shareable page for social media promotion (viral growth)
+- **Design**: Full-screen hero + program cards + CTA
+- **Layout**: Constrained 480px max-width, mobile-first
+- **Copy Theme**: "Sign up once, get loyalty everywhere"
+- **AC**:
+  - Shows business name, logo, description
+  - Lists all active reward programs with visual progress indicators
+  - Displays social proof (X customers, Y rewards earned)
+  - Clear CTA: "Start Earning Rewards" (always visible)
+  - If authenticated: Shows user's progress at this business OR auto-enrolls
+  - If not authenticated: Redirects to signup with referral context
+  - Share button: Copies link to clipboard with success toast
+- **SEO**: This route should use SSR for social media previews
+- **Shareable URL**: Business dashboard shows copyable link: `nopunchcards.com/join/{slug}`
+- **See**: `loyalty-platform-design.md` → Business Public Page section
+
+**Context-Aware Signup** (`src/routes/signup.tsx` with query params)
+
+- **URL Format**: `/signup?ref=joes-coffee-shop`
+- **Copy**: Emphasizes "Sign up once" value prop
+- **AC**:
+  - Preserves `ref` param through signup flow
+  - After signup + card link, redirects to that business's program
+  - Shows confirmation: "You're now earning rewards at Joe's Coffee!"
+- **See**: `loyalty-platform-design.md` → Context-Aware Signup Flow
+
 ### Landing Page (`src/routes/index.tsx`)
 
 - **Design**: Full-width hero, 3-step "How It Works", stats, footer
@@ -1963,6 +2151,8 @@ return await resendComponent.handleResendEventWebhook(ctx, req);
   - **AC**: Shows counts (total customers, total visits, active rewards) via Convex queries
   - **Header**: Business name + settings icon (no hamburger)
   - **Bottom Nav**: Active "Dashboard"
+  - **New Feature**: Prominent "Share Your Page" card with copyable link + social share buttons
+  - **Link Format**: `nopunchcards.com/join/{slug}`
   - **See**: `loyalty-platform-design.md` → Business Dashboard section
 
 - `programs/index.tsx` (renamed from rewards/)
@@ -1996,6 +2186,7 @@ return await resendComponent.handleResendEventWebhook(ctx, req);
   - **Design**: Settings list with sections
   - **Access**: Via settings icon in header (top right)
   - **AC**: Edit business profile, upload logo URL, view verification status
+  - **New Feature**: Customize shareable link slug (must be unique), preview public page
 
 ### Consumer Routes (`src/routes/consumer/`)
 
@@ -2699,11 +2890,27 @@ export function CreateRewardButton() {
 6. Business UX
 
 - [ ] Register flow uses multistep form (one field per screen).
+- [ ] Register flow generates unique slug from business name.
 - [ ] Dashboard with metric cards.
+- [ ] Dashboard shows "Share Your Page" card with copyable link.
 - [ ] Bottom nav: Dashboard, Programs, Analytics (NOT "Rewards").
 - [ ] Programs list with FAB for creating new program.
 - [ ] Create program uses 4-step form with progress indicators.
 - [ ] Settings accessible via settings icon (no hamburger menu).
+- [ ] Settings allows customizing shareable link slug (with uniqueness validation).
+
+6a. Business Public Pages (Viral Growth)
+
+- [ ] Public page route: `/join/[slug]` works for verified businesses.
+- [ ] Public page shows business name, logo, description (SSR for social previews).
+- [ ] Public page lists all active reward programs with visual indicators.
+- [ ] Public page displays social proof (customer count, rewards earned).
+- [ ] Public page has prominent "Start Earning Rewards" CTA (fixed/sticky).
+- [ ] Unauthenticated users redirected to signup with `?ref={slug}` param.
+- [ ] Authenticated users see their progress OR auto-enroll in programs.
+- [ ] Share button copies link to clipboard with success feedback.
+- [ ] Copy emphasizes "Sign up once, get loyalty everywhere" value prop.
+- [ ] 404 page for invalid/unverified business slugs.
 
 7. Notifications
 
@@ -2768,6 +2975,21 @@ cd ../..
 
 ## Changelog
 
+### 2025-11-08T22:00:00Z
+
+- **Added Business Public Pages (Viral Growth Feature)**:
+  - Added `slug` field to businesses table with `by_slug` index
+  - Created public queries: `getBySlug`, `getActivePrograms`, `getStats`
+  - Added slug generation helper: `generateUniqueSlug`
+  - New public route: `/join/[slug]` for shareable business pages
+  - Context-aware signup flow with `?ref={slug}` param preservation
+  - Business dashboard "Share Your Page" card with copyable link
+  - Settings page allows slug customization
+  - Copy theme: "Sign up once, get loyalty everywhere"
+  - SSR for social media preview optimization
+  - Complete checklist items for public page feature
+  - Updated business registration to auto-generate slug
+
 ### 2025-11-08T21:00:00Z
 
 - **Aligned Routes with Design System**:
@@ -2813,4 +3035,4 @@ cd ../..
 - Added currency field to transactions
 - Added syncCursor to plaidAccounts for pagination
 
-Playbook last updated: 2025-11-08T21:00:00Z
+Playbook last updated: 2025-11-08T22:00:00Z

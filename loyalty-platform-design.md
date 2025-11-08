@@ -1,10 +1,12 @@
 <!-- Design document generated: 2025-11-08 -->
+<!-- Last updated: 2025-11-08T22:00:00Z -->
 
 # No Punch Cards — UI/UX Design System & User Flows
 
 **Created:** 2025-11-08  
+**Last Updated:** 2025-11-08T22:00:00Z  
 **Status:** Draft  
-**Mode:** SPA (Single Page Application)
+**Mode:** SPA (Single Page Application) with SSR for public pages
 
 ---
 
@@ -68,6 +70,15 @@
 }
 ```
 
+### 7. **Viral Growth via Public Pages**
+
+- Every business gets a unique shareable link: `/join/{business-slug}`
+- Public page showcases programs without requiring login
+- Copy emphasizes: **"Sign up once, get loyalty everywhere"**
+- Businesses promote on social media (Instagram, Facebook, in-store QR)
+- SSR for social media preview cards (Open Graph meta tags)
+- Context-aware signup flow preserves business referral
+
 ---
 
 ## Table of Contents
@@ -77,8 +88,9 @@
 3. [Landing Page](#landing-page)
 4. [User Flows](#user-flows)
 5. [Screen Specifications](#screen-specifications)
-6. [Component Library](#component-library)
-7. [SPA Configuration](#spa-configuration)
+6. [Business Public Page (Viral Growth)](#business-public-page-viral-growth)
+7. [Component Library](#component-library)
+8. [SPA Configuration](#spa-configuration)
 
 ---
 
@@ -590,6 +602,86 @@ Full Screen Detail
 [Swipe down to close]
 ```
 
+**Flow 4: Share Public Page**
+
+```
+Business Dashboard
+  → "Share Your Page" card visible
+     ↓
+[Tap "Copy Link"]
+     ↓
+Link copied to clipboard
+  "nopunchcards.com/join/joes-coffee"
+     ↓
+Success toast
+  "Link copied! Share with your customers"
+     ↓
+[Optional: Social share buttons]
+  - Instagram story
+  - Facebook post
+  - Twitter/X post
+     ↓
+Customer sees post on social media
+     ↓
+[Tap link] → Public Business Page
+```
+
+### Viral Growth Journey (Customer from Social Media)
+
+**Flow 1: Discovery via Social Media**
+
+```
+[Instagram/Facebook Post]
+"Earn free coffee at Joe's! ☕"
+Link: nopunchcards.com/join/joes-coffee
+     ↓
+[Tap link]
+     ↓
+Public Business Page
+  - Joe's Coffee Shop
+  - "5-Visit Punch Card"
+  - "Sign up once, get loyalty everywhere"
+  - 47 customers already earning rewards
+     ↓
+[Scroll to see programs]
+     ↓
+Program Cards (visual preview):
+  ○○○○○ → 5 visits → Free coffee
+     ↓
+[Sticky CTA: "Start Earning Rewards"]
+     ↓
+[Tap CTA]
+     ↓
+IF not logged in:
+  → Signup page (?ref=joes-coffee)
+     ↓
+1. Email & Password
+     ↓
+2. Name
+     ↓
+3. "Link the card you use most"
+   → Plaid Link
+     ↓
+4. Card selection
+     ↓
+Success Screen
+  "You're all set!"
+  "Now earning rewards at Joe's Coffee
+   and 300+ other businesses"
+     ↓
+Redirect to Consumer Dashboard
+  → Joe's Coffee shows 0/5 progress
+     ↓
+[Next time they shop at Joe's]
+  → Transaction auto-matched
+  → Progress: 1/5 visits
+  → Push notification
+
+IF already logged in:
+  → Auto-enroll in programs
+  → Dashboard shows Joe's Coffee
+```
+
 ---
 
 ## Screen Specifications
@@ -898,6 +990,384 @@ Social Proof:
 │                                     │
 └─────────────────────────────────────┘
 ```
+
+---
+
+## Business Public Page (Viral Growth)
+
+### Overview
+
+**Purpose**: Shareable landing page for businesses to promote on social media and drive customer acquisition.
+
+**URL Format**: `nopunchcards.com/join/{business-slug}`
+
+**Key Features**:
+
+- Public (no auth required)
+- SSR for social media previews (Open Graph)
+- Mobile-first, constrained 480px desktop
+- Prominent "Sign up once, get loyalty everywhere" messaging
+- Social proof (customer count, rewards earned)
+- Sticky CTA for conversion
+
+### Screen Layout
+
+**Mobile (375px)**
+
+```
+┌─────────────────────────────────────┐
+│ ← Back                   [Share] ⤴ │ ← Header
+├─────────────────────────────────────┤
+│                                     │
+│        ┌──────────┐                 │
+│        │   LOGO   │                 │ ← Business logo
+│        └──────────┘                 │
+│                                     │
+│     Joe's Coffee Shop               │ ← Business name (h1)
+│                                     │
+│ ☕ Coffee · 123 Main St             │ ← Category + Address
+│                                     │
+├─────────────────────────────────────┤
+│                                     │
+│ Sign up once,                       │ ← Value prop
+│ get loyalty everywhere              │   (prominent)
+│                                     │
+│ ┌─────────────────────────────────┐ │
+│ │  47 customers    12 rewards     │ │ ← Social proof
+│ │   earning here   this week      │ │
+│ └─────────────────────────────────┘ │
+│                                     │
+├─────────────────────────────────────┤
+│                                     │
+│ Earn free coffee with every         │ ← Description
+│ 5 visits. Plus rewards at 300+      │   (optional)
+│ other local businesses.             │
+│                                     │
+├─────────────────────────────────────┤
+│                                     │
+│ Rewards at Joe's Coffee             │ ← Section title
+│                                     │
+│ ┌─────────────────────────────────┐ │
+│ │ 5-Visit Punch Card              │ │ ← Program card
+│ │                                 │ │
+│ │     ○ ○ ○ ○ ○                  │ │ ← Visual dots
+│ │                                 │ │
+│ │ Visit 5 times, earn:            │ │
+│ │ Free medium coffee              │ │
+│ └─────────────────────────────────┘ │
+│                                     │
+│ ┌─────────────────────────────────┐ │
+│ │ 10-Visit VIP Card               │ │
+│ │                                 │ │
+│ │     ○ ○ ○ ○ ○ ○ ○ ○ ○ ○        │ │
+│ │                                 │ │
+│ │ Visit 10 times, earn:           │ │
+│ │ Free large coffee + pastry      │ │
+│ └─────────────────────────────────┘ │
+│                                     │
+├─────────────────────────────────────┤
+│                                     │
+│ How it works                        │ ← How it works
+│                                     │   (3 steps)
+│ 1️⃣ Link your card (one time)       │
+│ 2️⃣ Shop like normal                 │
+│ 3️⃣ Earn rewards automatically       │
+│                                     │
+├─────────────────────────────────────┤
+│                                     │
+│ Plus loyalty at 300+ businesses     │ ← Platform benefit
+│                                     │
+│ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐   │
+│ │Cafe │ │Deli │ │Gym  │ │More │   │ ← Example icons
+│ └─────┘ └─────┘ └─────┘ └─────┘   │
+│                                     │
+│ One account, all your local         │
+│ loyalty rewards in one place.       │
+│                                     │
+│                                     │
+│                                     │
+│ [Scroll padding for sticky CTA]     │
+│                                     │
+└─────────────────────────────────────┘
+│  [Start Earning Rewards] →          │ ← Sticky CTA
+└─────────────────────────────────────┘  (fixed bottom)
+```
+
+**Desktop Layout (1440px)**
+
+```
+                    ┌─────────────────────────────────────┐
+                    │ ← Back                   [Share] ⤴ │
+                    ├─────────────────────────────────────┤
+                    │                                     │
+   ← Whitespace     │        ┌──────────┐                 │
+                    │        │   LOGO   │                 │
+                    │        └──────────┘                 │
+                    │                                     │
+   Max-width:       │     Joe's Coffee Shop               │
+   480px centered   │                                     │
+                    │ ☕ Coffee · 123 Main St             │
+                    │                                     │
+                    │ Sign up once,                       │
+                    │ get loyalty everywhere              │
+                    │                                     │
+                    │ ┌─────────────────────────────────┐ │
+                    │ │  47 customers    12 rewards     │ │
+                    │ │   earning here   this week      │ │
+                    │ └─────────────────────────────────┘ │
+                    │                                     │
+                    │ [Rewards programs...]               │
+                    │                                     │
+                    │ [Start Earning Rewards] →           │
+                    └─────────────────────────────────────┘
+                                                              Whitespace →
+```
+
+### Copy Guidelines
+
+**Primary Message**: "Sign up once, get loyalty everywhere"
+
+**Supporting Copy**:
+
+- "One account, all your local rewards"
+- "Automatic rewards at 300+ businesses"
+- "No punch cards, no apps, just shop"
+- "Link your card once, earn everywhere"
+
+**Social Proof**:
+
+- "{X} customers earning here"
+- "{Y} rewards earned this week"
+- "Join {X} others"
+
+**CTA Variations**:
+
+- Primary: "Start Earning Rewards"
+- Alternative: "Join Now"
+- If logged in: "Start Earning Here"
+
+### Component Breakdown
+
+**Hero Section**
+
+```jsx
+<div className="text-center py-8">
+  {/* Logo */}
+  {business.logoUrl && (
+    <img
+      src={business.logoUrl}
+      alt={business.name}
+      className="w-24 h-24 mx-auto rounded-full border-4 border-white shadow-lg mb-4"
+    />
+  )}
+
+  {/* Business name */}
+  <h1 className="text-3xl font-bold mb-2">{business.name}</h1>
+
+  {/* Category + Location */}
+  <p className="text-gray-400 flex items-center justify-center gap-2">
+    <span>{business.category}</span>
+    <span>·</span>
+    <span>{business.address}</span>
+  </p>
+</div>
+```
+
+**Value Prop Banner**
+
+```jsx
+<div className="bg-linear-to-r from-gray-900 to-gray-800 rounded-lg p-6 text-center mb-6">
+  <h2 className="text-2xl font-bold mb-2">Sign up once,</h2>
+  <p className="text-xl text-gray-300">get loyalty everywhere</p>
+</div>
+```
+
+**Social Proof Stats**
+
+```jsx
+<div className="grid grid-cols-2 gap-4 mb-8">
+  <div className="bg-gray-900 rounded-lg p-4 text-center">
+    <div className="text-3xl font-bold">{stats.totalCustomers}</div>
+    <div className="text-sm text-gray-400">customers earning here</div>
+  </div>
+  <div className="bg-gray-900 rounded-lg p-4 text-center">
+    <div className="text-3xl font-bold">{stats.totalRewards}</div>
+    <div className="text-sm text-gray-400">rewards this week</div>
+  </div>
+</div>
+```
+
+**Program Card (Public View)**
+
+```jsx
+<div
+  className="bg-gray-900 rounded-lg p-6 border border-gray-800 mb-4
+                hover:border-gray-700 transition-colors"
+>
+  <h3 className="text-xl font-semibold mb-4">{program.name}</h3>
+
+  {/* Visual progress dots */}
+  <div className="flex gap-2 mb-4 justify-center">
+    {Array.from({ length: program.rules.visits }).map((_, i) => (
+      <div key={i} className="w-4 h-4 rounded-full bg-gray-700" />
+    ))}
+  </div>
+
+  {/* Reward description */}
+  <div className="bg-gray-950 rounded-lg p-4 text-center">
+    <p className="text-sm text-gray-400 mb-1">
+      Visit {program.rules.visits} times, earn:
+    </p>
+    <p className="text-lg font-semibold">{program.rules.reward}</p>
+  </div>
+</div>
+```
+
+**Sticky CTA (Bottom)**
+
+```jsx
+<div
+  className="fixed bottom-0 left-0 right-0 p-4 bg-linear-to-t 
+                from-black via-black/95 to-transparent 
+                md:max-w-[480px] md:mx-auto"
+>
+  <button
+    onClick={handleStartEarning}
+    className="w-full h-14 bg-white text-black rounded-lg 
+                     font-semibold text-lg hover:bg-gray-100 
+                     active:scale-95 transition-all shadow-xl 
+                     flex items-center justify-center gap-2"
+  >
+    Start Earning Rewards
+    <span>→</span>
+  </button>
+</div>
+```
+
+**Share Button (Header)**
+
+```jsx
+<button
+  onClick={copyLinkToClipboard}
+  className="flex items-center gap-2 px-4 py-2 bg-gray-800 
+                rounded-lg text-sm font-medium hover:bg-gray-700 
+                transition-colors"
+>
+  <span>Share</span>
+  <span>⤴</span>
+</button>;
+
+{
+  /* Success toast after copy */
+}
+```
+
+### Business Dashboard Integration
+
+**Share Your Page Card** (added to business dashboard)
+
+```jsx
+<div
+  className="bg-linear-to-br from-gray-900 to-gray-800 
+                rounded-lg p-6 border border-gray-700 mb-6"
+>
+  <div className="flex items-start justify-between mb-4">
+    <div>
+      <h3 className="text-lg font-semibold mb-1">Share Your Page</h3>
+      <p className="text-sm text-gray-400">
+        Promote your rewards on social media
+      </p>
+    </div>
+    <span className="text-2xl">📢</span>
+  </div>
+
+  {/* Copyable link */}
+  <div className="bg-gray-950 rounded-lg p-3 flex items-center gap-3 mb-4">
+    <code className="flex-1 text-sm text-gray-300 truncate">
+      nopunchcards.com/join/{business.slug}
+    </code>
+    <button
+      onClick={copyLink}
+      className="px-3 py-1 bg-white text-black rounded font-medium 
+                       text-sm hover:bg-gray-100 transition-colors shrink-0"
+    >
+      Copy
+    </button>
+  </div>
+
+  {/* Social share buttons */}
+  <div className="flex gap-2">
+    <button className="flex-1 py-2 bg-gray-800 rounded text-sm">
+      📷 Instagram
+    </button>
+    <button className="flex-1 py-2 bg-gray-800 rounded text-sm">
+      📘 Facebook
+    </button>
+    <button className="flex-1 py-2 bg-gray-800 rounded text-sm">
+      🐦 Twitter
+    </button>
+  </div>
+</div>
+```
+
+### SEO & Social Media Optimization
+
+**Open Graph Meta Tags** (for social previews)
+
+```tsx
+// In /join/[slug].tsx route
+export const meta = ({ data }: { data: BusinessData }) => {
+  return [
+    { title: `Earn rewards at ${data.business.name} | No Punch Cards` },
+    {
+      name: "description",
+      content: `Sign up once, get loyalty everywhere. Start earning at ${data.business.name} and 300+ other local businesses.`,
+    },
+    { property: "og:title", content: `Earn rewards at ${data.business.name}` },
+    {
+      property: "og:description",
+      content: "One account for all your local loyalty rewards.",
+    },
+    {
+      property: "og:image",
+      content: data.business.logoUrl || "/og-default-image.png",
+    },
+    {
+      property: "og:url",
+      content: `https://nopunchcards.com/join/${data.business.slug}`,
+    },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+  ];
+};
+```
+
+### Interactions & States
+
+**Not Authenticated**:
+
+- CTA → Redirect to `/signup?ref={slug}`
+- Preserve context through signup flow
+- After signup, auto-enroll in programs
+- Show success: "Now earning at {business}"
+
+**Already Authenticated**:
+
+- CTA → Auto-enroll (mutation)
+- Show progress if already enrolled
+- Redirect to dashboard with toast
+
+**Invalid/Unverified Business**:
+
+- Show 404 page
+- "This business page doesn't exist"
+- CTA to explore other businesses
+
+**Loading State**:
+
+- Skeleton loaders for cards
+- Logo placeholder
+- Prevent layout shift
 
 ---
 
@@ -1489,6 +1959,9 @@ function ConsumerDashboard() {
 - [ ] Create `<Toast />` notification system
 - [ ] Create `<CircularProgress />` component
 - [ ] Create `<MultistepForm />` wrapper
+- [ ] Create `<ShareYourPageCard />` for business dashboard
+- [ ] Create `<PublicProgramCard />` for public pages
+- [ ] Create `<StickyPrimaryCTA />` component
 
 ### Pages
 
@@ -1498,6 +1971,9 @@ function ConsumerDashboard() {
 - [ ] Onboarding flows (consumer & business)
 - [ ] Create program flow
 - [ ] Reward detail screen
+- [ ] **Business public page** (`/join/[slug]`)
+- [ ] Context-aware signup flow with ref param
+- [ ] 404 page for invalid business slugs
 
 ### Interactions
 
@@ -1506,6 +1982,8 @@ function ConsumerDashboard() {
 - [ ] Bottom sheet animations
 - [ ] Modal transitions
 - [ ] Success animations (confetti, checkmark)
+- [ ] Copy-to-clipboard with success feedback
+- [ ] Share button functionality (native share API)
 
 ### Mobile Optimizations
 
@@ -1515,6 +1993,19 @@ function ConsumerDashboard() {
 - [ ] Viewport meta tag
 - [ ] Prevent zoom on input focus
 
+### Public Pages & Viral Growth
+
+- [ ] SSR configuration for `/join/[slug]` route
+- [ ] Open Graph meta tags for social previews
+- [ ] Default OG image for businesses without logos
+- [ ] Slug generation helper (business registration)
+- [ ] Slug uniqueness validation
+- [ ] Referral context preservation through signup
+- [ ] Auto-enrollment after context-aware signup
+- [ ] Business slug customization (settings page)
+- [ ] QR code generation for in-store promotion
+- [ ] Social share button integrations (Instagram, Facebook, Twitter)
+
 ---
 
-_Last updated: 2025-11-08_
+_Last updated: 2025-11-08T22:00:00Z_
