@@ -2437,6 +2437,40 @@ function AuthenticatedLayout() {
 }
 ```
 
+**`src/routes/app.tsx`**: PWA entry point (smart redirect)
+
+```tsx
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
+
+// Smart redirect based on auth status
+const getAppRedirect = createServerFn({ method: "GET" }).handler(async () => {
+  const { getCurrentUser } = await import("../../convex/auth");
+  const user = await getCurrentUser();
+
+  if (!user) {
+    // Not logged in → redirect to login
+    throw redirect({ to: "/login" });
+  }
+
+  // Logged in → redirect to appropriate dashboard based on role
+  const profile = user.profile;
+  if (profile?.role === "business_owner") {
+    throw redirect({ to: "/business/dashboard" });
+  } else {
+    throw redirect({ to: "/consumer/dashboard" });
+  }
+});
+
+export const Route = createFileRoute("/app")({
+  // Disable SSR - this is a client-only redirect handler
+  ssr: false,
+  beforeLoad: async () => {
+    await getAppRedirect();
+  },
+});
+```
+
 **`src/routes/(authenticated)/consumer/dashboard.tsx`**: Consumer dashboard (inherits SSR disabled)
 
 ```tsx
@@ -2499,7 +2533,7 @@ export default defineConfig({
         theme_color: "#000000",
         background_color: "#ffffff",
         display: "standalone",
-        start_url: "/",
+        start_url: "/app", // ← Smart entry point, not landing page
         scope: "/",
         icons: [
           {

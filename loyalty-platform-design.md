@@ -1933,14 +1933,29 @@ root { ssr: true }
 {
   "name": "No Punch Cards",
   "short_name": "NoPunchCards",
-  "start_url": "/consumer/dashboard",
+  "start_url": "/app",
   "display": "standalone",
   "theme_color": "#000000",
   "background_color": "#ffffff"
 }
 ```
 
-The `start_url` points to an `ssr: false` route, ensuring instant app experience after PWA install.
+**PWA Entry Point Strategy:**
+
+The `start_url` points to `/app`, which is a smart redirect route that:
+
+1. **Checks authentication** (client-side, `ssr: false`)
+2. **If logged in**: Redirects to appropriate dashboard based on role
+   - Business owner → `/business/dashboard`
+   - Consumer → `/consumer/dashboard`
+3. **If not logged in**: Redirects to `/login`
+
+This ensures:
+
+- ✅ PWA never shows the landing page (landing is for discovery, not installed apps)
+- ✅ Instant app experience (client-side redirect, no SSR)
+- ✅ Smart routing based on user context
+- ✅ Users land exactly where they want to be
 
 ---
 
