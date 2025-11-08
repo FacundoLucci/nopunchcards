@@ -8,6 +8,8 @@ import {
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 
+import { ThemeProvider } from "@/components/theme-provider";
+
 import Header from "../components/Header";
 
 import appCss from "../styles.css?url";
@@ -83,7 +85,9 @@ function RootComponent() {
       authClient={authClient}
     >
       <RootDocument>
-        <Outlet />
+        <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+          <Outlet />
+        </ThemeProvider>
       </RootDocument>
     </ConvexBetterAuthProvider>
   );
