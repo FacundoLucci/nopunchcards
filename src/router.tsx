@@ -8,7 +8,7 @@ import { routeTree } from "./routeTree.gen";
 export function getRouter() {
   const CONVEX_URL = (import.meta as any).env.VITE_CONVEX_URL!;
   if (!CONVEX_URL) {
-    console.error("missing envar VITE_CONVEX_URL");
+    throw new Error("missing VITE_CONVEX_URL envar");
   }
   const convex = new ConvexReactClient(CONVEX_URL, {
     unsavedChangesWarning: false,
@@ -29,8 +29,8 @@ export function getRouter() {
     createRouter({
       routeTree,
       defaultPreload: "intent",
-      context: { queryClient, convexClient: convex, convexQueryClient },
       scrollRestoration: true,
+      context: { queryClient, convexClient: convex, convexQueryClient },
       Wrap: ({ children }) => (
         <ConvexProvider client={convexQueryClient.convexClient}>
           {children}

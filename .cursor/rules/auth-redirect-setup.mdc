@@ -1,0 +1,221 @@
+# Authentication Redirect Setup
+
+**Last Updated:** 2025-11-09
+
+## Overview
+
+This document describes the instant redirect implementation for authenticated routes in the No Punch Cards application using TanStack Start and Better Auth with Convex.
+
+## How It Works
+
+### 1. Protected Layout Route
+
+All authenticated routes are nested under `src/routes/(authenticated)/_layout.tsx`, which acts as a guard:
+
+```tsx
+import { fetchQuery } from "@/lib/auth-server";
+import { api } from "../../../convex/_generated/api";
+
+// Server function to check authentication using Convex
+const checkAuth = createServerFn({ method: "GET" }).handler(async () => {
+  const user = await fetchQuery(api.auth.getCurrentUser, {});
+  const isAuthenticated = !!user;
+  const userId = user?.userId || user?._id;
+  return { isAuthenticated, userId };
+});
+
+export const Route = createFileRoute("/(authenticated)/_layout")({
+  ssr: true,
+  beforeLoad: async ({ location }) => {
+    const { isAuthenticated, userId } = await checkAuth();
+    
+    if (!isAuthenticated) {
+      // Instant redirect to login with return URL
+      throw redirect({
+        to: "/login",
+        search: {
+          redirect: location.href,
+        },
+      });
+    }
+    
+    return { userId };
+  },
+  component: AuthenticatedLayout,
+});
+```
+
+**Key Features:**
+- Uses `beforeLoad` hook which runs **before** route rendering (instant)
+- Uses `throw redirect()` for immediate redirect (no component rendering)
+- Captures `location.href` to return user after login
+- Server-side auth check via **Convex query** using `fetchQuery` from `@/lib/auth-server`
+- Follows Better Auth + Convex pattern (not direct `fetchSession`)
+
+### 2. Login Page with Return URL Support
+
+The login page (`src/routes/login.tsx`) **requires** a `redirect` search parameter:
+
+```tsx
+export const Route = createFileRoute("/login")({
+  ssr: false,
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      redirect: (search.redirect as string) || "/app",
+    };
+  },
+  component: LoginPage,
+});
+
+function LoginPage() {
+  const search = Route.useSearch();
+  
+  const handleLogin = async (e: React.FormEvent) => {
+    // ... authentication logic ...
+    
+    // Redirect back to original location after successful login
+    window.location.href = search.redirect;
+  };
+}
+```
+
+**Key Features:**
+- **Required**: All redirects and links to `/login` must include a `search.redirect` parameter
+- Validates and extracts `redirect` parameter from URL
+- Defaults to `/app` if no redirect specified
+- Uses `window.location.href` for full page reload after auth (ensures fresh auth state)
+
+**Important**: TypeScript will enforce that all navigation to `/login` includes the search parameter:
+
+```tsx
+// ✅ Correct
+throw redirect({ to: "/login", search: { redirect: "/app" } });
+navigate({ to: "/login", search: { redirect: "/consumer/dashboard" } });
+<Link to="/login" search={{ redirect: "/app" }}>Sign In</Link>
+
+// ❌ TypeScript Error - missing search parameter
+throw redirect({ to: "/login" });
+navigate({ to: "/login" });
+<Link to="/login">Sign In</Link>
+```
+
+## User Flow Example
+
+1. **User tries to access protected route:**
+   ```
+   GET /consumer/dashboard
+   ```
+
+2. **Layout detects no auth, instant redirect:**
+   ```
+   302 → /login?redirect=/consumer/dashboard
+   ```
+
+3. **User logs in successfully:**
+   ```
+   POST /api/auth/sign-in (credentials)
+   ```
+
+4. **After login, redirect to original destination:**
+   ```
+   window.location.href = "/consumer/dashboard"
+   ```
+
+## Protected Routes
+
+All routes under `src/routes/(authenticated)/` are automatically protected:
+
+- `/consumer/dashboard`
+- `/consumer/onboarding`
+- `/consumer/merchants`
+- `/consumer/rewards`
+- `/consumer/notifications`
+- `/business/dashboard`
+- `/business/register`
+- `/business/programs/create`
+- `/business/programs/index`
+- `/business/analytics`
+
+## Why It's Instant
+
+1. **`beforeLoad` runs before rendering** - No flash of protected content
+2. **`throw redirect()` is immediate** - Stops execution and redirects
+3. **Server-side auth check** - Uses cookies, no client-side delay
+4. **No React rendering** - Redirect happens at router level
+
+## Adding New Protected Routes
+
+To protect a new route, simply place it under `src/routes/(authenticated)/`:
+
+```
+src/routes/(authenticated)/my-new-route.tsx
+```
+
+The `_layout.tsx` guard will automatically protect it.
+
+## TanStack Start Best Practices Used
+
+Based on TanStack Start documentation:
+
+✅ Use `beforeLoad` for auth checks  
+✅ Use `throw redirect()` for instant redirects  
+✅ Pass `location` to redirect search params  
+✅ Disable SSR for auth flows (`ssr: false`)  
+✅ Use server functions for auth checks  
+✅ Use `window.location.href` for post-auth redirect (fresh state)
+
+## Better Auth + Convex Pattern
+
+This implementation follows the recommended Better Auth + Convex pattern:
+
+### Server-Side Setup (`src/lib/auth-server.ts`)
+```tsx
+import { createAuth } from "convex/auth";
+import { setupFetchClient } from "@convex-dev/better-auth/react-start";
+import { getCookie } from "@tanstack/react-start/server";
+
+export const { fetchQuery, fetchMutation, fetchAction } =
+  await setupFetchClient(createAuth, getCookie);
+```
+
+### Convex Query (`convex/auth.ts`)
+```tsx
+export const getCurrentUser = query({
+  args: {},
+  handler: async (ctx) => {
+    return authComponent.getAuthUser(ctx);
+  },
+});
+```
+
+### Usage in TanStack Start Server Functions
+```tsx
+import { fetchQuery } from "@/lib/auth-server";
+import { api } from "../../../convex/_generated/api";
+
+const checkAuth = createServerFn({ method: "GET" }).handler(async () => {
+  const user = await fetchQuery(api.auth.getCurrentUser, {});
+  return { isAuthenticated: !!user, userId: user?.userId || user?._id };
+});
+```
+
+**Why this pattern?**
+- ✅ Properly integrates Better Auth with Convex
+- ✅ Authentication state managed by Convex (single source of truth)
+- ✅ Works with SSR and server functions
+- ✅ Cookies automatically passed via `getCookie`
+
+## Related Files
+
+- `/src/lib/auth-server.ts` - Server-side fetch helpers for Convex
+- `/src/routes/(authenticated)/_layout.tsx` - Protected route guard
+- `/src/routes/login.tsx` - Login page with redirect support
+- `/src/routes/__root.tsx` - Root auth setup
+- `/convex/auth.ts` - Better Auth configuration with getCurrentUser query
+- `/.cursor/rules/better-auth-usage.mdc` - Auth usage patterns
+
+## References
+
+- TanStack Start Authentication: https://tanstack.com/start/latest/docs/framework/react/guide/authentication
+- Better Auth with Convex: https://github.com/get-convex/convex-backend/tree/main/npm-packages/better-auth
+- TanStack Router Redirects: https://tanstack.com/router/latest/docs/framework/react/guide/navigation#redirects

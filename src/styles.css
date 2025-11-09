@@ -132,3 +132,30 @@ code {
     @apply bg-background text-foreground;
   }
 }
+
+/* Card playfulness (light mode only) */
+.card-playful {
+  transform: rotate(-0.5deg);
+  transition: transform 200ms ease;
+}
+
+.card-playful:hover {
+  transform: rotate(0deg) scale(1.02);
+}
+
+.card-playful:nth-child(even) {
+  transform: rotate(0.5deg);
+}
+
+/* App container - constrained width for mobile-first design */
+.app-container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Landing page - can use full width */
+.landing-section {
+  max-width: 1280px;
+  margin: 0 auto;
+}

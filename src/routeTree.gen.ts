@@ -9,146 +9,280 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AppRouteImport } from './routes/app'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as DemoStartServerFuncsRouteImport } from './routes/demo/start.server-funcs'
-import { Route as DemoStartApiRequestRouteImport } from './routes/demo/start.api-request'
-import { Route as DemoApiNamesRouteImport } from './routes/demo/api.names'
+import { Route as JoinSlugRouteImport } from './routes/join/$slug'
+import { Route as AuthenticatedLayoutRouteImport } from './routes/_authenticated/_layout'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
-import { Route as DemoStartSsrIndexRouteImport } from './routes/demo/start.ssr.index'
-import { Route as DemoStartSsrSpaModeRouteImport } from './routes/demo/start.ssr.spa-mode'
-import { Route as DemoStartSsrFullSsrRouteImport } from './routes/demo/start.ssr.full-ssr'
-import { Route as DemoStartSsrDataOnlyRouteImport } from './routes/demo/start.ssr.data-only'
+import { Route as AuthenticatedConsumerOnboardingRouteImport } from './routes/_authenticated/consumer/onboarding'
+import { Route as AuthenticatedConsumerNotificationsRouteImport } from './routes/_authenticated/consumer/notifications'
+import { Route as AuthenticatedConsumerMerchantsRouteImport } from './routes/_authenticated/consumer/merchants'
+import { Route as AuthenticatedConsumerDashboardRouteImport } from './routes/_authenticated/consumer/dashboard'
+import { Route as AuthenticatedBusinessRegisterRouteImport } from './routes/_authenticated/business/register'
+import { Route as AuthenticatedBusinessDashboardRouteImport } from './routes/_authenticated/business/dashboard'
+import { Route as AuthenticatedBusinessAnalyticsRouteImport } from './routes/_authenticated/business/analytics'
+import { Route as AuthenticatedConsumerRewardsIndexRouteImport } from './routes/_authenticated/consumer/rewards/index'
+import { Route as AuthenticatedBusinessProgramsIndexRouteImport } from './routes/_authenticated/business/programs/index'
+import { Route as AuthenticatedBusinessProgramsCreateRouteImport } from './routes/_authenticated/business/programs/create'
 
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DemoStartServerFuncsRoute = DemoStartServerFuncsRouteImport.update({
-  id: '/demo/start/server-funcs',
-  path: '/demo/start/server-funcs',
+const JoinSlugRoute = JoinSlugRouteImport.update({
+  id: '/join/$slug',
+  path: '/join/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DemoStartApiRequestRoute = DemoStartApiRequestRouteImport.update({
-  id: '/demo/start/api-request',
-  path: '/demo/start/api-request',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoApiNamesRoute = DemoApiNamesRouteImport.update({
-  id: '/demo/api/names',
-  path: '/demo/api/names',
-  getParentRoute: () => rootRouteImport,
+const AuthenticatedLayoutRoute = AuthenticatedLayoutRouteImport.update({
+  id: '/_layout',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DemoStartSsrIndexRoute = DemoStartSsrIndexRouteImport.update({
-  id: '/demo/start/ssr/',
-  path: '/demo/start/ssr/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoStartSsrSpaModeRoute = DemoStartSsrSpaModeRouteImport.update({
-  id: '/demo/start/ssr/spa-mode',
-  path: '/demo/start/ssr/spa-mode',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoStartSsrFullSsrRoute = DemoStartSsrFullSsrRouteImport.update({
-  id: '/demo/start/ssr/full-ssr',
-  path: '/demo/start/ssr/full-ssr',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoStartSsrDataOnlyRoute = DemoStartSsrDataOnlyRouteImport.update({
-  id: '/demo/start/ssr/data-only',
-  path: '/demo/start/ssr/data-only',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const AuthenticatedConsumerOnboardingRoute =
+  AuthenticatedConsumerOnboardingRouteImport.update({
+    id: '/consumer/onboarding',
+    path: '/consumer/onboarding',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedConsumerNotificationsRoute =
+  AuthenticatedConsumerNotificationsRouteImport.update({
+    id: '/consumer/notifications',
+    path: '/consumer/notifications',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedConsumerMerchantsRoute =
+  AuthenticatedConsumerMerchantsRouteImport.update({
+    id: '/consumer/merchants',
+    path: '/consumer/merchants',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedConsumerDashboardRoute =
+  AuthenticatedConsumerDashboardRouteImport.update({
+    id: '/consumer/dashboard',
+    path: '/consumer/dashboard',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedBusinessRegisterRoute =
+  AuthenticatedBusinessRegisterRouteImport.update({
+    id: '/business/register',
+    path: '/business/register',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedBusinessDashboardRoute =
+  AuthenticatedBusinessDashboardRouteImport.update({
+    id: '/business/dashboard',
+    path: '/business/dashboard',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedBusinessAnalyticsRoute =
+  AuthenticatedBusinessAnalyticsRouteImport.update({
+    id: '/business/analytics',
+    path: '/business/analytics',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedConsumerRewardsIndexRoute =
+  AuthenticatedConsumerRewardsIndexRouteImport.update({
+    id: '/consumer/rewards/',
+    path: '/consumer/rewards/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedBusinessProgramsIndexRoute =
+  AuthenticatedBusinessProgramsIndexRouteImport.update({
+    id: '/business/programs/',
+    path: '/business/programs/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedBusinessProgramsCreateRoute =
+  AuthenticatedBusinessProgramsCreateRouteImport.update({
+    id: '/business/programs/create',
+    path: '/business/programs/create',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/app': typeof AppRoute
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
+  '/join/$slug': typeof JoinSlugRoute
+  '/business/analytics': typeof AuthenticatedBusinessAnalyticsRoute
+  '/business/dashboard': typeof AuthenticatedBusinessDashboardRoute
+  '/business/register': typeof AuthenticatedBusinessRegisterRoute
+  '/consumer/dashboard': typeof AuthenticatedConsumerDashboardRoute
+  '/consumer/merchants': typeof AuthenticatedConsumerMerchantsRoute
+  '/consumer/notifications': typeof AuthenticatedConsumerNotificationsRoute
+  '/consumer/onboarding': typeof AuthenticatedConsumerOnboardingRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/demo/api/names': typeof DemoApiNamesRoute
-  '/demo/start/api-request': typeof DemoStartApiRequestRoute
-  '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
-  '/demo/start/ssr/data-only': typeof DemoStartSsrDataOnlyRoute
-  '/demo/start/ssr/full-ssr': typeof DemoStartSsrFullSsrRoute
-  '/demo/start/ssr/spa-mode': typeof DemoStartSsrSpaModeRoute
-  '/demo/start/ssr': typeof DemoStartSsrIndexRoute
+  '/business/programs/create': typeof AuthenticatedBusinessProgramsCreateRoute
+  '/business/programs': typeof AuthenticatedBusinessProgramsIndexRoute
+  '/consumer/rewards': typeof AuthenticatedConsumerRewardsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/app': typeof AppRoute
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
+  '/join/$slug': typeof JoinSlugRoute
+  '/business/analytics': typeof AuthenticatedBusinessAnalyticsRoute
+  '/business/dashboard': typeof AuthenticatedBusinessDashboardRoute
+  '/business/register': typeof AuthenticatedBusinessRegisterRoute
+  '/consumer/dashboard': typeof AuthenticatedConsumerDashboardRoute
+  '/consumer/merchants': typeof AuthenticatedConsumerMerchantsRoute
+  '/consumer/notifications': typeof AuthenticatedConsumerNotificationsRoute
+  '/consumer/onboarding': typeof AuthenticatedConsumerOnboardingRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/demo/api/names': typeof DemoApiNamesRoute
-  '/demo/start/api-request': typeof DemoStartApiRequestRoute
-  '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
-  '/demo/start/ssr/data-only': typeof DemoStartSsrDataOnlyRoute
-  '/demo/start/ssr/full-ssr': typeof DemoStartSsrFullSsrRoute
-  '/demo/start/ssr/spa-mode': typeof DemoStartSsrSpaModeRoute
-  '/demo/start/ssr': typeof DemoStartSsrIndexRoute
+  '/business/programs/create': typeof AuthenticatedBusinessProgramsCreateRoute
+  '/business/programs': typeof AuthenticatedBusinessProgramsIndexRoute
+  '/consumer/rewards': typeof AuthenticatedConsumerRewardsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/app': typeof AppRoute
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
+  '/_authenticated/_layout': typeof AuthenticatedLayoutRoute
+  '/join/$slug': typeof JoinSlugRoute
+  '/_authenticated/business/analytics': typeof AuthenticatedBusinessAnalyticsRoute
+  '/_authenticated/business/dashboard': typeof AuthenticatedBusinessDashboardRoute
+  '/_authenticated/business/register': typeof AuthenticatedBusinessRegisterRoute
+  '/_authenticated/consumer/dashboard': typeof AuthenticatedConsumerDashboardRoute
+  '/_authenticated/consumer/merchants': typeof AuthenticatedConsumerMerchantsRoute
+  '/_authenticated/consumer/notifications': typeof AuthenticatedConsumerNotificationsRoute
+  '/_authenticated/consumer/onboarding': typeof AuthenticatedConsumerOnboardingRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/demo/api/names': typeof DemoApiNamesRoute
-  '/demo/start/api-request': typeof DemoStartApiRequestRoute
-  '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
-  '/demo/start/ssr/data-only': typeof DemoStartSsrDataOnlyRoute
-  '/demo/start/ssr/full-ssr': typeof DemoStartSsrFullSsrRoute
-  '/demo/start/ssr/spa-mode': typeof DemoStartSsrSpaModeRoute
-  '/demo/start/ssr/': typeof DemoStartSsrIndexRoute
+  '/_authenticated/business/programs/create': typeof AuthenticatedBusinessProgramsCreateRoute
+  '/_authenticated/business/programs/': typeof AuthenticatedBusinessProgramsIndexRoute
+  '/_authenticated/consumer/rewards/': typeof AuthenticatedConsumerRewardsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/app'
+    | '/login'
+    | '/signup'
+    | '/join/$slug'
+    | '/business/analytics'
+    | '/business/dashboard'
+    | '/business/register'
+    | '/consumer/dashboard'
+    | '/consumer/merchants'
+    | '/consumer/notifications'
+    | '/consumer/onboarding'
     | '/api/auth/$'
-    | '/demo/api/names'
-    | '/demo/start/api-request'
-    | '/demo/start/server-funcs'
-    | '/demo/start/ssr/data-only'
-    | '/demo/start/ssr/full-ssr'
-    | '/demo/start/ssr/spa-mode'
-    | '/demo/start/ssr'
+    | '/business/programs/create'
+    | '/business/programs'
+    | '/consumer/rewards'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/app'
+    | '/login'
+    | '/signup'
+    | '/join/$slug'
+    | '/business/analytics'
+    | '/business/dashboard'
+    | '/business/register'
+    | '/consumer/dashboard'
+    | '/consumer/merchants'
+    | '/consumer/notifications'
+    | '/consumer/onboarding'
     | '/api/auth/$'
-    | '/demo/api/names'
-    | '/demo/start/api-request'
-    | '/demo/start/server-funcs'
-    | '/demo/start/ssr/data-only'
-    | '/demo/start/ssr/full-ssr'
-    | '/demo/start/ssr/spa-mode'
-    | '/demo/start/ssr'
+    | '/business/programs/create'
+    | '/business/programs'
+    | '/consumer/rewards'
   id:
     | '__root__'
     | '/'
+    | '/_authenticated'
+    | '/app'
+    | '/login'
+    | '/signup'
+    | '/_authenticated/_layout'
+    | '/join/$slug'
+    | '/_authenticated/business/analytics'
+    | '/_authenticated/business/dashboard'
+    | '/_authenticated/business/register'
+    | '/_authenticated/consumer/dashboard'
+    | '/_authenticated/consumer/merchants'
+    | '/_authenticated/consumer/notifications'
+    | '/_authenticated/consumer/onboarding'
     | '/api/auth/$'
-    | '/demo/api/names'
-    | '/demo/start/api-request'
-    | '/demo/start/server-funcs'
-    | '/demo/start/ssr/data-only'
-    | '/demo/start/ssr/full-ssr'
-    | '/demo/start/ssr/spa-mode'
-    | '/demo/start/ssr/'
+    | '/_authenticated/business/programs/create'
+    | '/_authenticated/business/programs/'
+    | '/_authenticated/consumer/rewards/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  AppRoute: typeof AppRoute
+  LoginRoute: typeof LoginRoute
+  SignupRoute: typeof SignupRoute
+  JoinSlugRoute: typeof JoinSlugRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
-  DemoApiNamesRoute: typeof DemoApiNamesRoute
-  DemoStartApiRequestRoute: typeof DemoStartApiRequestRoute
-  DemoStartServerFuncsRoute: typeof DemoStartServerFuncsRoute
-  DemoStartSsrDataOnlyRoute: typeof DemoStartSsrDataOnlyRoute
-  DemoStartSsrFullSsrRoute: typeof DemoStartSsrFullSsrRoute
-  DemoStartSsrSpaModeRoute: typeof DemoStartSsrSpaModeRoute
-  DemoStartSsrIndexRoute: typeof DemoStartSsrIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -156,26 +290,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/demo/start/server-funcs': {
-      id: '/demo/start/server-funcs'
-      path: '/demo/start/server-funcs'
-      fullPath: '/demo/start/server-funcs'
-      preLoaderRoute: typeof DemoStartServerFuncsRouteImport
+    '/join/$slug': {
+      id: '/join/$slug'
+      path: '/join/$slug'
+      fullPath: '/join/$slug'
+      preLoaderRoute: typeof JoinSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/demo/start/api-request': {
-      id: '/demo/start/api-request'
-      path: '/demo/start/api-request'
-      fullPath: '/demo/start/api-request'
-      preLoaderRoute: typeof DemoStartApiRequestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/api/names': {
-      id: '/demo/api/names'
-      path: '/demo/api/names'
-      fullPath: '/demo/api/names'
-      preLoaderRoute: typeof DemoApiNamesRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/_layout': {
+      id: '/_authenticated/_layout'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AuthenticatedLayoutRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/api/auth/$': {
       id: '/api/auth/$'
@@ -184,47 +311,123 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/demo/start/ssr/': {
-      id: '/demo/start/ssr/'
-      path: '/demo/start/ssr'
-      fullPath: '/demo/start/ssr'
-      preLoaderRoute: typeof DemoStartSsrIndexRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/consumer/onboarding': {
+      id: '/_authenticated/consumer/onboarding'
+      path: '/consumer/onboarding'
+      fullPath: '/consumer/onboarding'
+      preLoaderRoute: typeof AuthenticatedConsumerOnboardingRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/demo/start/ssr/spa-mode': {
-      id: '/demo/start/ssr/spa-mode'
-      path: '/demo/start/ssr/spa-mode'
-      fullPath: '/demo/start/ssr/spa-mode'
-      preLoaderRoute: typeof DemoStartSsrSpaModeRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/consumer/notifications': {
+      id: '/_authenticated/consumer/notifications'
+      path: '/consumer/notifications'
+      fullPath: '/consumer/notifications'
+      preLoaderRoute: typeof AuthenticatedConsumerNotificationsRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/demo/start/ssr/full-ssr': {
-      id: '/demo/start/ssr/full-ssr'
-      path: '/demo/start/ssr/full-ssr'
-      fullPath: '/demo/start/ssr/full-ssr'
-      preLoaderRoute: typeof DemoStartSsrFullSsrRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/consumer/merchants': {
+      id: '/_authenticated/consumer/merchants'
+      path: '/consumer/merchants'
+      fullPath: '/consumer/merchants'
+      preLoaderRoute: typeof AuthenticatedConsumerMerchantsRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/demo/start/ssr/data-only': {
-      id: '/demo/start/ssr/data-only'
-      path: '/demo/start/ssr/data-only'
-      fullPath: '/demo/start/ssr/data-only'
-      preLoaderRoute: typeof DemoStartSsrDataOnlyRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/consumer/dashboard': {
+      id: '/_authenticated/consumer/dashboard'
+      path: '/consumer/dashboard'
+      fullPath: '/consumer/dashboard'
+      preLoaderRoute: typeof AuthenticatedConsumerDashboardRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/business/register': {
+      id: '/_authenticated/business/register'
+      path: '/business/register'
+      fullPath: '/business/register'
+      preLoaderRoute: typeof AuthenticatedBusinessRegisterRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/business/dashboard': {
+      id: '/_authenticated/business/dashboard'
+      path: '/business/dashboard'
+      fullPath: '/business/dashboard'
+      preLoaderRoute: typeof AuthenticatedBusinessDashboardRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/business/analytics': {
+      id: '/_authenticated/business/analytics'
+      path: '/business/analytics'
+      fullPath: '/business/analytics'
+      preLoaderRoute: typeof AuthenticatedBusinessAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/consumer/rewards/': {
+      id: '/_authenticated/consumer/rewards/'
+      path: '/consumer/rewards'
+      fullPath: '/consumer/rewards'
+      preLoaderRoute: typeof AuthenticatedConsumerRewardsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/business/programs/': {
+      id: '/_authenticated/business/programs/'
+      path: '/business/programs'
+      fullPath: '/business/programs'
+      preLoaderRoute: typeof AuthenticatedBusinessProgramsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/business/programs/create': {
+      id: '/_authenticated/business/programs/create'
+      path: '/business/programs/create'
+      fullPath: '/business/programs/create'
+      preLoaderRoute: typeof AuthenticatedBusinessProgramsCreateRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
   }
 }
 
+interface AuthenticatedRouteChildren {
+  AuthenticatedLayoutRoute: typeof AuthenticatedLayoutRoute
+  AuthenticatedBusinessAnalyticsRoute: typeof AuthenticatedBusinessAnalyticsRoute
+  AuthenticatedBusinessDashboardRoute: typeof AuthenticatedBusinessDashboardRoute
+  AuthenticatedBusinessRegisterRoute: typeof AuthenticatedBusinessRegisterRoute
+  AuthenticatedConsumerDashboardRoute: typeof AuthenticatedConsumerDashboardRoute
+  AuthenticatedConsumerMerchantsRoute: typeof AuthenticatedConsumerMerchantsRoute
+  AuthenticatedConsumerNotificationsRoute: typeof AuthenticatedConsumerNotificationsRoute
+  AuthenticatedConsumerOnboardingRoute: typeof AuthenticatedConsumerOnboardingRoute
+  AuthenticatedBusinessProgramsCreateRoute: typeof AuthenticatedBusinessProgramsCreateRoute
+  AuthenticatedBusinessProgramsIndexRoute: typeof AuthenticatedBusinessProgramsIndexRoute
+  AuthenticatedConsumerRewardsIndexRoute: typeof AuthenticatedConsumerRewardsIndexRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedLayoutRoute: AuthenticatedLayoutRoute,
+  AuthenticatedBusinessAnalyticsRoute: AuthenticatedBusinessAnalyticsRoute,
+  AuthenticatedBusinessDashboardRoute: AuthenticatedBusinessDashboardRoute,
+  AuthenticatedBusinessRegisterRoute: AuthenticatedBusinessRegisterRoute,
+  AuthenticatedConsumerDashboardRoute: AuthenticatedConsumerDashboardRoute,
+  AuthenticatedConsumerMerchantsRoute: AuthenticatedConsumerMerchantsRoute,
+  AuthenticatedConsumerNotificationsRoute:
+    AuthenticatedConsumerNotificationsRoute,
+  AuthenticatedConsumerOnboardingRoute: AuthenticatedConsumerOnboardingRoute,
+  AuthenticatedBusinessProgramsCreateRoute:
+    AuthenticatedBusinessProgramsCreateRoute,
+  AuthenticatedBusinessProgramsIndexRoute:
+    AuthenticatedBusinessProgramsIndexRoute,
+  AuthenticatedConsumerRewardsIndexRoute:
+    AuthenticatedConsumerRewardsIndexRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  AppRoute: AppRoute,
+  LoginRoute: LoginRoute,
+  SignupRoute: SignupRoute,
+  JoinSlugRoute: JoinSlugRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
-  DemoApiNamesRoute: DemoApiNamesRoute,
-  DemoStartApiRequestRoute: DemoStartApiRequestRoute,
-  DemoStartServerFuncsRoute: DemoStartServerFuncsRoute,
-  DemoStartSsrDataOnlyRoute: DemoStartSsrDataOnlyRoute,
-  DemoStartSsrFullSsrRoute: DemoStartSsrFullSsrRoute,
-  DemoStartSsrSpaModeRoute: DemoStartSsrSpaModeRoute,
-  DemoStartSsrIndexRoute: DemoStartSsrIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

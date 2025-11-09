@@ -1,25 +1,49 @@
-Welcome to your new TanStack app! 
+# No Punch Cards - Loyalty Platform MVP
 
-# Getting Started
+Automatic loyalty rewards without the punch cards. Link your card once, earn everywhere.
 
-To run this application:
+## Tech Stack
+
+- **Frontend**: TanStack Start (React + SSR)
+- **Backend**: Convex (real-time database + serverless functions)
+- **Auth**: Better Auth
+- **Payments**: Plaid (transaction data) + Autumn (billing)
+- **Notifications**: Web Push + Resend (email)
+- **UI**: shadcn/ui + Tailwind CSS (OKLCH colors)
+- **PWA**: vite-plugin-pwa
+
+## Quick Start
+
+See **QUICKSTART.md** for step-by-step setup instructions.
 
 ```bash
+# Install dependencies
 pnpm install
-pnpm start
+
+# Start Convex backend (terminal 1)
+pnpm dlx convex dev
+
+# Start frontend (terminal 2)
+pnpm dev
 ```
 
-# Building For Production
+Visit http://localhost:3000
 
-To build this application for production:
+## Documentation
+
+- **QUICKSTART.md** - Step-by-step getting started guide
+- **IMPLEMENTATION_SUMMARY.md** - Complete implementation details
+- **loyalty-platform-mvp.playbook.md** - Full MVP specification
+- **loyalty-platform-design.md** - Design system & user flows
+
+## Building For Production
 
 ```bash
 pnpm build
+npx convex deploy
 ```
 
 ## Testing
-
-This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
 
 ```bash
 pnpm test
@@ -29,10 +53,8 @@ pnpm test
 
 This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
 
-
-
-
 ## Routing
+
 This project uses [TanStack Router](https://tanstack.com/router). The initial setup is a file based router. Which means that the routes are managed as files in `src/routes`.
 
 ### Adding A Route
@@ -68,8 +90,8 @@ In the File Based Routing setup the layout is located in `src/routes/__root.tsx`
 Here is an example layout that includes a header:
 
 ```tsx
-import { Outlet, createRootRoute } from '@tanstack/react-router'
-import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
+import { Outlet, createRootRoute } from "@tanstack/react-router";
+import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 
 import { Link } from "@tanstack/react-router";
 
@@ -86,13 +108,12 @@ export const Route = createRootRoute({
       <TanStackRouterDevtools />
     </>
   ),
-})
+});
 ```
 
 The `<TanStackRouterDevtools />` component is not required so you can remove it if you don't want it in your layout.
 
 More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
-
 
 ## Data Fetching
 

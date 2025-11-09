@@ -344,6 +344,146 @@ function ProtectedPage({ children }: { children: React.ReactNode }) {
 }
 ```
 
+## TanStack Start Server-Side Patterns
+
+### Server-Side Setup
+
+First, set up the server-side fetch helpers in `src/lib/auth-server.ts`:
+
+```typescript
+import { createAuth } from "convex/auth";
+import { setupFetchClient } from "@convex-dev/better-auth/react-start";
+import { getCookie } from "@tanstack/react-start/server";
+
+export const { fetchQuery, fetchMutation, fetchAction } =
+  await setupFetchClient(createAuth, getCookie);
+```
+
+### Auth Check in Server Functions
+
+Use this pattern to check authentication in TanStack Start server functions:
+
+```typescript
+import { createServerFn } from "@tanstack/react-start";
+import { fetchQuery } from "@/lib/auth-server";
+import { api } from "../../../convex/_generated/api";
+
+// Server function to check authentication
+const checkAuth = createServerFn({ method: "GET" }).handler(async () => {
+  const user = await fetchQuery(api.auth.getCurrentUser, {});
+  const isAuthenticated = !!user;
+  const userId = user?.userId || user?._id;
+  return { isAuthenticated, userId };
+});
+```
+
+### Protected Route Guards
+
+Use in `beforeLoad` for instant redirects:
+
+```typescript
+import { createFileRoute, redirect } from "@tanstack/react-router";
+
+export const Route = createFileRoute("/(authenticated)/_layout")({
+  ssr: true, // Enable SSR for server-side auth checks
+  beforeLoad: async ({ location }) => {
+    const { isAuthenticated, userId } = await checkAuth();
+
+    if (!isAuthenticated) {
+      throw redirect({
+        to: "/login",
+        search: {
+          redirect: location.href,
+        },
+      });
+    }
+
+    return { userId };
+  },
+  component: AuthenticatedLayout,
+});
+```
+
+### Why This Pattern?
+
+✅ **Proper Integration**: Uses the official Better Auth + Convex pattern  
+✅ **Single Source of Truth**: Authentication state managed by Convex  
+✅ **SSR Compatible**: Works with TanStack Start server functions  
+✅ **Automatic Cookies**: Cookies passed automatically via `getCookie`  
+✅ **Type Safe**: Full TypeScript support with inferred types
+
+### Server Function Examples
+
+**Update user data:**
+
+```typescript
+// convex/users.ts
+import { mutation } from "./_generated/server";
+import { v } from "convex/values";
+import { authComponent } from "./auth";
+
+export const updateProfile = mutation({
+  args: {
+    name: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await authComponent.getAuthUser(ctx);
+    if (!user) throw new Error("Not authenticated");
+
+    // Update user profile
+    await ctx.db.patch(user._id, { name: args.name });
+  },
+});
+
+// src/routes/profile.ts
+import { createServerFn } from "@tanstack/react-start";
+import { fetchMutation } from "@/lib/auth-server";
+import { api } from "../../convex/_generated/api";
+
+export const updateProfileFn = createServerFn({ method: "POST" }).handler(
+  async ({ data }) => {
+    await fetchMutation(api.users.updateProfile, {
+      name: data.name,
+    });
+  }
+);
+```
+
+**Fetch authenticated data:**
+
+```typescript
+// convex/users.ts
+import { query } from "./_generated/server";
+import { authComponent } from "./auth";
+
+export const getMyData = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await authComponent.getAuthUser(ctx);
+    if (!user) throw new Error("Not authenticated");
+
+    return {
+      user,
+      profile: await ctx.db
+        .query("profiles")
+        .withIndex("by_userId", (q) => q.eq("userId", user._id))
+        .unique(),
+    };
+  },
+});
+
+// src/routes/dashboard.tsx
+import { createServerFn } from "@tanstack/react-start";
+import { fetchQuery } from "@/lib/auth-server";
+import { api } from "../../convex/_generated/api";
+
+const loadDashboardData = createServerFn({ method: "GET" }).handler(
+  async () => {
+    return await fetchQuery(api.users.getMyData, {});
+  }
+);
+```
+
 ## Common Auth Methods
 
 ### authClient Methods (Client-Side)
@@ -374,21 +514,39 @@ const user = await authComponent.getAuthUser(ctx);
 
 // User object structure:
 // {
-//   id: string;
+//   _id: Id<"user">;
+//   userId?: string | null;
 //   email: string;
-//   name?: string;
+//   name: string;
 //   emailVerified: boolean;
-//   image?: string;
-//   createdAt: Date;
-//   updatedAt: Date;
+//   image?: string | null;
+//   createdAt: number;
+//   updatedAt: number;
 // }
+```
+
+### Server-Side Fetch Methods (TanStack Start)
+
+```typescript
+import { fetchQuery, fetchMutation, fetchAction } from "@/lib/auth-server";
+import { api } from "../../convex/_generated/api";
+
+// Fetch data from Convex query (with auth)
+const data = await fetchQuery(api.myModule.myQuery, { arg: "value" });
+
+// Call Convex mutation (with auth)
+await fetchMutation(api.myModule.myMutation, { arg: "value" });
+
+// Call Convex action (with auth)
+await fetchAction(api.myModule.myAction, { arg: "value" });
 ```
 
 ## Best Practices
 
 1. **Always Check Authentication**:
 
-   - Use `authComponent.getAuthUser(ctx)` in every protected function
+   - **Convex Functions**: Use `authComponent.getAuthUser(ctx)` in every protected function
+   - **TanStack Start Server Functions**: Use `fetchQuery(api.auth.getCurrentUser, {})` pattern
    - Throw descriptive errors when authentication fails
    - Consider whether null user is allowed (public data with personalization)
 
@@ -422,9 +580,16 @@ const user = await authComponent.getAuthUser(ctx);
    ```
 
 5. **Separate Public and Private Data**:
+
    - Create separate queries for public vs authenticated views
    - Don't expose sensitive data in public queries
    - Filter data based on user permissions
+
+6. **Use Proper Server-Side Pattern**:
+   - **DO**: Use `fetchQuery/fetchMutation/fetchAction` from `@/lib/auth-server` in TanStack Start server functions
+   - **DON'T**: Call `fetchSession` directly - it bypasses the Convex integration
+   - Enable SSR (`ssr: true`) on protected routes for instant server-side auth checks
+   - Use `beforeLoad` with `throw redirect()` for instant redirects (no component flash)
 
 ## Troubleshooting
 
@@ -447,4 +612,4 @@ const user = await authComponent.getAuthUser(ctx);
 
 ---
 
-_Last updated: 2025-11-08_
+_Last updated: 2025-11-09_

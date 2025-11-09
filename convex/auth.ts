@@ -4,12 +4,19 @@ import { components } from "./_generated/api";
 import { DataModel } from "./_generated/dataModel";
 import { query } from "./_generated/server";
 import { betterAuth } from "better-auth";
+import authSchema from "./betterAuth/schema";
 
 const siteUrl = process.env.SITE_URL!;
 
 // The component client has methods needed for integrating Convex with Better Auth,
 // as well as helper methods for general use.
-export const authComponent = createClient<DataModel>(components.betterAuth);
+export const authComponent = createClient<DataModel, typeof authSchema>(
+  components.betterAuth,
+  {
+    verbose: false,
+    local: { schema: authSchema },
+  }
+);
 
 export const createAuth = (
   ctx: GenericCtx<DataModel>,
@@ -35,11 +42,31 @@ export const createAuth = (
   });
 };
 
+// Helper to get current user with profile
+// This joins Better Auth user (component) with our profiles table (app)
+export const getCurrentUserWithProfile = async (ctx: any) => {
+  const user = await authComponent.getAuthUser(ctx);
+  if (!user) return null;
+
+  const userId = user.userId || user._id;
+  const profile = await ctx.db
+    .query("profiles")
+    .withIndex("by_userId", (q: any) => q.eq("userId", userId))
+    .unique();
+
+  return { ...user, id: userId, profile };
+};
+
 // Example function for getting the current user
-// Feel free to edit, omit, etc.
+// Returns null if not authenticated (doesn't throw)
 export const getCurrentUser = query({
   args: {},
   handler: async (ctx) => {
-    return authComponent.getAuthUser(ctx);
+    try {
+      return await authComponent.getAuthUser(ctx);
+    } catch (error) {
+      // Return null instead of throwing when unauthenticated
+      return null;
+    }
   },
 });
