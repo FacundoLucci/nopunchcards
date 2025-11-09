@@ -14,6 +14,7 @@ import type * as businesses_generateSlug from "../businesses/generateSlug.js";
 import type * as businesses_mutations from "../businesses/mutations.js";
 import type * as businesses_public from "../businesses/public.js";
 import type * as businesses_queries from "../businesses/queries.js";
+import type * as consumer_accounts from "../consumer/accounts.js";
 import type * as consumer_queries from "../consumer/queries.js";
 import type * as crons from "../crons.js";
 import type * as geospatial from "../geospatial.js";
@@ -59,6 +60,7 @@ declare const fullApi: ApiFromModules<{
   "businesses/mutations": typeof businesses_mutations;
   "businesses/public": typeof businesses_public;
   "businesses/queries": typeof businesses_queries;
+  "consumer/accounts": typeof consumer_accounts;
   "consumer/queries": typeof consumer_queries;
   crons: typeof crons;
   geospatial: typeof geospatial;

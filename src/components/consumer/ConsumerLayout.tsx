@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { authClient } from "@/lib/auth-clients";
 import { Button } from "@/components/ui/button";
-import { Bell, LogOut } from "lucide-react";
+import { Bell, LogOut, Settings } from "lucide-react";
 import { BottomNav } from "./BottomNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -33,6 +33,11 @@ export function ConsumerLayout({ children }: ConsumerLayoutProps) {
             <button className="relative hover:opacity-70 transition-opacity">
               <Bell className="w-5 h-5" />
               {/* Notification badge would go here */}
+            </button>
+          </Link>
+          <Link to="/consumer/settings">
+            <button className="relative hover:opacity-70 transition-opacity">
+              <Settings className="w-5 h-5" />
             </button>
           </Link>
           <Button

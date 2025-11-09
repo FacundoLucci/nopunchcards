@@ -1,6 +1,61 @@
 import { internalMutation } from "../_generated/server";
 import { v } from "convex/values";
 
+/**
+ * Calculate haversine distance between two lat/lng points in kilometers
+ */
+function calculateHaversineDistance(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number
+): number {
+  const R = 6371; // Earth's radius in kilometers
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+/**
+ * Map common Plaid categories to business categories
+ */
+function categoriesMatch(
+  transactionCategories: string[] | undefined,
+  businessCategory: string
+): boolean {
+  if (!transactionCategories || transactionCategories.length === 0) {
+    return false;
+  }
+
+  const txCategories = transactionCategories.map((c) => c.toLowerCase());
+  const bizCategory = businessCategory.toLowerCase();
+
+  // Category mapping
+  const categoryMap: Record<string, string[]> = {
+    coffee: ["food and drink", "coffee", "cafe", "restaurants"],
+    restaurant: ["food and drink", "restaurants", "fast food"],
+    retail: ["shops", "retail", "clothing", "electronics"],
+    grocery: ["shops", "food and drink", "groceries", "supermarkets"],
+    fitness: ["recreation", "gyms and fitness", "sports"],
+    salon: ["shops", "beauty", "personal care"],
+  };
+
+  const matchCategories = categoryMap[bizCategory] || [bizCategory];
+
+  return txCategories.some((txCat) =>
+    matchCategories.some((match) => txCat.includes(match))
+  );
+}
+
 export const matchTransaction = internalMutation({
   args: { transactionId: v.id("transactions") },
   returns: v.union(v.id("businesses"), v.null()),
@@ -27,82 +82,115 @@ export const matchTransaction = internalMutation({
       .withIndex("by_status", (q) => q.eq("status", "verified"))
       .collect();
 
-    // 5. Score each business using multiple heuristics
+    // 5. Score each business using multiple signals (multi-signal matching)
     const scores = businesses.map((business) => {
       let score = 0;
       const txName = tx.merchantName!.toLowerCase().trim();
       const bizName = business.name.toLowerCase().trim();
 
-      // 5a. Exact name match = 100 points (highest confidence)
+      // SIGNAL 1: Statement Descriptor Match (60-70 points)
+      // This is a strong signal but NOT unique, so not sufficient alone
+      if (
+        business.statementDescriptors &&
+        business.statementDescriptors.length > 0
+      ) {
+        const txNameUpper = txName.toUpperCase();
+        for (const descriptor of business.statementDescriptors) {
+          if (txNameUpper === descriptor) {
+            score += 70; // Exact match
+            break;
+          } else if (
+            txNameUpper.includes(descriptor) ||
+            descriptor.includes(txNameUpper)
+          ) {
+            score += 60; // Partial match
+            break;
+          }
+        }
+      }
+
+      // SIGNAL 2: Business Name Match (40-100 points)
+      // Lower weight if we already have descriptor match
+      const nameWeight = score > 0 ? 0.5 : 1.0; // Reduce weight if descriptor matched
+
       if (txName === bizName) {
-        score += 100;
-      }
-      // 5b. Business name is substring of merchant name = 80 points
-      //     Example: "Starbucks" matches "Starbucks #1234"
-      else if (txName.includes(bizName)) {
-        score += 80;
-      }
-      // 5c. Merchant name is substring of business name = 60 points
-      else if (bizName.includes(txName)) {
-        score += 60;
-      }
-      // 5d. Partial word match = 40 points
-      //     Example: "Target Store" matches "Target"
-      else {
+        score += 100 * nameWeight; // Exact name match
+      } else if (txName.includes(bizName)) {
+        score += 50 * nameWeight; // Business name in merchant name
+      } else if (bizName.includes(txName)) {
+        score += 40 * nameWeight; // Merchant name in business name
+      } else {
+        // Partial word match
         const txWords = txName.split(/\s+/);
         const bizWords = bizName.split(/\s+/);
         const commonWords = txWords.filter(
           (w) => bizWords.includes(w) && w.length > 3
         );
         if (commonWords.length > 0) {
-          score += 40;
+          score += 20 * nameWeight * commonWords.length;
         }
       }
 
-      // 5e. MCC code match (if transaction category and business mccCodes exist)
-      //     Simplified category matching for MVP
-      if (
-        tx.category &&
-        tx.category.length > 0 &&
-        business.mccCodes &&
-        business.mccCodes.length > 0
-      ) {
-        // This needs proper MCC mapping; placeholder for now
+      // SIGNAL 3: Category Match (20 points)
+      if (categoriesMatch(tx.category, business.category)) {
         score += 20;
       }
 
-      // 5f. Location proximity (if both have coordinates)
-      //     TODO: Use geospatial component or haversine distance
-      //     Within 1km = 30 bonus points
-      // if (tx.location && business.location) {
-      //   const distanceKm = calculateHaversineDistance(...);
-      //   if (distanceKm < 1) score += 30;
-      // }
+      // SIGNAL 4: Location Proximity (0-30 points, distance-weighted)
+      // Within 1km = 30 points, 1-5km = 15 points, 5-10km = 5 points
+      const txLocation = (tx as any).location;
+      if (txLocation && business.location) {
+        const distanceKm = calculateHaversineDistance(
+          txLocation.lat,
+          txLocation.lng,
+          business.location.lat,
+          business.location.lng
+        );
 
-      return { business, score };
+        if (distanceKm < 1) {
+          score += 30;
+        } else if (distanceKm < 5) {
+          score += 15;
+        } else if (distanceKm < 10) {
+          score += 5;
+        }
+      }
+
+      return { business, score, signals: score };
     });
 
     // 6. Sort by score descending to get best match first
     scores.sort((a, b) => b.score - a.score);
 
-    // 7. If highest score >= 80 (confidence threshold), return that businessId
+    // 7. Multi-signal confidence threshold
+    // Require score >= 90 to ensure multiple signals converged
+    // This prevents false positives from single weak signals
     const bestMatch = scores[0];
-    const CONFIDENCE_THRESHOLD = 80;
+    const CONFIDENCE_THRESHOLD = 90;
 
     if (bestMatch && bestMatch.score >= CONFIDENCE_THRESHOLD) {
       console.log(
-        `Matched tx ${tx.plaidTransactionId} to business "${bestMatch.business.name}" ` +
+        `✓ Matched tx ${tx.plaidTransactionId} to business "${bestMatch.business.name}" ` +
           `(score: ${bestMatch.score}, merchant: "${tx.merchantName}")`
       );
       return bestMatch.business._id;
     }
 
     // 8. No confident match found - remains unmatched
-    console.log(
-      `No match for tx ${tx.plaidTransactionId} ` +
-        `(merchant: "${tx.merchantName}", best score: ${bestMatch?.score || 0})`
-    );
+    // Log for debugging and potential manual review
+    if (bestMatch && bestMatch.score >= 70) {
+      console.log(
+        `⚠ Low-confidence match for tx ${tx.plaidTransactionId}: ` +
+          `"${bestMatch.business.name}" (score: ${bestMatch.score}/${CONFIDENCE_THRESHOLD}, merchant: "${tx.merchantName}") - needs review`
+      );
+    } else {
+      console.log(
+        `✗ No match for tx ${tx.plaidTransactionId} ` +
+          `(merchant: "${tx.merchantName}", best score: ${
+            bestMatch?.score || 0
+          })`
+      );
+    }
     return null;
   },
 });
-

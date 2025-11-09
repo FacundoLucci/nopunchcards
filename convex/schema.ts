@@ -36,6 +36,7 @@ export default defineSchema({
     logoUrl: v.optional(v.string()),
     status: v.union(v.literal("verified"), v.literal("unverified")),
     mccCodes: v.optional(v.array(v.string())),
+    statementDescriptors: v.optional(v.array(v.string())), // How business appears on card statements (e.g., ["SQ*JOES", "JOES COFFEE"])
     createdAt: v.number(),
   })
     .index("by_ownerId", ["ownerId"])
@@ -69,6 +70,7 @@ export default defineSchema({
     merchantName: v.optional(v.string()),
     date: v.string(), // ISO yyyy-mm-dd from Plaid
     category: v.optional(v.array(v.string())),
+    location: v.optional(v.object({ lat: v.number(), lng: v.number() })), // Transaction location from Plaid
     businessId: v.optional(v.id("businesses")), // Matched business
     status: v.union(
       v.literal("pending"),

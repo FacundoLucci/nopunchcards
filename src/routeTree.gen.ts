@@ -17,6 +17,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as JoinSlugRouteImport } from './routes/join/$slug'
 import { Route as AuthenticatedLayoutRouteImport } from './routes/_authenticated/_layout'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as AuthenticatedConsumerSettingsRouteImport } from './routes/_authenticated/consumer/settings'
 import { Route as AuthenticatedConsumerOnboardingRouteImport } from './routes/_authenticated/consumer/onboarding'
 import { Route as AuthenticatedConsumerNotificationsRouteImport } from './routes/_authenticated/consumer/notifications'
 import { Route as AuthenticatedConsumerMerchantsRouteImport } from './routes/_authenticated/consumer/merchants'
@@ -66,6 +67,12 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedConsumerSettingsRoute =
+  AuthenticatedConsumerSettingsRouteImport.update({
+    id: '/consumer/settings',
+    path: '/consumer/settings',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedConsumerOnboardingRoute =
   AuthenticatedConsumerOnboardingRouteImport.update({
     id: '/consumer/onboarding',
@@ -140,6 +147,7 @@ export interface FileRoutesByFullPath {
   '/consumer/merchants': typeof AuthenticatedConsumerMerchantsRoute
   '/consumer/notifications': typeof AuthenticatedConsumerNotificationsRoute
   '/consumer/onboarding': typeof AuthenticatedConsumerOnboardingRoute
+  '/consumer/settings': typeof AuthenticatedConsumerSettingsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/business/programs/create': typeof AuthenticatedBusinessProgramsCreateRoute
   '/business/programs': typeof AuthenticatedBusinessProgramsIndexRoute
@@ -158,6 +166,7 @@ export interface FileRoutesByTo {
   '/consumer/merchants': typeof AuthenticatedConsumerMerchantsRoute
   '/consumer/notifications': typeof AuthenticatedConsumerNotificationsRoute
   '/consumer/onboarding': typeof AuthenticatedConsumerOnboardingRoute
+  '/consumer/settings': typeof AuthenticatedConsumerSettingsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/business/programs/create': typeof AuthenticatedBusinessProgramsCreateRoute
   '/business/programs': typeof AuthenticatedBusinessProgramsIndexRoute
@@ -179,6 +188,7 @@ export interface FileRoutesById {
   '/_authenticated/consumer/merchants': typeof AuthenticatedConsumerMerchantsRoute
   '/_authenticated/consumer/notifications': typeof AuthenticatedConsumerNotificationsRoute
   '/_authenticated/consumer/onboarding': typeof AuthenticatedConsumerOnboardingRoute
+  '/_authenticated/consumer/settings': typeof AuthenticatedConsumerSettingsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/_authenticated/business/programs/create': typeof AuthenticatedBusinessProgramsCreateRoute
   '/_authenticated/business/programs/': typeof AuthenticatedBusinessProgramsIndexRoute
@@ -199,6 +209,7 @@ export interface FileRouteTypes {
     | '/consumer/merchants'
     | '/consumer/notifications'
     | '/consumer/onboarding'
+    | '/consumer/settings'
     | '/api/auth/$'
     | '/business/programs/create'
     | '/business/programs'
@@ -217,6 +228,7 @@ export interface FileRouteTypes {
     | '/consumer/merchants'
     | '/consumer/notifications'
     | '/consumer/onboarding'
+    | '/consumer/settings'
     | '/api/auth/$'
     | '/business/programs/create'
     | '/business/programs'
@@ -237,6 +249,7 @@ export interface FileRouteTypes {
     | '/_authenticated/consumer/merchants'
     | '/_authenticated/consumer/notifications'
     | '/_authenticated/consumer/onboarding'
+    | '/_authenticated/consumer/settings'
     | '/api/auth/$'
     | '/_authenticated/business/programs/create'
     | '/_authenticated/business/programs/'
@@ -310,6 +323,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/auth/$'
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/consumer/settings': {
+      id: '/_authenticated/consumer/settings'
+      path: '/consumer/settings'
+      fullPath: '/consumer/settings'
+      preLoaderRoute: typeof AuthenticatedConsumerSettingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/consumer/onboarding': {
       id: '/_authenticated/consumer/onboarding'
@@ -393,6 +413,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedConsumerMerchantsRoute: typeof AuthenticatedConsumerMerchantsRoute
   AuthenticatedConsumerNotificationsRoute: typeof AuthenticatedConsumerNotificationsRoute
   AuthenticatedConsumerOnboardingRoute: typeof AuthenticatedConsumerOnboardingRoute
+  AuthenticatedConsumerSettingsRoute: typeof AuthenticatedConsumerSettingsRoute
   AuthenticatedBusinessProgramsCreateRoute: typeof AuthenticatedBusinessProgramsCreateRoute
   AuthenticatedBusinessProgramsIndexRoute: typeof AuthenticatedBusinessProgramsIndexRoute
   AuthenticatedConsumerRewardsIndexRoute: typeof AuthenticatedConsumerRewardsIndexRoute
@@ -408,6 +429,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedConsumerNotificationsRoute:
     AuthenticatedConsumerNotificationsRoute,
   AuthenticatedConsumerOnboardingRoute: AuthenticatedConsumerOnboardingRoute,
+  AuthenticatedConsumerSettingsRoute: AuthenticatedConsumerSettingsRoute,
   AuthenticatedBusinessProgramsCreateRoute:
     AuthenticatedBusinessProgramsCreateRoute,
   AuthenticatedBusinessProgramsIndexRoute:

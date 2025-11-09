@@ -10,6 +10,7 @@ export const create = mutation({
     description: v.optional(v.string()),
     address: v.optional(v.string()),
     logoUrl: v.optional(v.string()),
+    statementDescriptors: v.optional(v.array(v.string())),
   },
   returns: v.object({
     businessId: v.id("businesses"),
@@ -18,6 +19,11 @@ export const create = mutation({
   handler: async (ctx, args) => {
     // Require business_owner role
     const user = await requireRole(ctx, ["business_owner", "admin"]);
+
+    // Clean and normalize statement descriptors
+    const cleanedDescriptors = args.statementDescriptors
+      ?.map((d) => d.trim().toUpperCase())
+      .filter((d) => d.length > 0);
 
     // Create business with unverified status
     const businessId = await ctx.db.insert("businesses", {
@@ -28,6 +34,7 @@ export const create = mutation({
       description: args.description,
       address: args.address,
       logoUrl: args.logoUrl,
+      statementDescriptors: cleanedDescriptors,
       status: "unverified",
       createdAt: Date.now(),
     });
@@ -51,6 +58,7 @@ export const update = mutation({
     address: v.optional(v.string()),
     logoUrl: v.optional(v.string()),
     slug: v.optional(v.string()),
+    statementDescriptors: v.optional(v.array(v.string())),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -67,6 +75,13 @@ export const update = mutation({
     }
 
     const { businessId, ...updates } = args;
+
+    // Clean and normalize statement descriptors if provided
+    if (updates.statementDescriptors) {
+      updates.statementDescriptors = updates.statementDescriptors
+        .map((d) => d.trim().toUpperCase())
+        .filter((d) => d.length > 0);
+    }
 
     // If slug is being updated, verify it's unique
     if (updates.slug && updates.slug !== business.slug) {

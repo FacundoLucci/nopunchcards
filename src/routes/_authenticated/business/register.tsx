@@ -26,6 +26,7 @@ function BusinessRegister() {
   const [category, setCategory] = useState("");
   const [address, setAddress] = useState("");
   const [description, setDescription] = useState("");
+  const [statementDescriptor, setStatementDescriptor] = useState("");
 
   const categories = [
     "Coffee",
@@ -108,6 +109,41 @@ function BusinessRegister() {
       ),
     },
     {
+      title: "How do you appear on credit card statements?",
+      component: (
+        <div className="space-y-3">
+          <Label htmlFor="statementDescriptor">Statement Descriptor</Label>
+          <Input
+            id="statementDescriptor"
+            type="text"
+            value={statementDescriptor}
+            onChange={(e) => setStatementDescriptor(e.target.value)}
+            placeholder="e.g., SQ*JOES COFFEE"
+            className="text-lg"
+          />
+          <div className="space-y-2 text-sm text-muted-foreground">
+            <p className="font-medium">This is how your business shows up on customer card statements.</p>
+            <p>Common examples:</p>
+            <ul className="list-disc list-inside space-y-1 ml-2">
+              <li><span className="font-mono">SQ*YOUR BUSINESS</span> (Square)</li>
+              <li><span className="font-mono">TST*YOUR BUSINESS</span> (Toast)</li>
+              <li><span className="font-mono">STRIPE*YOUR BUSINESS</span> (Stripe)</li>
+              <li><span className="font-mono">CLOVER*YOUR BUSINESS</span> (Clover)</li>
+              <li><span className="font-mono">YOUR BUSINESS NAME</span> (Direct)</li>
+            </ul>
+            <p className="mt-2">💡 Check a recent customer receipt or ask your payment processor if unsure.</p>
+          </div>
+        </div>
+      ),
+      onNext: () => {
+        if (!statementDescriptor.trim()) {
+          toast.error("Please enter how you appear on statements");
+          return false;
+        }
+        return true;
+      },
+    },
+    {
       title: "Tell customers about your business (optional)",
       component: (
         <div className="space-y-2">
@@ -128,11 +164,18 @@ function BusinessRegister() {
 
   const handleComplete = async () => {
     try {
+      // Split statement descriptor by commas in case they entered multiple
+      const descriptors = statementDescriptor
+        .split(",")
+        .map((d) => d.trim())
+        .filter((d) => d.length > 0);
+
       await createBusiness({
         name,
         category,
         address: address || undefined,
         description: description || undefined,
+        statementDescriptors: descriptors.length > 0 ? descriptors : undefined,
       });
 
       toast.success("Business registered! We'll review it within 24 hours.");
