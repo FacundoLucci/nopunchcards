@@ -3,6 +3,7 @@ import { authClient } from "@/lib/auth-clients";
 import { Button } from "@/components/ui/button";
 import { Bell, LogOut } from "lucide-react";
 import { BottomNav } from "./BottomNav";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface ConsumerLayoutProps {
   children: React.ReactNode;
@@ -26,7 +27,8 @@ export function ConsumerLayout({ children }: ConsumerLayoutProps) {
       {/* Header */}
       <header className="sticky top-0 bg-background/80 backdrop-blur-sm border-b py-4 px-6 flex items-center justify-between z-10">
         <h1 className="text-xl font-bold">No Punch Cards</h1>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
           <Link to="/consumer/notifications">
             <button className="relative hover:opacity-70 transition-opacity">
               <Bell className="w-5 h-5" />

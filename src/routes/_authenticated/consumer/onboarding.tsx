@@ -5,6 +5,7 @@ import { api } from "../../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/_authenticated/consumer/onboarding")({
   component: ConsumerOnboarding,
@@ -48,6 +49,9 @@ function ConsumerOnboarding() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
+      <div className="fixed top-4 right-4">
+        <ThemeToggle />
+      </div>
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl mb-2">Welcome! 👋</CardTitle>

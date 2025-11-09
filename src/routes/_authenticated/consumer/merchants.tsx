@@ -6,8 +6,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { ConsumerLayout } from "@/components/consumer/ConsumerLayout";
+import { requireOnboarding } from "@/lib/onboarding-check";
 
 export const Route = createFileRoute("/_authenticated/consumer/merchants")({
+  ssr: true,
+  beforeLoad: async ({ location }) => {
+    await requireOnboarding(location.pathname);
+  },
   component: MerchantsPage,
 });
 

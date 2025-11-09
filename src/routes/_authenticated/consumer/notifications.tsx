@@ -5,8 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import { ConsumerLayout } from "@/components/consumer/ConsumerLayout";
+import { requireOnboarding } from "@/lib/onboarding-check";
 
 export const Route = createFileRoute("/_authenticated/consumer/notifications")({
+  ssr: true,
+  beforeLoad: async ({ location }) => {
+    await requireOnboarding(location.pathname);
+  },
   component: NotificationsPage,
 });
 

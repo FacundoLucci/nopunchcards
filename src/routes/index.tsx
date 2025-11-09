@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
@@ -13,9 +14,12 @@ function LandingPage() {
       <header className="fixed top-0 left-0 right-0 bg-background/80 backdrop-blur-sm border-b z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <h1 className="text-xl font-bold">No Punch Cards</h1>
-          <Link to="/login" search={{ redirect: "/app" }}>
-            <Button variant="ghost">Sign In</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Link to="/login" search={{ redirect: "/app" }}>
+              <Button variant="ghost">Sign In</Button>
+            </Link>
+          </div>
         </div>
       </header>
 

@@ -55,12 +55,15 @@ export const exchangePublicToken = action({
       institutionName,
     });
 
-    // 6. Schedule initial transaction sync (run immediately with runAfter(0))
+    // 6. Mark onboarding as complete (user has linked their card)
+    await ctx.runMutation(internal.onboarding.mutations.markCardLinked, {});
+
+    // 7. Schedule initial transaction sync (run immediately with runAfter(0))
     await ctx.scheduler.runAfter(0, internal.plaid.syncTransactions.syncTransactions, {
       plaidItemId,
     });
 
-    // 7. Return itemId for client-side confirmation
+    // 8. Return itemId for client-side confirmation
     return { itemId: plaidItemId };
   },
 });

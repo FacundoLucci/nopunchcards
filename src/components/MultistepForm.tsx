@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface MultistepFormProps {
   steps: Array<{
@@ -54,6 +55,7 @@ export function MultistepForm({ steps, onComplete, className }: MultistepFormPro
         <span className="text-sm text-muted-foreground">
           {currentStep + 1} of {steps.length}
         </span>
+        <ThemeToggle />
       </div>
 
       {/* Progress bar */}

@@ -1,13 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
-import { api } from "../../../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { authComponent } from "../../../../../convex/auth";
 import { ConsumerLayout } from "@/components/consumer/ConsumerLayout";
+import { requireOnboarding } from "@/lib/onboarding-check";
 
 export const Route = createFileRoute("/_authenticated/consumer/rewards/")({
+  ssr: true,
+  beforeLoad: async ({ location }) => {
+    await requireOnboarding(location.pathname);
+  },
   component: RewardsPage,
 });
 
@@ -43,7 +45,9 @@ function RewardsPage() {
                     <p className="text-sm text-muted-foreground mb-4">
                       {reward.programName}
                     </p>
-                    <p className="font-medium mb-4">{reward.rewardDescription}</p>
+                    <p className="font-medium mb-4">
+                      {reward.rewardDescription}
+                    </p>
                     <Button className="w-full">Claim Reward</Button>
                   </CardContent>
                 </Card>
@@ -78,4 +82,3 @@ function RewardsPage() {
     </ConsumerLayout>
   );
 }
-

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/login")({
   // SSR disabled for auth flows
@@ -52,6 +53,9 @@ function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-muted/50">
+      <div className="fixed top-4 right-4">
+        <ThemeToggle />
+      </div>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl">Sign In</CardTitle>

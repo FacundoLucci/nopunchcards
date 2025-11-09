@@ -26,6 +26,8 @@ import type * as notifications_markRead from "../notifications/markRead.js";
 import type * as notifications_sendPushToUser from "../notifications/sendPushToUser.js";
 import type * as notifications_sendRewardEarned from "../notifications/sendRewardEarned.js";
 import type * as notifications_subscribe from "../notifications/subscribe.js";
+import type * as onboarding_mutations from "../onboarding/mutations.js";
+import type * as onboarding_queries from "../onboarding/queries.js";
 import type * as plaid_encryption from "../plaid/encryption.js";
 import type * as plaid_exchangeToken from "../plaid/exchangeToken.js";
 import type * as plaid_helpers from "../plaid/helpers.js";
@@ -69,6 +71,8 @@ declare const fullApi: ApiFromModules<{
   "notifications/sendPushToUser": typeof notifications_sendPushToUser;
   "notifications/sendRewardEarned": typeof notifications_sendRewardEarned;
   "notifications/subscribe": typeof notifications_subscribe;
+  "onboarding/mutations": typeof onboarding_mutations;
+  "onboarding/queries": typeof onboarding_queries;
   "plaid/encryption": typeof plaid_encryption;
   "plaid/exchangeToken": typeof plaid_exchangeToken;
   "plaid/helpers": typeof plaid_helpers;

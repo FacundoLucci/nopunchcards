@@ -13,6 +13,13 @@ export default defineSchema({
     ),
     phone: v.optional(v.string()),
     preferences: v.optional(v.any()),
+    // Onboarding tracking
+    onboarding: v.optional(
+      v.object({
+        hasLinkedCard: v.boolean(),
+        completedAt: v.optional(v.number()),
+      })
+    ),
     createdAt: v.number(),
   })
     .index("by_userId", ["userId"])

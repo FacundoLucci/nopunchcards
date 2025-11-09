@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-clients";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/join/$slug")({
   // SSR enabled for Open Graph previews
@@ -94,9 +95,12 @@ function PublicBusinessPage() {
         <button onClick={() => navigate({ to: "/" })}>
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <button onClick={handleShare}>
-          <Share2 className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <button onClick={handleShare}>
+            <Share2 className="w-5 h-5" />
+          </button>
+        </div>
       </header>
 
       <div className="app-container p-6 space-y-8">

@@ -4,6 +4,7 @@ import { api } from "../../../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/_authenticated/business/programs/")({
   component: ProgramsPage,
@@ -43,8 +44,9 @@ function ProgramsPage() {
   return (
     <div className="pb-20">
       {/* Header */}
-      <header className="sticky top-0 bg-background/80 backdrop-blur-sm border-b py-4 px-6 z-10">
+      <header className="sticky top-0 bg-background/80 backdrop-blur-sm border-b py-4 px-6 flex items-center justify-between z-10">
         <h1 className="text-xl font-bold">Programs</h1>
+        <ThemeToggle />
       </header>
 
       <div className="p-6 space-y-6">

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShareYourPageCard } from "@/components/ShareYourPageCard";
 import { Settings, Plus } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/_authenticated/business/dashboard")({
   component: BusinessDashboard,
@@ -62,9 +63,12 @@ function BusinessDashboard() {
       {/* Header */}
       <header className="sticky top-0 bg-background/80 backdrop-blur-sm border-b py-4 px-6 flex items-center justify-between z-10">
         <h1 className="text-xl font-bold">{business.name}</h1>
-        <button onClick={() => navigate({ to: "/business/settings" })}>
-          <Settings className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <button onClick={() => navigate({ to: "/business/settings" })}>
+            <Settings className="w-5 h-5" />
+          </button>
+        </div>
       </header>
 
       <div className="p-6 space-y-6">

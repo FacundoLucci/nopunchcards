@@ -5,13 +5,20 @@ import { ProgressCard } from "@/components/ProgressCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { authClient } from "@/lib/auth-clients";
 import { ConsumerLayout } from "@/components/consumer/ConsumerLayout";
+import { OnboardingProgress } from "@/components/OnboardingProgress";
+import { requireOnboarding } from "@/lib/onboarding-check";
 
 export const Route = createFileRoute("/_authenticated/consumer/dashboard")({
+  ssr: true,
+  beforeLoad: async ({ location }) => {
+    await requireOnboarding(location.pathname);
+  },
   component: ConsumerDashboard,
 });
 
 function ConsumerDashboard() {
   const { data: session } = authClient.useSession();
+  const onboardingStatus = useQuery(api.onboarding.queries.getOnboardingStatus, {});
   const activeProgress = useQuery(api.consumer.queries.getActiveProgress, {});
   const recentTransactions = useQuery(api.consumer.queries.getRecentTransactions, {
     limit: 5,
@@ -37,6 +44,15 @@ function ConsumerDashboard() {
             </p>
           )}
         </div>
+
+        {/* Onboarding Progress Banner */}
+        {onboardingStatus && !onboardingStatus.isComplete && (
+          <OnboardingProgress
+            hasLinkedCard={onboardingStatus.hasLinkedCard}
+            isComplete={onboardingStatus.isComplete}
+            compact
+          />
+        )}
 
         {/* Active Rewards */}
         <div className="space-y-4">
