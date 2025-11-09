@@ -117,10 +117,12 @@ function PublicBusinessPage() {
         </div>
 
         {/* Value Prop */}
-        <Card className="bg-gradient-to-br from-secondary to-muted">
+        <Card className="bg-linear-to-br from-secondary to-muted">
           <CardContent className="pt-6 text-center">
             <h2 className="text-2xl font-bold mb-2">Sign up once,</h2>
-            <p className="text-xl text-muted-foreground">get loyalty everywhere</p>
+            <p className="text-xl text-muted-foreground">
+              get loyalty everywhere
+            </p>
           </CardContent>
         </Card>
 
@@ -146,7 +148,9 @@ function PublicBusinessPage() {
 
         {/* Description */}
         {business.description && (
-          <p className="text-center text-muted-foreground">{business.description}</p>
+          <p className="text-center text-muted-foreground">
+            {business.description}
+          </p>
         )}
 
         {/* Programs */}
@@ -168,15 +172,22 @@ function PublicBusinessPage() {
                     {program.name}
                   </h3>
                   <div className="flex gap-2 justify-center">
-                    {Array.from({ length: program.rules.visits }).map((_, i) => (
-                      <div key={i} className="w-4 h-4 rounded-full bg-muted" />
-                    ))}
+                    {Array.from({ length: program.rules.visits }).map(
+                      (_, i) => (
+                        <div
+                          key={i}
+                          className="w-4 h-4 rounded-full bg-muted"
+                        />
+                      )
+                    )}
                   </div>
                   <div className="bg-muted rounded-lg p-4 text-center">
                     <p className="text-sm text-muted-foreground mb-1">
                       Visit {program.rules.visits} times, earn:
                     </p>
-                    <p className="text-lg font-semibold">{program.rules.reward}</p>
+                    <p className="text-lg font-semibold">
+                      {program.rules.reward}
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -215,7 +226,7 @@ function PublicBusinessPage() {
       </div>
 
       {/* Sticky CTA */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background via-background/95 to-transparent md:max-w-[480px] md:mx-auto">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-linear-to-t from-background via-background/95 to-transparent md:max-w-[480px] md:mx-auto">
         <Button
           onClick={handleStartEarning}
           className="w-full h-14 text-lg shadow-xl"
@@ -226,4 +237,3 @@ function PublicBusinessPage() {
     </div>
   );
 }
-
