@@ -172,7 +172,7 @@ code {
     oklch(0.15 0.02 260) 100%
   );
   border-radius: var(--radius-lg);
-  padding: 1.5rem;
+  padding: 1rem 1.5rem;
   box-shadow: 0 4px 12px oklch(0 0 0 / 0.2);
   transition: all 300ms ease;
 }
