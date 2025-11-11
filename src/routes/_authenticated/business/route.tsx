@@ -3,12 +3,14 @@ import {
   Outlet,
   useMatchRoute,
   useNavigate,
+  useRouter,
 } from "@tanstack/react-router";
 import { BusinessNav } from "@/components/business/BusinessNav";
 import { UserMenu } from "@/components/UserMenu";
 import { Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BottomFade } from "@/components/consumer/BottomFade";
+import { BusinessRoutePrefetcher } from "@/components/business/RoutePrefetcher";
 
 export const Route = createFileRoute("/_authenticated/business")({
   component: BusinessLayout,
@@ -17,6 +19,7 @@ export const Route = createFileRoute("/_authenticated/business")({
 function BusinessLayout() {
   const matchRoute = useMatchRoute();
   const navigate = useNavigate();
+  const router = useRouter();
 
   // Detect if we're on a main route (show header) or detail route (hide header)
   const isDashboard = !!matchRoute({ to: "/business/dashboard" });
@@ -36,13 +39,23 @@ function BusinessLayout() {
     return "Business"; // Default for dashboard or other routes
   };
 
+  // Preload on touchstart for instant navigation
+  const handleTouchStart = () => {
+    router.preloadRoute({ to: "/business/programs/create" } as any);
+  };
+
   return (
     <div className={showNav ? "pb-28" : ""}>
+      {/* Prefetch all business routes for instant navigation */}
+      <BusinessRoutePrefetcher />
+
       {/* Conditional Header - shown only on main routes */}
       {showHeader && (
         <header className="sticky top-0 bg-background/80 backdrop-blur-sm py-4 px-4 flex items-center justify-between z-10">
           <div className="flex flex-col gap-0.5">
-            <h1 className="text-xl font-bold">NO PUNCH CARDS</h1>
+            <h1 className="text-lg font-extrabold text-white bg-[#F03D0C] rounded-[4px] px-1.5 text-center">
+              NO PUNCH CARDS
+            </h1>
             <div className="relative h-4">
               <AnimatePresence>
                 <motion.p
@@ -75,6 +88,7 @@ function BusinessLayout() {
       >
         <button
           onClick={() => navigate({ to: "/business/programs/create" })}
+          onTouchStart={handleTouchStart}
           className="bg-primary text-primary-foreground px-6 py-2 rounded-full shadow-lg flex items-center gap-2 hover:scale-105 transition-transform text-sm"
         >
           <Plus className="w-4 h-4" />

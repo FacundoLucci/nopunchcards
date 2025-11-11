@@ -163,3 +163,34 @@ code {
   max-width: 1280px;
   margin: 0 auto;
 }
+
+/* Gradient CTA Card */
+.gradient-cta-card {
+  background: linear-gradient(
+    135deg,
+    oklch(0.2 0.02 240) 0%,
+    oklch(0.15 0.02 260) 100%
+  );
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px oklch(0 0 0 / 0.2);
+  transition: all 300ms ease;
+}
+
+.gradient-cta-card:hover {
+  box-shadow: 0 8px 24px oklch(0 0 0 / 0.3);
+  transform: translateY(-2px);
+}
+
+.dark .gradient-cta-card {
+  background: linear-gradient(
+    135deg,
+    oklch(0.25 0.02 240) 0%,
+    oklch(0.2 0.02 260) 100%
+  );
+  box-shadow: 0 4px 12px oklch(0 0 0 / 0.4);
+}
+
+.dark .gradient-cta-card:hover {
+  box-shadow: 0 8px 24px oklch(0 0 0 / 0.6);
+}

@@ -1,13 +1,23 @@
-import { Link, useLocation } from "@tanstack/react-router";
+import { Link, useLocation, useRouter } from "@tanstack/react-router";
 import { motion } from "framer-motion";
+import { useCallback } from "react";
 
 export function BusinessNav() {
   const location = useLocation();
+  const router = useRouter();
   const pathname = location.pathname;
 
   const isDashboard = pathname === "/business/dashboard";
   const isPrograms = pathname.startsWith("/business/programs");
   const isSettings = pathname === "/business/settings";
+
+  // Preload route on touchstart for instant navigation
+  const handleTouchStart = useCallback(
+    (to: string) => {
+      router.preloadRoute({ to } as any);
+    },
+    [router]
+  );
 
   // Show main navigation for all business pages
   return (
@@ -16,6 +26,7 @@ export function BusinessNav() {
         <div className="pointer-events-auto bg-background/80 backdrop-blur-lg border shadow-lg rounded-full px-2 py-2 flex items-center gap-1">
           <Link
             to="/business/dashboard"
+            onTouchStart={() => handleTouchStart("/business/dashboard")}
             className="flex items-center justify-center transition-all px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap hover:bg-accent/50 relative"
           >
             {isDashboard && (
@@ -39,6 +50,7 @@ export function BusinessNav() {
           </Link>
           <Link
             to="/business/programs"
+            onTouchStart={() => handleTouchStart("/business/programs")}
             className="flex items-center justify-center transition-all px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap hover:bg-accent/50 relative"
           >
             {isPrograms && (
@@ -62,6 +74,7 @@ export function BusinessNav() {
           </Link>
           <Link
             to="/business/settings"
+            onTouchStart={() => handleTouchStart("/business/settings")}
             className="flex items-center justify-center transition-all px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap hover:bg-accent/50 relative"
           >
             {isSettings && (

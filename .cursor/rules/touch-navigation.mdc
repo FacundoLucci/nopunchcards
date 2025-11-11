@@ -1,0 +1,169 @@
+# Touch Navigation Performance Rules
+
+**Last Updated:** 2025-11-11
+
+## Quick Reference
+
+For instant navigation on touch devices, always implement these patterns:
+
+### 1. Router Configuration
+
+Use viewport preloading and aggressive caching:
+
+```typescript
+// src/router.tsx
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: Infinity, // Convex pushes updates
+      gcTime: 1000 * 60 * 30, // 30 min cache
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+    },
+  },
+});
+
+const router = createRouter({
+  defaultPreload: "viewport", // Works for touch!
+  defaultPreloadDelay: 50,
+  // ... rest
+});
+```
+
+### 2. Touchstart Preloading Pattern
+
+Add to ALL navigation links:
+
+```typescript
+import { useRouter } from "@tanstack/react-router";
+import { useCallback } from "react";
+
+const router = useRouter();
+
+const handleTouchStart = useCallback(
+  (to: string) => {
+    router.preloadRoute({ to } as any);
+  },
+  [router]
+);
+
+// Apply to links:
+<Link
+  to="/my/route"
+  onTouchStart={() => handleTouchStart("/my/route")}
+>
+  My Link
+</Link>
+```
+
+### 3. Route Prefetcher Pattern
+
+For sections with multiple routes, create a prefetcher:
+
+```typescript
+// src/components/[section]/RoutePrefetcher.tsx
+import { useRouter } from "@tanstack/react-router";
+import { useEffect } from "react";
+
+export function MySectionPrefetcher() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const routes = ["/route1", "/route2", "/route3"];
+    
+    const timer = setTimeout(() => {
+      routes.forEach((to) => {
+        router.preloadRoute({ to } as any).catch(() => {});
+      });
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [router]);
+
+  return null;
+}
+```
+
+Use in layout:
+
+```typescript
+function MyLayout() {
+  return (
+    <div>
+      <MySectionPrefetcher />
+      {/* content */}
+    </div>
+  );
+}
+```
+
+## Current Implementation
+
+### Consumer Section
+- ✅ Viewport preloading enabled
+- ✅ Touchstart on bottom nav (Dashboard, Merchants)
+- ✅ Touchstart on notification bell
+- ✅ Touchstart on "View All" links
+- ✅ Route prefetcher for 5 main routes
+- ✅ Aggressive caching (30min)
+
+### Business Section
+- ✅ Viewport preloading enabled
+- ✅ Touchstart on business nav (Dashboard, Programs, Settings)
+- ✅ Touchstart on "Add Program" button
+- ✅ Route prefetcher for 4 main routes
+- ✅ Aggressive caching (30min)
+
+## When Adding New Navigation
+
+For every new navigation link:
+
+1. **Add touchstart handler:**
+   ```typescript
+   <Link
+     to="/new/route"
+     onTouchStart={() => handleTouchStart("/new/route")}
+   >
+     Link Text
+   </Link>
+   ```
+
+2. **Add to prefetcher (if main route):**
+   ```typescript
+   const routesToPrefetch = [
+     "/existing/route1",
+     "/existing/route2",
+     "/new/route", // ← Add here
+   ];
+   ```
+
+## Why This Works
+
+1. **Viewport preloading:** Preloads visible links (works for touch)
+2. **Touchstart preloading:** Starts loading during touch delay (~100-300ms)
+3. **Aggressive caching:** Data cached for 30min, refetched only on changes (Convex WebSocket)
+4. **Route prefetching:** All main routes loaded after initial render
+
+## Performance Targets
+
+- First navigation: < 150ms
+- Cached navigation: < 10ms (instant)
+- Prefetched routes: ~0ms (instant)
+
+## Trade-offs
+
+✅ **Use for:**
+- Small apps (< 10 main routes)
+- Fast queries (< 200ms)
+- Mobile-first UX
+- Real-time backends (Convex)
+
+❌ **Don't use for:**
+- Large apps (> 50 routes)
+- Heavy queries (> 1MB data)
+- Slow backends (> 1s queries)
+- Limited bandwidth scenarios
+
+---
+
+_Tagged: 2025-11-11 - Touch navigation optimization patterns_

@@ -37,6 +37,27 @@ const fetchAuth = createServerFn({ method: "GET" }).handler(async () => {
   };
 });
 
+// Cache auth result to prevent duplicate calls during route preloading
+let authCache: { userId?: string; token?: string; timestamp: number } | null = null;
+const CACHE_DURATION = 1000; // 1 second cache
+
+async function getCachedAuth() {
+  const now = Date.now();
+  
+  // Return cached result if fresh (< 1 second old)
+  if (authCache && now - authCache.timestamp < CACHE_DURATION) {
+    return { userId: authCache.userId, token: authCache.token };
+  }
+  
+  // Fetch fresh auth data
+  const { userId, token } = await fetchAuth();
+  
+  // Update cache
+  authCache = { userId, token, timestamp: now };
+  
+  return { userId, token };
+}
+
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
   convexClient: ConvexReactClient;
@@ -76,7 +97,10 @@ export const Route = createRootRouteWithContext<{
   beforeLoad: async (ctx) => {
     // all queries, mutations and action made with TanStack Query will be
     // authenticated by an identity token.
-    const { userId, token } = await fetchAuth();
+    
+    // Use cached auth to prevent duplicate server calls during preloading
+    const { userId, token } = await getCachedAuth();
+    
     // During SSR only (the only time serverHttpClient exists),
     // set the auth token to make HTTP queries with.
     if (token) {

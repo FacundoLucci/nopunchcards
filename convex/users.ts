@@ -158,7 +158,8 @@ export const updateName = mutation({
     if (!user) throw new Error("Not authenticated");
 
     // Update the user's name in the Better Auth user table
-    await ctx.db.patch(user._id, { name: args.name });
+    // Type assertion needed because Better Auth tables aren't in our DataModel
+    await ctx.db.patch(user._id as any, { name: args.name });
     return null;
   },
 });

@@ -1,9 +1,11 @@
-import { Link, useMatchRoute } from "@tanstack/react-router";
+import { Link, useMatchRoute, useRouter } from "@tanstack/react-router";
 import { Home, Search, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
+import { useCallback } from "react";
 
 export function BottomNav() {
   const matchRoute = useMatchRoute();
+  const router = useRouter();
 
   const isDashboard = !!matchRoute({ to: "/consumer/dashboard" });
   const isMerchants = !!matchRoute({ to: "/consumer/merchants" });
@@ -16,6 +18,14 @@ export function BottomNav() {
   const isDetailPage =
     isNotifications || isSettings || isRewards || isOnboarding;
 
+  // Preload route on touchstart (before tap completes) for instant navigation
+  const handleTouchStart = useCallback(
+    (to: string) => {
+      router.preloadRoute({ to } as any);
+    },
+    [router]
+  );
+
   if (isDetailPage) {
     // Show back button for detail pages - goes to dashboard
     return (
@@ -23,6 +33,7 @@ export function BottomNav() {
         <div className="max-w-[480px] mx-auto px-6 flex justify-center">
           <Link
             to="/consumer/dashboard"
+            onTouchStart={() => handleTouchStart("/consumer/dashboard")}
             className="pointer-events-auto bg-background/80 backdrop-blur-lg border shadow-lg rounded-full p-3 flex items-center justify-center transition-all hover:bg-accent/50 min-w-[48px] min-h-[48px]"
           >
             <ArrowLeft className="w-6 h-6" />
@@ -39,6 +50,7 @@ export function BottomNav() {
         <div className="pointer-events-auto bg-background/80 backdrop-blur-lg border shadow-lg rounded-full px-3 py-2 flex items-center gap-4">
           <Link
             to="/consumer/dashboard"
+            onTouchStart={() => handleTouchStart("/consumer/dashboard")}
             className="flex items-center justify-center transition-all p-2 rounded-full hover:bg-accent/50 min-w-[40px] min-h-[40px] relative z-10"
           >
             {isDashboard && (
@@ -60,6 +72,7 @@ export function BottomNav() {
           </Link>
           <Link
             to="/consumer/merchants"
+            onTouchStart={() => handleTouchStart("/consumer/merchants")}
             className="flex items-center justify-center transition-all p-2 rounded-full hover:bg-accent/50 min-w-[40px] min-h-[40px] relative z-10"
           >
             {isMerchants && (

@@ -20,6 +20,11 @@ export function getRouter() {
       queries: {
         queryKeyHashFn: convexQueryClient.hashFn(),
         queryFn: convexQueryClient.queryFn(),
+        // Aggressive caching for instant navigation
+        staleTime: Infinity, // Convex pushes updates automatically
+        gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
+        refetchOnWindowFocus: false, // Convex real-time handles updates
+        refetchOnReconnect: false,
       },
     },
   });
@@ -28,7 +33,10 @@ export function getRouter() {
   const router = routerWithQueryClient(
     createRouter({
       routeTree,
-      defaultPreload: "intent",
+      // Use viewport preloading - preloads any link that's visible on screen
+      // This works for both mouse (on hover) and touch (when link is visible)
+      defaultPreload: "viewport",
+      defaultPreloadDelay: 50, // Start preloading quickly
       scrollRestoration: true,
       context: { queryClient, convexClient: convex, convexQueryClient },
       Wrap: ({ children }) => (
