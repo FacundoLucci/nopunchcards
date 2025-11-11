@@ -84,6 +84,8 @@ export const listByBusiness = query({
   returns: v.array(
     v.object({
       _id: v.id("rewardPrograms"),
+      _creationTime: v.number(),
+      businessId: v.id("businesses"),
       name: v.string(),
       description: v.optional(v.string()),
       type: v.string(),

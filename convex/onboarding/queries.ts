@@ -18,7 +18,15 @@ export const getOnboardingStatus = query({
     v.null()
   ),
   handler: async (ctx) => {
-    const user = await authComponent.getAuthUser(ctx);
+    // Wrap in try-catch to handle unauthenticated case gracefully
+    let user;
+    try {
+      user = await authComponent.getAuthUser(ctx);
+    } catch (error) {
+      // User is not authenticated, return null
+      return null;
+    }
+    
     if (!user) return null;
 
     const userId = user.userId || user._id;

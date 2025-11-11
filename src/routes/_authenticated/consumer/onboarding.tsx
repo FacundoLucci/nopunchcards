@@ -1,9 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { useAction } from "convex/react";
+import { useState, useEffect } from "react";
+import { useAction, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -15,9 +21,26 @@ function ConsumerOnboarding() {
   const navigate = useNavigate();
   const createLinkToken = useAction(api.plaid.linkToken.createLinkToken);
   const exchangeToken = useAction(api.plaid.exchangeToken.exchangePublicToken);
+  const ensureProfile = useMutation(api.users.ensureProfile);
   const [loading, setLoading] = useState(false);
+  const [profileReady, setProfileReady] = useState(false);
+
+  // Ensure user has consumer profile when page loads
+  useEffect(() => {
+    ensureProfile({ role: "consumer" })
+      .then(() => setProfileReady(true))
+      .catch((error) => {
+        console.error("Failed to create consumer profile:", error);
+        setProfileReady(true); // Continue anyway, might already exist
+      });
+  }, [ensureProfile]);
 
   const startPlaidLink = async () => {
+    if (!profileReady) {
+      toast.error("Please wait while we set up your account");
+      return;
+    }
+
     setLoading(true);
     try {
       const { linkToken } = await createLinkToken({});
@@ -46,6 +69,15 @@ function ConsumerOnboarding() {
       setLoading(false);
     }
   };
+
+  // Show loading state while profile is being created
+  if (!profileReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-muted-foreground">Setting up your account...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
@@ -97,4 +129,3 @@ function ConsumerOnboarding() {
     </div>
   );
 }
-

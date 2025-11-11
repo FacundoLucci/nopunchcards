@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { MultistepForm } from "@/components/MultistepForm";
@@ -21,12 +21,44 @@ export const Route = createFileRoute("/_authenticated/business/register")({
 function BusinessRegister() {
   const navigate = useNavigate();
   const createBusiness = useMutation(api.businesses.mutations.create);
+  const ensureProfile = useMutation(api.users.ensureProfile);
 
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
   const [address, setAddress] = useState("");
   const [description, setDescription] = useState("");
   const [statementDescriptor, setStatementDescriptor] = useState("");
+  const [profileReady, setProfileReady] = useState(false);
+
+  // Ensure user has business_owner profile when page loads
+  useEffect(() => {
+    let mounted = true;
+
+    const setupProfile = async () => {
+      try {
+        const profileId = await ensureProfile({ role: "business_owner" });
+        console.log("Profile ensured:", profileId);
+        if (mounted && profileId) {
+          setProfileReady(true);
+        } else if (mounted && !profileId) {
+          toast.error(
+            "Failed to create profile - please refresh and try again"
+          );
+        }
+      } catch (error: any) {
+        console.error("Failed to create business owner profile:", error);
+        if (mounted) {
+          toast.error(error.message || "Failed to set up business account");
+        }
+      }
+    };
+
+    setupProfile();
+
+    return () => {
+      mounted = false;
+    };
+  }, []); // Empty dependency array - only run once on mount
 
   const categories = [
     "Coffee",
@@ -122,16 +154,31 @@ function BusinessRegister() {
             className="text-lg"
           />
           <div className="space-y-2 text-sm text-muted-foreground">
-            <p className="font-medium">This is how your business shows up on customer card statements.</p>
+            <p className="font-medium">
+              This is how your business shows up on customer card statements.
+            </p>
             <p>Common examples:</p>
             <ul className="list-disc list-inside space-y-1 ml-2">
-              <li><span className="font-mono">SQ*YOUR BUSINESS</span> (Square)</li>
-              <li><span className="font-mono">TST*YOUR BUSINESS</span> (Toast)</li>
-              <li><span className="font-mono">STRIPE*YOUR BUSINESS</span> (Stripe)</li>
-              <li><span className="font-mono">CLOVER*YOUR BUSINESS</span> (Clover)</li>
-              <li><span className="font-mono">YOUR BUSINESS NAME</span> (Direct)</li>
+              <li>
+                <span className="font-mono">SQ*YOUR BUSINESS</span> (Square)
+              </li>
+              <li>
+                <span className="font-mono">TST*YOUR BUSINESS</span> (Toast)
+              </li>
+              <li>
+                <span className="font-mono">STRIPE*YOUR BUSINESS</span> (Stripe)
+              </li>
+              <li>
+                <span className="font-mono">CLOVER*YOUR BUSINESS</span> (Clover)
+              </li>
+              <li>
+                <span className="font-mono">YOUR BUSINESS NAME</span> (Direct)
+              </li>
             </ul>
-            <p className="mt-2">💡 Check a recent customer receipt or ask your payment processor if unsure.</p>
+            <p className="mt-2">
+              💡 Check a recent customer receipt or ask your payment processor
+              if unsure.
+            </p>
           </div>
         </div>
       ),
@@ -156,7 +203,9 @@ function BusinessRegister() {
             placeholder="Best coffee in town!"
             className="text-lg"
           />
-          <p className="text-sm text-muted-foreground">You can add this later</p>
+          <p className="text-sm text-muted-foreground">
+            You can add this later
+          </p>
         </div>
       ),
     },
@@ -185,6 +234,14 @@ function BusinessRegister() {
     }
   };
 
+  // Show loading state while profile is being created
+  if (!profileReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-muted-foreground">Setting up your account...</div>
+      </div>
+    );
+  }
+
   return <MultistepForm steps={steps} onComplete={handleComplete} />;
 }
-

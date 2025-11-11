@@ -2,21 +2,38 @@
 description: Common patterns for using Better Auth with Convex and TanStack Start
 globs: **/*.ts,**/*.tsx
 created: 2025-11-08
+updated: 2025-11-09
 ---
 
 # Better Auth Usage Patterns (Convex + TanStack Start)
 
 ## Quick Reference
 
-### Get Current User in Convex
+### Get Current User in Convex (Required Authentication)
 
 ```typescript
 import { authComponent } from "./auth";
 
+// authComponent.getAuthUser() THROWS an error if not authenticated
+// For required authentication, let it throw or catch to customize error
 const user = await authComponent.getAuthUser(ctx);
-if (!user) {
-  throw new Error("Not authenticated");
+// user is guaranteed to be non-null here
+```
+
+### Get Current User in Convex (Optional Authentication)
+
+```typescript
+import { authComponent } from "./auth";
+
+// For optional auth, wrap in try-catch since it throws when unauthenticated
+let user;
+try {
+  user = await authComponent.getAuthUser(ctx);
+} catch (error) {
+  // User is not authenticated, user will be undefined
+  user = null;
 }
+// Now user is either the authenticated user or null
 ```
 
 ### Use Auth in React Component
@@ -124,8 +141,15 @@ export const getPosts = query({
     })
   ),
   handler: async (ctx, args) => {
-    // Get user if authenticated, null otherwise
-    const user = await authComponent.getAuthUser(ctx);
+    // IMPORTANT: authComponent.getAuthUser() throws if not authenticated
+    // For optional auth, wrap in try-catch
+    let user;
+    try {
+      user = await authComponent.getAuthUser(ctx);
+    } catch (error) {
+      // User is not authenticated
+      user = null;
+    }
 
     const posts = await ctx.db
       .query("posts")
@@ -509,10 +533,21 @@ const session = await authClient.getSession();
 ```typescript
 import { authComponent } from "./auth";
 
-// Get authenticated user (returns null if not authenticated)
+// IMPORTANT: authComponent.getAuthUser() THROWS an error if not authenticated
+// It does NOT return null - you must wrap in try-catch for optional auth
+
+// For required authentication (let it throw):
 const user = await authComponent.getAuthUser(ctx);
 
-// User object structure:
+// For optional authentication (wrap in try-catch):
+let user;
+try {
+  user = await authComponent.getAuthUser(ctx);
+} catch (error) {
+  user = null; // Not authenticated
+}
+
+// User object structure when authenticated:
 // {
 //   _id: Id<"user">;
 //   userId?: string | null;
@@ -543,33 +578,61 @@ await fetchAction(api.myModule.myAction, { arg: "value" });
 
 ## Best Practices
 
-1. **Always Check Authentication**:
+1. **Understand Authentication Error Behavior**:
+
+   - **CRITICAL**: `authComponent.getAuthUser(ctx)` THROWS an error when not authenticated
+   - It does NOT return `null` - you cannot check `if (!user)`
+   - **For required auth**: Let it throw or catch to customize the error message
+   - **For optional auth**: Always wrap in try-catch to handle unauthenticated users
+
+   ```typescript
+   // ❌ WRONG - this won't work for optional auth
+   const user = await authComponent.getAuthUser(ctx);
+   if (!user) {
+     // This code will never run - an error is thrown instead
+   }
+
+   // ✅ CORRECT - for optional authentication
+   let user;
+   try {
+     user = await authComponent.getAuthUser(ctx);
+   } catch (error) {
+     user = null; // Handle unauthenticated case
+   }
+
+   // ✅ CORRECT - for required authentication (let it throw)
+   const user = await authComponent.getAuthUser(ctx);
+   // If we get here, user is guaranteed to be authenticated
+   ```
+
+2. **Always Check Authentication in Protected Functions**:
 
    - **Convex Functions**: Use `authComponent.getAuthUser(ctx)` in every protected function
    - **TanStack Start Server Functions**: Use `fetchQuery(api.auth.getCurrentUser, {})` pattern
-   - Throw descriptive errors when authentication fails
-   - Consider whether null user is allowed (public data with personalization)
+   - Let the error throw for required auth, or catch to customize the message
 
-2. **Provide Clear Error Messages**:
+3. **Provide Clear Error Messages (Optional)**:
 
    ```typescript
-   if (!user) {
+   // You can catch and rethrow with a custom message
+   try {
+     const user = await authComponent.getAuthUser(ctx);
+     // ... use user
+   } catch (error) {
      throw new Error("Unauthorized: Please sign in to access this resource");
    }
    ```
 
-3. **Use Type Safety**:
+4. **Use Type Safety**:
 
    ```typescript
-   // User is guaranteed to exist after this check
+   // User is guaranteed to exist after successful getAuthUser call
    const user = await authComponent.getAuthUser(ctx);
-   if (!user) throw new Error("Not authenticated");
-
-   // TypeScript knows user is non-null here
+   // TypeScript knows user is non-null here (if no error was thrown)
    const userId: string = user.id;
    ```
 
-4. **Handle Loading States**:
+5. **Handle Loading States**:
 
    ```typescript
    const { data: session, isPending } = useSession();
@@ -579,13 +642,13 @@ await fetchAction(api.myModule.myAction, { arg: "value" });
    }
    ```
 
-5. **Separate Public and Private Data**:
+6. **Separate Public and Private Data**:
 
    - Create separate queries for public vs authenticated views
    - Don't expose sensitive data in public queries
    - Filter data based on user permissions
 
-6. **Use Proper Server-Side Pattern**:
+7. **Use Proper Server-Side Pattern**:
    - **DO**: Use `fetchQuery/fetchMutation/fetchAction` from `@/lib/auth-server` in TanStack Start server functions
    - **DON'T**: Call `fetchSession` directly - it bypasses the Convex integration
    - Enable SSR (`ssr: true`) on protected routes for instant server-side auth checks
@@ -593,11 +656,28 @@ await fetchAction(api.myModule.myAction, { arg: "value" });
 
 ## Troubleshooting
 
-### "Not authenticated" errors in Convex functions
+### "Unauthenticated" errors in Convex functions
 
-- Ensure `ConvexBetterAuthProvider` wraps your app
-- Check that `setAuth(token)` is called in `beforeLoad` (see setup rules)
-- Verify session exists with `useSession()` hook
+**Problem**: Getting "Uncaught Error: Unauthenticated" when calling a query/mutation
+
+**Common Causes**:
+
+1. **Missing try-catch for optional auth**: If your function should work for both authenticated and unauthenticated users, wrap `authComponent.getAuthUser(ctx)` in try-catch:
+
+   ```typescript
+   // ✅ CORRECT
+   let user;
+   try {
+     user = await authComponent.getAuthUser(ctx);
+   } catch (error) {
+     user = null; // Gracefully handle unauthenticated case
+   }
+   ```
+
+2. **Authentication not set up on client**:
+   - Ensure `ConvexBetterAuthProvider` wraps your app
+   - Check that `setAuth(token)` is called in `beforeLoad` (see setup rules)
+   - Verify session exists with `useSession()` hook
 
 ### Session not persisting
 
@@ -612,4 +692,4 @@ await fetchAction(api.myModule.myAction, { arg: "value" });
 
 ---
 
-_Last updated: 2025-11-09_
+_Last updated: 2025-11-09 (Updated with critical auth error behavior - getAuthUser throws instead of returning null)_

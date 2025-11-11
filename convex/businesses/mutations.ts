@@ -106,11 +106,19 @@ export const getByOwner = mutation({
   returns: v.array(
     v.object({
       _id: v.id("businesses"),
+      _creationTime: v.number(), // System field
       name: v.string(),
       slug: v.string(),
       category: v.string(),
       status: v.string(),
+      ownerId: v.string(),
       createdAt: v.number(),
+      description: v.optional(v.string()),
+      address: v.optional(v.string()),
+      logoUrl: v.optional(v.string()),
+      location: v.optional(v.object({ lat: v.number(), lng: v.number() })),
+      mccCodes: v.optional(v.array(v.string())),
+      statementDescriptors: v.optional(v.array(v.string())),
     })
   ),
   handler: async (ctx) => {

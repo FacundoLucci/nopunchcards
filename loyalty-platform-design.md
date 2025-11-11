@@ -619,7 +619,7 @@ Success toast
 [Optional: Social share buttons]
   - Instagram story
   - Facebook post
-  - Twitter/X post
+  - X post
      ↓
 Customer sees post on social media
      ↓
@@ -745,7 +745,7 @@ Social Proof:
 │                                     │
 │ Hey Alex,                           │ ← Greeting
 │ You're 2 visits away from           │
-│ earning a free coffee! ☕           │
+│ earning a free coffee! ☕            │
 │                                     │
 ├─────────────────────────────────────┤
 │                                     │
@@ -754,8 +754,8 @@ Social Proof:
 │ ┌─────────────────────────────────┐ │
 │ │ Joe's Coffee Shop               │ │ ← Card (with subtle tilt)
 │ │                                 │ │
-│ │     ●●●○○                      │ │ ← Progress dots
-│ │     3 of 5 visits              │ │
+│ │     ●●●○○                       │ │ ← Progress dots
+│ │     3 of 5 visits               │ │
 │ │                                 │ │
 │ │ Reward: Free medium coffee      │ │
 │ └─────────────────────────────────┘ │
@@ -763,10 +763,10 @@ Social Proof:
 │ ┌─────────────────────────────────┐ │
 │ │ Main Street Deli                │ │
 │ │                                 │ │
-│ │     ●○○○○○○○○○                 │ │
-│ │     1 of 10 visits             │ │
+│ │     ●○○○○○○○○○                  │ │
+│ │     1 of 10 visits              │ │
 │ │                                 │ │
-│ │ Reward: Free sandwich          │ │
+│ │ Reward: Free sandwich           │ │
 │ └─────────────────────────────────┘ │
 │                                     │
 ├─────────────────────────────────────┤
@@ -775,11 +775,11 @@ Social Proof:
 │                                     │
 │ Today                               │
 │ Joe's Coffee Shop      -$4.50       │
-│ 10:32 AM               ●●●○○       │
+│ 10:32 AM               ●●●○○        │
 │                                     │
 │ Yesterday                           │
 │ Main Street Deli       -$12.00      │
-│ 12:45 PM               ●○○○○○○○○○  │
+│ 12:45 PM               ●○○○○○○○○○   │
 │                                     │
 └─────────────────────────────────────┘
 │ [Dashboard] [Merchants] [Rewards]   │ ← Bottom nav
@@ -1303,9 +1303,7 @@ Social Proof:
     <button className="flex-1 py-2 bg-gray-800 rounded text-sm">
       📘 Facebook
     </button>
-    <button className="flex-1 py-2 bg-gray-800 rounded text-sm">
-      🐦 Twitter
-    </button>
+    <button className="flex-1 py-2 bg-gray-800 rounded text-sm">🐦 X</button>
   </div>
 </div>
 ```
@@ -2109,7 +2107,7 @@ function ConsumerDashboard() {
 - [ ] Auto-enrollment after context-aware signup
 - [ ] Business slug customization (settings page)
 - [ ] QR code generation for in-store promotion
-- [ ] Social share button integrations (Instagram, Facebook, Twitter)
+- [ ] Social share button integrations (Instagram, Facebook, X)
 
 ---
 

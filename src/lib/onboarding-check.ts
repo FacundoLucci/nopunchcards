@@ -1,38 +1,21 @@
-import { redirect } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
-import { fetchQuery } from "@/lib/auth-server";
-import { api } from "../../convex/_generated/api";
-
 /**
- * Server function to check onboarding status
- * Used in consumer route beforeLoad hooks
+ * Client-side onboarding check
+ * 
+ * Note: We no longer do server-side onboarding checks in beforeLoad
+ * because it adds 300-500ms of latency on every navigation.
+ * 
+ * Instead, components use useSuspenseQuery to check onboarding status
+ * and redirect if needed. This allows:
+ * 1. Instant navigation (no blocking HTTP requests)
+ * 2. Automatic caching (TanStack Query)
+ * 3. Preloading on hover (router integration)
+ * 
+ * The OnboardingGuard component handles the actual redirect logic.
  */
-export const checkOnboarding = createServerFn({ method: "GET" }).handler(
-  async () => {
-    const onboardingStatus = await fetchQuery(
-      api.onboarding.queries.getOnboardingStatus,
-      {}
-    );
-    return onboardingStatus;
-  }
-);
 
-/**
- * Utility to check onboarding and redirect if incomplete
- * Use in beforeLoad for consumer routes that require onboarding
- */
-export async function requireOnboarding(currentPath: string) {
-  // Skip check if on onboarding page
-  if (currentPath === "/consumer/onboarding") {
-    return;
-  }
-
-  const onboardingStatus = await checkOnboarding();
-
-  if (onboardingStatus && onboardingStatus.needsOnboarding) {
-    throw redirect({
-      to: "/consumer/onboarding",
-    });
-  }
+export function requireOnboarding(_currentPath: string) {
+  // No-op - onboarding is now checked client-side in components
+  // This function remains for backwards compatibility but does nothing
+  return;
 }
 

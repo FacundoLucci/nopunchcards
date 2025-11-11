@@ -1,128 +1,148 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { convexQuery } from "@convex-dev/react-query";
 import { api } from "../../../../convex/_generated/api";
 import { ProgressCard } from "@/components/ProgressCard";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-clients";
-import { ConsumerLayout } from "@/components/consumer/ConsumerLayout";
 import { OnboardingProgress } from "@/components/OnboardingProgress";
-import { requireOnboarding } from "@/lib/onboarding-check";
+import { OnboardingGuard } from "@/components/OnboardingGuard";
+import { Suspense } from "react";
 
 export const Route = createFileRoute("/_authenticated/consumer/dashboard")({
-  ssr: true,
-  beforeLoad: async ({ location }) => {
-    await requireOnboarding(location.pathname);
-  },
+  // Client-side rendering for instant navigation
+  ssr: false,
   component: ConsumerDashboard,
 });
 
 function ConsumerDashboard() {
   const { data: session } = authClient.useSession();
-  const onboardingStatus = useQuery(api.onboarding.queries.getOnboardingStatus, {});
-  const activeProgress = useQuery(api.consumer.queries.getActiveProgress, {});
-  const recentTransactions = useQuery(api.consumer.queries.getRecentTransactions, {
-    limit: 5,
-  });
-
   const firstName = session?.user?.name?.split(" ")[0] || "there";
 
   return (
-    <ConsumerLayout>
-      <div className="p-6 space-y-8">
-        {/* Greeting */}
-        <div>
-          <h2 className="text-2xl font-bold mb-2">Hey {firstName},</h2>
-          {activeProgress && activeProgress.length > 0 ? (
-            <p className="text-muted-foreground">
-              You're{" "}
-              {activeProgress[0].totalVisits - activeProgress[0].currentVisits} visits
-              away from earning {activeProgress[0].rewardDescription}!
-            </p>
-          ) : (
-            <p className="text-muted-foreground">
-              Start shopping to earn your first reward
-            </p>
-          )}
-        </div>
-
-        {/* Onboarding Progress Banner */}
-        {onboardingStatus && !onboardingStatus.isComplete && (
-          <OnboardingProgress
-            hasLinkedCard={onboardingStatus.hasLinkedCard}
-            isComplete={onboardingStatus.isComplete}
-            compact
-          />
-        )}
-
-        {/* Active Rewards */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Active Rewards</h3>
-          {activeProgress === undefined ? (
-            <div className="text-muted-foreground">Loading...</div>
-          ) : activeProgress.length === 0 ? (
-            <Card>
-              <CardContent className="pt-6 text-center text-muted-foreground">
-                <p>No active rewards yet</p>
-                <p className="text-sm mt-2">
-                  Shop at participating businesses to start earning
+    <Suspense
+      fallback={
+        <div className="p-4 sm:p-6 text-muted-foreground">Loading...</div>
+      }
+    >
+      <OnboardingGuard>
+        <div className="p-4 sm:p-6 space-y-6 sm:space-y-8">
+          {/* Greeting - shows immediately */}
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold mb-2">
+              Hey {firstName},
+            </h2>
+            <Suspense
+              fallback={
+                <p className="text-muted-foreground">
+                  Loading your progress...
                 </p>
-              </CardContent>
-            </Card>
-          ) : (
-            activeProgress.map((progress) => (
-              <ProgressCard
-                key={progress._id}
-                businessName={progress.businessName}
-                currentVisits={progress.currentVisits}
-                totalVisits={progress.totalVisits}
-                rewardDescription={progress.rewardDescription}
-              />
-            ))
-          )}
-        </div>
+              }
+            >
+              <GreetingMessage />
+            </Suspense>
+          </div>
 
-        {/* Recent Activity */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Recent Activity</h3>
-          {recentTransactions === undefined ? (
-            <div className="text-muted-foreground">Loading...</div>
-          ) : recentTransactions.length === 0 ? (
-            <Card>
-              <CardContent className="pt-6 text-center text-muted-foreground">
-                <p>No transactions yet</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {recentTransactions.map((tx) => (
-                <Card key={tx._id}>
-                  <CardContent className="pt-4 pb-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">
-                          {tx.businessName || tx.merchantName || "Unknown"}
-                        </p>
-                        <p className="text-sm text-muted-foreground">{tx.date}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium">
-                          ${(Math.abs(tx.amount) / 100).toFixed(2)}
-                        </p>
-                        {tx.currentVisits !== undefined && tx.totalVisits && (
-                          <p className="text-xs text-muted-foreground">
-                            {tx.currentVisits}/{tx.totalVisits} visits
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+          {/* Onboarding Progress - loads independently */}
+          <Suspense fallback={null}>
+            <OnboardingBanner />
+          </Suspense>
+
+          {/* Active Rewards - loads independently */}
+          <Suspense
+            fallback={
+              <div className="text-muted-foreground">Loading rewards...</div>
+            }
+          >
+            <ActiveRewardsSection />
+          </Suspense>
         </div>
-      </div>
-    </ConsumerLayout>
+      </OnboardingGuard>
+    </Suspense>
   );
 }
 
+// Each section loads its own data independently
+function GreetingMessage() {
+  const { data: activeProgress } = useSuspenseQuery(
+    convexQuery(api.consumer.queries.getActiveProgress, {})
+  );
+
+  if (activeProgress && activeProgress.length > 0) {
+    return (
+      <p className="text-muted-foreground">
+        You're {activeProgress[0].totalVisits - activeProgress[0].currentVisits}{" "}
+        visits away from earning {activeProgress[0].rewardDescription}!
+      </p>
+    );
+  }
+
+  return (
+    <p className="text-muted-foreground">
+      Start shopping to earn your first reward
+    </p>
+  );
+}
+
+function OnboardingBanner() {
+  const { data: onboardingStatus } = useSuspenseQuery(
+    convexQuery(api.onboarding.queries.getOnboardingStatus, {})
+  );
+
+  if (onboardingStatus && !onboardingStatus.isComplete) {
+    return (
+      <OnboardingProgress
+        hasLinkedCard={onboardingStatus.hasLinkedCard}
+        isComplete={onboardingStatus.isComplete}
+        compact
+      />
+    );
+  }
+
+  return null;
+}
+
+function ActiveRewardsSection() {
+  const { data: activeProgress } = useSuspenseQuery(
+    convexQuery(api.consumer.queries.getActiveProgress, {})
+  );
+
+  // Show top 3 rewards by most recent activity
+  const topRewards = activeProgress.slice(0, 3);
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold">Your Rewards</h3>
+      {activeProgress.length === 0 ? (
+        <Card>
+          <CardContent className="pt-6 text-center text-muted-foreground">
+            <p>No active rewards yet</p>
+            <p className="text-sm mt-2">
+              Shop at participating businesses to start earning
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {topRewards.map((progress) => (
+            <ProgressCard
+              key={progress._id}
+              businessName={progress.businessName}
+              currentVisits={progress.currentVisits}
+              totalVisits={progress.totalVisits}
+              rewardDescription={progress.rewardDescription}
+            />
+          ))}
+          {activeProgress.length > 3 && (
+            <Link to="/consumer/rewards">
+              <Button variant="outline" className="w-full">
+                View All ({activeProgress.length} rewards)
+              </Button>
+            </Link>
+          )}
+        </>
+      )}
+    </div>
+  );
+}

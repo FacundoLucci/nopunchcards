@@ -1,0 +1,200 @@
+---
+description: User account settings separate from app-specific settings
+globs: **/*.ts,**/*.tsx
+created: 2025-11-11
+updated: 2025-11-11
+---
+
+# Account Settings Architecture
+
+## Overview
+
+User account settings are now separated from app-specific settings to provide a clean separation of concerns:
+
+- **Account Settings** (`/account`) - Personal information and security (accessible from avatar dropdown)
+- **App Settings** - Role-specific settings for the application
+  - Consumer: `/consumer/settings` - Linked cards and consumer preferences
+  - Business: `/business/settings` - Business profile and business-specific settings
+
+## Navigation Structure
+
+### Avatar Dropdown Menu (UserMenu Component)
+
+The avatar dropdown in the top navigation provides quick access to:
+
+1. **Account Settings** - Personal account and security settings (all users)
+2. **App Settings** - Role-specific application settings
+   - "Business Settings" for business owners
+   - "App Settings" for consumers
+3. **Theme** - Light/Dark/System theme selection
+4. **Logout** - Sign out
+
+## Account Settings Page
+
+**Route:** `/account`  
+**Component:** `src/routes/_authenticated/account.tsx`
+
+### Features
+
+#### Personal Information
+- **Email** (read-only)
+  - Displays current email address
+  - Shows verification badge if email is verified
+  - Explains email cannot be changed
+  
+- **Name** 
+  - View/edit user's display name
+  - Inline editing with Save/Cancel buttons
+  - Updates Better Auth user table via `api.users.updateName`
+
+- **Member Since**
+  - Shows account creation date
+
+#### Security
+- **Password Change**
+  - Current password verification
+  - New password (minimum 8 characters)
+  - Password confirmation
+  - Uses Better Auth's `authClient.changePassword()` API
+  - Option to revoke other sessions (currently disabled)
+
+### Backend Support
+
+#### Convex Functions (`convex/users.ts`)
+
+```typescript
+// Get account information
+export const getAccountInfo = query({
+  args: {},
+  returns: v.union(
+    v.object({
+      email: v.string(),
+      name: v.string(),
+      emailVerified: v.boolean(),
+      createdAt: v.number(),
+      role: v.union(
+        v.literal("consumer"),
+        v.literal("business_owner"),
+        v.literal("admin")
+      ),
+    }),
+    v.null()
+  ),
+  handler: async (ctx) => {
+    // Returns user info from Better Auth + role from profile
+  },
+});
+
+// Update user name
+export const updateName = mutation({
+  args: {
+    name: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    // Updates name in Better Auth user table
+  },
+});
+```
+
+### Better Auth Integration
+
+The account settings use Better Auth's client-side API for password changes:
+
+```typescript
+import { authClient } from "@/lib/auth-clients";
+
+const result = await authClient.changePassword({
+  currentPassword: "...",
+  newPassword: "...",
+  revokeOtherSessions: false, // Optional: log out other devices
+});
+
+if (result.error) {
+  // Handle error
+} else {
+  // Success
+}
+```
+
+## App-Specific Settings
+
+### Consumer Settings (`/consumer/settings`)
+
+**Focus:** Application-specific consumer features
+
+Current features:
+- Linked Cards management (Plaid integration)
+- Connect/disconnect bank accounts
+- View transaction sync status
+- Future: Notification preferences, reward settings
+
+### Business Settings (`/business/settings`)
+
+**Focus:** Business-specific configuration
+
+Current features:
+- Business profile information
+- Business URL/slug
+- Account status
+- Future: Notification preferences, reward program defaults
+
+## Best Practices
+
+### When to Add Settings
+
+**Account Settings** - Features that apply to the user regardless of role:
+- Personal information (name, email)
+- Security (password, 2FA)
+- Privacy settings
+- Account deletion
+- Language/timezone preferences
+
+**App Settings** - Features specific to the user's role in the application:
+- Consumer: Linked payment methods, reward preferences
+- Business: Business profile, reward program defaults, analytics preferences
+- Role-specific notifications
+- App-specific integrations
+
+### UI/UX Patterns
+
+1. **Read-only fields** - Use disabled inputs with `bg-muted` class
+2. **Inline editing** - Show/hide edit mode for individual fields
+3. **Loading states** - Show spinner in buttons during async operations
+4. **Toast notifications** - Confirm success/failure of operations
+5. **Validation** - Client-side validation before API calls
+6. **Cancel buttons** - Always provide a way to cancel edits
+
+### Error Handling
+
+```typescript
+try {
+  await updateName({ name: newName.trim() });
+  toast.success("Name updated successfully");
+  setIsEditingName(false);
+} catch (error) {
+  toast.error("Failed to update name");
+  console.error(error);
+} finally {
+  setSavingName(false);
+}
+```
+
+## Future Enhancements
+
+Potential additions to account settings:
+
+- [ ] Email verification flow
+- [ ] Two-factor authentication (2FA)
+- [ ] Session management (view/revoke active sessions)
+- [ ] Account deletion
+- [ ] Profile picture upload
+- [ ] Language preferences
+- [ ] Timezone selection
+- [ ] Privacy settings
+- [ ] Download account data
+- [ ] Connected social accounts
+
+---
+
+_Last updated: 2025-11-11_

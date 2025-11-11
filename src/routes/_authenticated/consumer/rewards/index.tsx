@@ -1,84 +1,77 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ConsumerLayout } from "@/components/consumer/ConsumerLayout";
-import { requireOnboarding } from "@/lib/onboarding-check";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { convexQuery } from "@convex-dev/react-query";
+import { api } from "../../../../../convex/_generated/api";
+import { Card, CardContent } from "@/components/ui/card";
+import { OnboardingGuard } from "@/components/OnboardingGuard";
+import { Suspense } from "react";
+import { Progress } from "@/components/ui/progress";
 
 export const Route = createFileRoute("/_authenticated/consumer/rewards/")({
-  ssr: true,
-  beforeLoad: async ({ location }) => {
-    await requireOnboarding(location.pathname);
-  },
+  ssr: false,
   component: RewardsPage,
 });
 
 function RewardsPage() {
-  // TODO: Create queries for active and completed rewards
-  const activeRewards: any[] = [];
-  const completedRewards: any[] = [];
+  return (
+    <Suspense
+      fallback={<div className="p-6 text-muted-foreground">Loading...</div>}
+    >
+      <OnboardingGuard>
+        <RewardsContent />
+      </OnboardingGuard>
+    </Suspense>
+  );
+}
+
+function RewardsContent() {
+  const { data: activeProgress } = useSuspenseQuery(
+    convexQuery(api.consumer.queries.getActiveProgress, {})
+  );
 
   return (
-    <ConsumerLayout>
-      <div className="p-6">
-        <Tabs defaultValue="active" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="active">Active</TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="active" className="space-y-4 mt-6">
-            {activeRewards.length === 0 ? (
-              <Card>
-                <CardContent className="pt-6 text-center text-muted-foreground">
-                  <p>No active rewards yet</p>
-                  <p className="text-sm mt-2">Keep shopping to earn rewards!</p>
+    <div className="p-6 space-y-4">
+        <h2 className="text-xl font-semibold mb-4">All Rewards</h2>
+        {activeProgress.length === 0 ? (
+          <Card>
+            <CardContent className="pt-6 text-center text-muted-foreground">
+              <p>No active rewards yet</p>
+              <p className="text-sm mt-2">
+                Shop at participating businesses to start earning
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-2">
+            {activeProgress.map((progress) => (
+              <Card key={progress._id} className="hover:bg-accent transition-colors">
+                <CardContent className="py-3 px-4">
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold truncate">
+                          {progress.businessName}
+                        </h3>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {progress.rewardDescription}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-sm font-medium">
+                          {progress.currentVisits}/{progress.totalVisits}
+                        </p>
+                      </div>
+                    </div>
+                    <Progress 
+                      value={(progress.currentVisits / progress.totalVisits) * 100} 
+                      className="h-1.5"
+                    />
+                  </div>
                 </CardContent>
               </Card>
-            ) : (
-              activeRewards.map((reward) => (
-                <Card key={reward._id}>
-                  <CardHeader>
-                    <CardTitle>{reward.businessName}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      {reward.programName}
-                    </p>
-                    <p className="font-medium mb-4">
-                      {reward.rewardDescription}
-                    </p>
-                    <Button className="w-full">Claim Reward</Button>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </TabsContent>
-
-          <TabsContent value="completed" className="space-y-4 mt-6">
-            {completedRewards.length === 0 ? (
-              <Card>
-                <CardContent className="pt-6 text-center text-muted-foreground">
-                  <p>No completed rewards yet</p>
-                </CardContent>
-              </Card>
-            ) : (
-              completedRewards.map((reward) => (
-                <Card key={reward._id}>
-                  <CardHeader>
-                    <CardTitle>{reward.businessName}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                      Earned: {reward.completedDate}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </TabsContent>
-        </Tabs>
-      </div>
-    </ConsumerLayout>
+            ))}
+          </div>
+        )}
+    </div>
   );
 }

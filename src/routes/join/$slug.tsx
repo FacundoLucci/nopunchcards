@@ -3,10 +3,9 @@ import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Share2 } from "lucide-react";
-import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { AlertCircle } from "lucide-react";
 import { authClient } from "@/lib/auth-clients";
-import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/join/$slug")({
   // SSR enabled for Open Graph previews
@@ -23,34 +22,16 @@ function PublicBusinessPage() {
 
   // Fetch business data client-side (will also work during SSR via ConvexQueryClient)
   const business = useQuery(api.businesses.public.getBySlug, { slug });
-  const programs = business
-    ? useQuery(api.businesses.public.getActivePrograms, {
-        businessId: business._id,
-      })
-    : undefined;
-  const stats = business
-    ? useQuery(api.businesses.public.getStats, {
-        businessId: business._id,
-      })
-    : undefined;
-
-  const handleShare = async () => {
-    const url = `${window.location.origin}/join/${slug}`;
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: `Earn rewards at ${business?.name}`,
-          text: "Sign up once, get loyalty everywhere",
-          url,
-        });
-      } else {
-        await navigator.clipboard.writeText(url);
-        toast.success("Link copied! Share with your customers");
-      }
-    } catch (error) {
-      // User cancelled or error
-    }
-  };
+  
+  // Always call hooks - pass skip condition to avoid running when business is not loaded
+  const programs = useQuery(
+    api.businesses.public.getActivePrograms,
+    business ? { businessId: business._id } : "skip"
+  );
+  const stats = useQuery(
+    api.businesses.public.getStats,
+    business ? { businessId: business._id } : "skip"
+  );
 
   const handleStartEarning = () => {
     if (session) {
@@ -77,7 +58,7 @@ function PublicBusinessPage() {
           <CardContent className="pt-6 text-center">
             <h2 className="text-2xl font-bold mb-2">Business Not Found</h2>
             <p className="text-muted-foreground mb-6">
-              This business page doesn't exist or hasn't been verified yet
+              This business page doesn't exist
             </p>
             <Button onClick={() => navigate({ to: "/" })}>
               Explore Other Businesses
@@ -90,20 +71,7 @@ function PublicBusinessPage() {
 
   return (
     <div className="min-h-screen pb-24">
-      {/* Header */}
-      <header className="sticky top-0 bg-background/80 backdrop-blur-sm border-b py-4 px-6 flex items-center justify-between z-10">
-        <button onClick={() => navigate({ to: "/" })}>
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div className="flex items-center gap-2">
-          <ThemeToggle />
-          <button onClick={handleShare}>
-            <Share2 className="w-5 h-5" />
-          </button>
-        </div>
-      </header>
-
-      <div className="app-container p-6 space-y-8">
+      <div className="max-w-[480px] mx-auto p-4 sm:p-6 space-y-6 sm:space-y-8">
         {/* Business Hero */}
         <div className="text-center space-y-4">
           {business.logoUrl && (
@@ -113,12 +81,44 @@ function PublicBusinessPage() {
               className="w-24 h-24 mx-auto rounded-full border-4 border-border shadow-lg"
             />
           )}
-          <h1 className="text-3xl font-bold">{business.name}</h1>
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold">{business.name}</h1>
+            {business.status === "verified" ? (
+              <Badge variant="default" className="bg-green-600">
+                ✓ Verified
+              </Badge>
+            ) : (
+              <Badge variant="secondary" className="gap-1">
+                <AlertCircle className="w-3 h-3" />
+                Pending Verification
+              </Badge>
+            )}
+          </div>
           <p className="text-muted-foreground">
             {business.category}
             {business.address && ` • ${business.address}`}
           </p>
         </div>
+
+        {/* Verification Notice */}
+        {business.status === "unverified" && (
+          <Card className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-500 shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium text-amber-900 dark:text-amber-100 mb-1">
+                    Business Under Review
+                  </p>
+                  <p className="text-amber-800 dark:text-amber-200">
+                    This business is pending verification. You can still sign up and join their programs,
+                    but automatic transaction matching will be enabled after verification is complete.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Value Prop */}
         <Card className="bg-linear-to-br from-secondary to-muted">

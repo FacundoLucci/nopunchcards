@@ -1,27 +1,30 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
+// Reusable validator for profile fields
+export const profileValidator = v.object({
+  userId: v.string(), // Better Auth user.id
+  role: v.union(
+    v.literal("consumer"),
+    v.literal("business_owner"),
+    v.literal("admin")
+  ),
+  phone: v.optional(v.string()),
+  preferences: v.optional(v.any()),
+  // Onboarding tracking
+  onboarding: v.optional(
+    v.object({
+      hasLinkedCard: v.boolean(),
+      completedAt: v.optional(v.number()),
+    })
+  ),
+  createdAt: v.number(),
+});
+
 export default defineSchema({
   // Better Auth manages 'user' table
   // We extend with profiles table (Better Auth user.id -> profiles.userId)
-  profiles: defineTable({
-    userId: v.string(), // Better Auth user.id
-    role: v.union(
-      v.literal("consumer"),
-      v.literal("business_owner"),
-      v.literal("admin")
-    ),
-    phone: v.optional(v.string()),
-    preferences: v.optional(v.any()),
-    // Onboarding tracking
-    onboarding: v.optional(
-      v.object({
-        hasLinkedCard: v.boolean(),
-        completedAt: v.optional(v.number()),
-      })
-    ),
-    createdAt: v.number(),
-  })
+  profiles: defineTable(profileValidator)
     .index("by_userId", ["userId"])
     .index("by_role", ["role"]),
 

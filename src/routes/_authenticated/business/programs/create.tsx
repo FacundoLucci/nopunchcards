@@ -155,6 +155,17 @@ function CreateProgram() {
     }
   };
 
-  return <MultistepForm steps={steps} onComplete={handleComplete} />;
+  const handleCancel = () => {
+    navigate({ to: "/business/programs" });
+  };
+
+  return (
+    <MultistepForm
+      title="Create a program"
+      steps={steps}
+      onComplete={handleComplete}
+      onCancel={handleCancel}
+    />
+  );
 }
 

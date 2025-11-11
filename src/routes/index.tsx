@@ -39,7 +39,11 @@ function LandingPage() {
                   Start Earning Rewards
                 </Button>
               </Link>
-              <Link to="/business/register" className="flex-1">
+              <Link
+                to="/signup"
+                search={{ mode: "business" }}
+                className="flex-1"
+              >
                 <Button
                   size="lg"
                   variant="outline"

@@ -125,4 +125,3 @@ export const deleteAccount = mutation({
     return null;
   },
 });
-

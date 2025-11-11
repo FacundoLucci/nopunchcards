@@ -24,12 +24,13 @@ export const getBySlug = query({
       .withIndex("by_slug", (q) => q.eq("slug", args.slug))
       .unique();
 
-    // 2. Return null if not found or not verified
-    if (!business || business.status !== "verified") {
+    // 2. Return null if not found
+    if (!business) {
       return null;
     }
 
-    // 3. Return public fields only (no ownerId, mccCodes, etc.)
+    // 3. Return public fields (including status so frontend can show verification badge)
+    // Note: Unverified businesses can be viewed but won't match transactions
     return {
       _id: business._id,
       name: business.name,

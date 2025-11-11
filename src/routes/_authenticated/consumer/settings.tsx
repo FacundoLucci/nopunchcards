@@ -1,28 +1,69 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery, useAction, useMutation } from "convex/react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { convexQuery } from "@convex-dev/react-query";
+import { useAction, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Loader2, CreditCard, Trash2, Plus, AlertCircle } from "lucide-react";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { OnboardingGuard } from "@/components/OnboardingGuard";
 
 export const Route = createFileRoute("/_authenticated/consumer/settings")({
+  ssr: false,
   component: ConsumerSettings,
 });
 
 function ConsumerSettings() {
-  const navigate = useNavigate();
-  const accounts = useQuery(api.consumer.accounts.listLinkedAccounts);
-  const disconnectAccount = useMutation(api.consumer.accounts.disconnectAccount);
+  return (
+    <Suspense
+      fallback={
+        <div className="container max-w-4xl py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mx-auto" />
+        </div>
+      }
+    >
+      <OnboardingGuard>
+        <SettingsContent />
+      </OnboardingGuard>
+    </Suspense>
+  );
+}
+
+function SettingsContent() {
+  const { data: accounts } = useSuspenseQuery(
+    convexQuery(api.consumer.accounts.listLinkedAccounts, {})
+  );
+
+  const disconnectAccount = useMutation(
+    api.consumer.accounts.disconnectAccount
+  );
   const deleteAccount = useMutation(api.consumer.accounts.deleteAccount);
   const createLinkToken = useAction(api.plaid.linkToken.createLinkToken);
   const exchangeToken = useAction(api.plaid.exchangeToken.exchangePublicToken);
-  
-  const [loadingAccountId, setLoadingAccountId] = useState<Id<"plaidAccounts"> | null>(null);
+
+  const [loadingAccountId, setLoadingAccountId] =
+    useState<Id<"plaidAccounts"> | null>(null);
   const [linkingNewCard, setLinkingNewCard] = useState(false);
 
   const handleDisconnect = async (accountId: Id<"plaidAccounts">) => {
@@ -100,24 +141,29 @@ function ConsumerSettings() {
   };
 
   return (
-    <div className="container max-w-4xl py-8 space-y-6">
+    <div className="container max-w-4xl py-4 px-4 sm:py-8 sm:px-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Settings</h1>
-        <p className="text-muted-foreground mt-2">
-          Manage your linked cards and account preferences
+        <h1 className="text-2xl sm:text-3xl font-bold">App Settings</h1>
+        <p className="text-muted-foreground mt-2 text-sm sm:text-base">
+          Manage your linked cards and app preferences
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex-1">
               <CardTitle>Linked Cards</CardTitle>
               <CardDescription className="mt-1.5">
                 View and manage your connected bank accounts and cards
               </CardDescription>
             </div>
-            <Button onClick={handleAddCard} disabled={linkingNewCard}>
+            <Button 
+              onClick={handleAddCard} 
+              disabled={linkingNewCard}
+              className="w-full sm:w-auto shrink-0"
+              size="sm"
+            >
               {linkingNewCard ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -133,11 +179,7 @@ function ConsumerSettings() {
           </div>
         </CardHeader>
         <CardContent>
-          {accounts === undefined ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : accounts.length === 0 ? (
+          {accounts.length === 0 ? (
             <div className="text-center py-12">
               <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No cards linked</h3>
@@ -163,30 +205,34 @@ function ConsumerSettings() {
               {accounts.map((account) => (
                 <Card key={account._id} className="border-2">
                   <CardContent className="pt-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-4 flex-1">
-                        <div className="rounded-lg bg-primary/10 p-3">
-                          <CreditCard className="h-6 w-6 text-primary" />
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                      <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
+                        <div className="rounded-lg bg-primary/10 p-3 shrink-0">
+                          <CreditCard className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                         </div>
-                        <div className="flex-1 space-y-1">
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-semibold">
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h4 className="font-semibold text-sm sm:text-base">
                               {account.institutionName || "Bank Account"}
                             </h4>
                             {getStatusBadge(account.status)}
                           </div>
-                          <p className="text-sm text-muted-foreground">
-                            {account.accountIds.length} account{account.accountIds.length !== 1 ? "s" : ""} linked
+                          <p className="text-xs sm:text-sm text-muted-foreground">
+                            {account.accountIds.length} account
+                            {account.accountIds.length !== 1 ? "s" : ""} linked
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground break-words">
                             Added {formatDate(account.createdAt)}
                             {account.lastSyncedAt && (
-                              <> • Last synced {formatDate(account.lastSyncedAt)}</>
+                              <>
+                                {" "}
+                                • Last synced {formatDate(account.lastSyncedAt)}
+                              </>
                             )}
                           </p>
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 sm:flex-col sm:gap-2">
                         {account.status === "active" && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
@@ -204,11 +250,14 @@ function ConsumerSettings() {
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Disconnect this account?</AlertDialogTitle>
+                                <AlertDialogTitle>
+                                  Disconnect this account?
+                                </AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  This will stop syncing transactions from this account. Your
-                                  transaction history will be preserved, but no new transactions
-                                  will be tracked.
+                                  This will stop syncing transactions from this
+                                  account. Your transaction history will be
+                                  preserved, but no new transactions will be
+                                  tracked.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
@@ -240,17 +289,21 @@ function ConsumerSettings() {
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Delete this account?</AlertDialogTitle>
+                                <AlertDialogTitle>
+                                  Delete this account?
+                                </AlertDialogTitle>
                                 <AlertDialogDescription className="space-y-2">
                                   <p>
-                                    This will permanently delete this account and all associated
-                                    transaction history. This action cannot be undone.
+                                    This will permanently delete this account
+                                    and all associated transaction history. This
+                                    action cannot be undone.
                                   </p>
                                   <div className="flex items-start gap-2 p-3 bg-destructive/10 rounded-md">
                                     <AlertCircle className="h-4 w-4 text-destructive mt-0.5" />
                                     <p className="text-sm text-destructive">
-                                      Warning: You will lose all reward progress associated with
-                                      transactions from this account.
+                                      Warning: You will lose all reward progress
+                                      associated with transactions from this
+                                      account.
                                     </p>
                                   </div>
                                 </AlertDialogDescription>
@@ -276,16 +329,6 @@ function ConsumerSettings() {
           )}
         </CardContent>
       </Card>
-
-      <div className="flex justify-center pt-4">
-        <Button
-          variant="outline"
-          onClick={() => navigate({ to: "/consumer/dashboard" })}
-        >
-          Back to Dashboard
-        </Button>
-      </div>
     </div>
   );
 }
-

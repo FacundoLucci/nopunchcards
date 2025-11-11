@@ -1,67 +1,154 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { convexQuery } from "@convex-dev/react-query";
 import { api } from "../../../../convex/_generated/api";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { useState } from "react";
-import { ConsumerLayout } from "@/components/consumer/ConsumerLayout";
-import { requireOnboarding } from "@/lib/onboarding-check";
+import { Progress } from "@/components/ui/progress";
+import { useState, Suspense, useEffect } from "react";
+import { OnboardingGuard } from "@/components/OnboardingGuard";
+import { MapPin } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/consumer/merchants")({
-  ssr: true,
-  beforeLoad: async ({ location }) => {
-    await requireOnboarding(location.pathname);
-  },
+  ssr: false,
   component: MerchantsPage,
 });
 
-// Create a simple query to list verified businesses
 function MerchantsPage() {
-  const [search, setSearch] = useState("");
+  return (
+    <Suspense fallback={<div className="p-6 text-muted-foreground">Loading...</div>}>
+      <OnboardingGuard>
+        <MerchantsContent />
+      </OnboardingGuard>
+    </Suspense>
+  );
+}
 
-  // TODO: Create convex/consumer/getBusinesses query
-  const businesses: any[] = [];
+function MerchantsContent() {
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          setLocationError("Unable to get your location");
+          // Use default location (San Francisco) as fallback
+          setUserLocation({ lat: 37.7749, lng: -122.4194 });
+        }
+      );
+    } else {
+      setLocationError("Geolocation not supported");
+      // Use default location (San Francisco) as fallback
+      setUserLocation({ lat: 37.7749, lng: -122.4194 });
+    }
+  }, []);
+
+  if (!userLocation) {
+    return (
+      <div className="p-6 text-center text-muted-foreground">
+        Getting your location...
+      </div>
+    );
+  }
+
+  return <NearbyRewardsList userLocation={userLocation} locationError={locationError} />;
+}
+
+function NearbyRewardsList({
+  userLocation,
+  locationError,
+}: {
+  userLocation: { lat: number; lng: number };
+  locationError: string | null;
+}) {
+  const { data: nearbyRewards } = useSuspenseQuery(
+    convexQuery(api.consumer.queries.getNearbyRewards, {
+      userLat: userLocation.lat,
+      userLng: userLocation.lng,
+      radiusMeters: 50000, // 50km radius
+    })
+  );
+
+  const formatDistance = (meters?: number) => {
+    if (!meters) return null;
+    if (meters < 1000) return `${Math.round(meters)}m`;
+    return `${(meters / 1000).toFixed(1)}km`;
+  };
 
   return (
-    <ConsumerLayout>
-      <div className="p-6 space-y-6">
-        {/* Search */}
-        <Input
-          type="search"
-          placeholder="Search businesses..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-
-        {/* Businesses List */}
-        <div className="space-y-4">
-          {businesses.length === 0 ? (
-            <Card>
-              <CardContent className="pt-6 text-center text-muted-foreground">
-                <p>No participating businesses yet</p>
-                <p className="text-sm mt-2">Check back soon!</p>
-              </CardContent>
-            </Card>
-          ) : (
-            businesses.map((business) => (
-              <Card key={business._id}>
-                <CardContent className="pt-6">
-                  <h3 className="font-semibold mb-1">{business.name}</h3>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    {business.category}
-                    {business.address && ` • ${business.address}`}
-                  </p>
-                  <Button variant="outline" size="sm" className="w-full">
-                    View Programs
-                  </Button>
-                </CardContent>
-              </Card>
-            ))
+    <div className="p-4 sm:p-6 space-y-4">
+        <div>
+          <h2 className="text-xl font-semibold">Nearby Rewards</h2>
+          {locationError && (
+            <p className="text-xs text-muted-foreground mt-1">
+              {locationError} - showing default area
+            </p>
           )}
         </div>
-      </div>
-    </ConsumerLayout>
+
+        {nearbyRewards.length === 0 ? (
+          <Card>
+            <CardContent className="pt-6 text-center text-muted-foreground">
+              <p>No rewards nearby</p>
+              <p className="text-sm mt-2">Check back soon for new businesses!</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-2">
+            {nearbyRewards.map((reward, index) => (
+              <Card
+                key={`${reward._id}-${index}`}
+                className="hover:bg-accent transition-colors"
+              >
+                <CardContent className="py-3 px-4">
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold truncate">
+                          {reward.businessName}
+                        </h3>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {reward.rewardDescription}
+                        </p>
+                        {reward.distance && (
+                          <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                            <MapPin className="w-3 h-3" />
+                            <span>{formatDistance(reward.distance)} away</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-sm font-medium">
+                          {reward.currentProgress
+                            ? `${reward.currentProgress.currentVisits}/${reward.visitsRequired}`
+                            : `0/${reward.visitsRequired}`}
+                        </p>
+                      </div>
+                    </div>
+                    {reward.currentProgress && (
+                      <Progress
+                        value={
+                          (reward.currentProgress.currentVisits /
+                            reward.visitsRequired) *
+                          100
+                        }
+                        className="h-1.5"
+                      />
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+    </div>
   );
 }
 

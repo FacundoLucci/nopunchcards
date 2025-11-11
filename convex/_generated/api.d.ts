@@ -10,6 +10,7 @@
 
 import type * as auth from "../auth.js";
 import type * as autumn from "../autumn.js";
+import type * as businesses_admin from "../businesses/admin.js";
 import type * as businesses_generateSlug from "../businesses/generateSlug.js";
 import type * as businesses_mutations from "../businesses/mutations.js";
 import type * as businesses_public from "../businesses/public.js";
@@ -56,6 +57,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   autumn: typeof autumn;
+  "businesses/admin": typeof businesses_admin;
   "businesses/generateSlug": typeof businesses_generateSlug;
   "businesses/mutations": typeof businesses_mutations;
   "businesses/public": typeof businesses_public;

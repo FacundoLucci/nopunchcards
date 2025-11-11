@@ -46,13 +46,20 @@ export const createAuth = (
 // This joins Better Auth user (component) with our profiles table (app)
 export const getCurrentUserWithProfile = async (ctx: any) => {
   const user = await authComponent.getAuthUser(ctx);
-  if (!user) return null;
+  if (!user) {
+    console.log("getCurrentUserWithProfile: No user from authComponent");
+    return null;
+  }
 
   const userId = user.userId || user._id;
+  console.log("getCurrentUserWithProfile: userId =", userId);
+  
   const profile = await ctx.db
     .query("profiles")
     .withIndex("by_userId", (q: any) => q.eq("userId", userId))
     .unique();
+
+  console.log("getCurrentUserWithProfile: profile found =", !!profile, profile?._id);
 
   return { ...user, id: userId, profile };
 };

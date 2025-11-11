@@ -1,9 +1,11 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated")({
-  beforeLoad: async ({ context, location }) => {
-    // Use the userId already fetched in root's beforeLoad (no extra server call!)
-    // This only blocks on SSR, on client navigation it's instant
+  // No SSR needed - auth check happens client-side now
+  ssr: false,
+  beforeLoad: async ({ location, context }) => {
+    // Use cached auth from root route (already checked via fetchAuth)
+    // This is instant - no HTTP request!
     if (!context.userId) {
       throw redirect({
         to: "/login",
@@ -20,8 +22,9 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthenticatedLayout() {
   return (
-    <div className="app-container min-h-screen">
+    <div className="app-container">
       <Outlet />
     </div>
   );
 }
+

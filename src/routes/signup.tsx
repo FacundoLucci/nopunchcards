@@ -1,12 +1,20 @@
-import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  useNavigate,
+  useSearch,
+} from "@tanstack/react-router";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-clients";
-import { useMutation } from "convex/react";
-import { api } from "../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -18,12 +26,15 @@ export const Route = createFileRoute("/signup")({
 
 function SignupPage() {
   const navigate = useNavigate();
-  const searchParams = useSearch({ from: "/signup" }) as { ref?: string };
-  const ensureProfile = useMutation(api.users.ensureProfile);
+  const searchParams = useSearch({ from: "/signup" }) as {
+    ref?: string;
+    mode?: "business" | "consumer";
+  };
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
+  const isBusiness = searchParams.mode === "business";
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,16 +53,19 @@ function SignupPage() {
         return;
       }
 
-      // Ensure profile exists for new user
-      await ensureProfile({});
-
       toast.success("Account created! Welcome to No Punch Cards");
+
+      // Note: Profile will be created automatically when user first accesses
+      // protected routes. This avoids race conditions with auth session sync.
 
       // If there's a referral param, redirect to that business page
       if (searchParams.ref) {
         navigate({ to: `/join/${searchParams.ref}` });
+      } else if (isBusiness) {
+        // Business signup: redirect to business registration
+        navigate({ to: "/business/register" });
       } else {
-        // Default: redirect to consumer onboarding
+        // Consumer signup: redirect to consumer onboarding
         navigate({ to: "/consumer/onboarding" });
       }
     } catch (error) {
@@ -67,10 +81,14 @@ function SignupPage() {
       </div>
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-2xl">Create Account</CardTitle>
+          <CardTitle className="text-2xl">
+            {isBusiness ? "Business Owner Sign Up" : "Create Account"}
+          </CardTitle>
           <CardDescription>
             {searchParams.ref
               ? "Sign up once, get loyalty everywhere"
+              : isBusiness
+              ? "Create an account to register your business"
               : "Start earning rewards at local businesses"}
           </CardDescription>
         </CardHeader>
@@ -124,4 +142,3 @@ function SignupPage() {
     </div>
   );
 }
-
