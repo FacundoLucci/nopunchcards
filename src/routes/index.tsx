@@ -60,8 +60,11 @@ function LandingPage() {
             </div>
           </div>
           <div className="hidden md:block">
-            {/* Placeholder for hero visual */}
-            <div className="aspect-square bg-muted rounded-lg" />
+            <img
+              src="/nano-banana-2025-11-11T15-20-36.png"
+              alt="No Punch Cards - Loyalty without the cards"
+              className="w-full h-auto rounded-lg shadow-lg"
+            />
           </div>
         </div>
       </section>
