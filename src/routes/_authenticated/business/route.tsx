@@ -53,7 +53,7 @@ function BusinessLayout() {
       {showHeader && (
         <header className="sticky top-0 bg-background/80 backdrop-blur-sm py-4 px-4 flex items-center justify-between z-10">
           <div className="flex flex-col gap-0.5">
-            <h1 className="text-lg font-extrabold text-white bg-[#F03D0C] rounded-[4px] px-1.5 text-center">
+            <h1 className="text-lg font-black text-white bg-[#F03D0C] rounded-md px-1.5 py-0">
               NO PUNCH CARDS
             </h1>
             <div className="relative h-4">

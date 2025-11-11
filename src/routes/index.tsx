@@ -11,10 +11,10 @@ function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 bg-background/80 backdrop-blur-sm border-b z-50">
+      <header className="fixed top-0 left-0 right-0 bg-background/80 backdrop-blur-sm z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-white bg-[#F03D0C] rounded-[4px] px-1.5 py-1.5">
-            No Punch Cards
+          <h1 className="text-2xl font-black text-white bg-[#F03D0C] rounded-md px-1.5 py-0">
+            NO PUNCH CARDS
           </h1>
           <div className="flex items-center gap-2">
             <ThemeToggle />

@@ -40,7 +40,7 @@ function ConsumerLayout() {
       {/* Conditional Header - shown only on main routes */}
       {showHeader && (
         <header className="sticky top-0 bg-background/80 backdrop-blur-sm py-4 px-4 flex items-center justify-between z-10">
-          <h1 className="text-xl font-bold text-white bg-[#F03D0C] rounded-md px-1.5 py-0.5">
+          <h1 className="text-lg font-black text-white bg-[#F03D0C] rounded-md px-1.5 py-0">
             NO PUNCH CARDS
           </h1>
           <div className="flex items-center gap-3">
