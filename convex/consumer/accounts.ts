@@ -44,6 +44,91 @@ export const listLinkedAccounts = query({
   },
 });
 
+// Query to get transactions for a specific account
+export const getAccountTransactions = query({
+  args: { accountId: v.id("plaidAccounts"), limit: v.optional(v.number()) },
+  returns: v.array(
+    v.object({
+      _id: v.id("transactions"),
+      merchantName: v.optional(v.string()),
+      businessName: v.optional(v.string()),
+      amount: v.number(),
+      date: v.string(),
+      currentVisits: v.optional(v.number()),
+      totalVisits: v.optional(v.number()),
+      status: v.union(
+        v.literal("pending"),
+        v.literal("matched"),
+        v.literal("unmatched")
+      ),
+    })
+  ),
+  handler: async (ctx, args) => {
+    const user = await authComponent.getAuthUser(ctx);
+    if (!user) throw new Error("Not authenticated");
+
+    const userId = user.userId || user._id;
+
+    // Verify the account belongs to the user
+    const account = await ctx.db.get(args.accountId);
+    if (!account || account.userId !== userId) {
+      throw new Error("Account not found or unauthorized");
+    }
+
+    const transactions = await ctx.db
+      .query("transactions")
+      .withIndex("by_userId_and_date", (q) => q.eq("userId", userId))
+      .order("desc")
+      .filter((q) => q.eq(q.field("plaidAccountId"), args.accountId))
+      .take(args.limit || 20);
+
+    const result = [];
+    for (const tx of transactions) {
+      let businessName = undefined;
+      let currentVisits = undefined;
+      let totalVisits = undefined;
+
+      if (tx.businessId) {
+        const business = await ctx.db.get(tx.businessId);
+        businessName = business?.name;
+
+        // Get active progress for this business
+        const progress = await ctx.db
+          .query("rewardProgress")
+          .withIndex("by_businessId", (q) => q.eq("businessId", tx.businessId!))
+          .filter((q) =>
+            q.and(
+              q.eq(q.field("userId"), userId),
+              q.eq(q.field("status"), "active")
+            )
+          )
+          .unique();
+
+        if (progress) {
+          const program = await ctx.db.get(progress.rewardProgramId);
+          if (program) {
+            currentVisits = progress.currentVisits;
+            totalVisits = program.rules.visits;
+          }
+        }
+      }
+
+      result.push({
+        _id: tx._id,
+        merchantName: tx.merchantName,
+        businessName,
+        amount: tx.amount,
+        date: tx.date,
+        currentVisits,
+        totalVisits,
+        status: tx.status,
+      });
+    }
+
+    return result;
+  },
+});
+
 // Mutation to disconnect a Plaid account
 export const disconnectAccount = mutation({
   args: {

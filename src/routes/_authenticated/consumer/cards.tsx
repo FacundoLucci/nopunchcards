@@ -2,9 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "../../../../convex/_generated/api";
-import { Suspense, useState } from "react";
+import { Suspense, useState, useMemo } from "react";
 import { CreditCard } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import type { Id } from "../../../../convex/_generated/dataModel";
 
 export const Route = createFileRoute("/_authenticated/consumer/cards")({
   // Client-side rendering for instant navigation
@@ -26,7 +27,7 @@ function CardsPage() {
         <div>
           <h2 className="text-xl sm:text-2xl font-bold mb-2">Your Cards</h2>
           <p className="text-muted-foreground text-sm sm:text-base">
-            Manage your linked payment methods
+            Click the deck to cycle through your cards
           </p>
         </div>
 
@@ -41,7 +42,16 @@ function CardsSection() {
   const { data: accounts } = useSuspenseQuery(
     convexQuery(api.consumer.accounts.listLinkedAccounts, {})
   );
-  const [expandedCard, setExpandedCard] = useState<string | null>(null);
+  const [activeCardIndex, setActiveCardIndex] = useState(0);
+
+  // Generate random tilts once on mount
+  const cardTilts = useMemo(
+    () =>
+      accounts.map(
+        () => Math.random() * 6 - 3 // Random tilt between -3 and 3 degrees
+      ),
+    [accounts.length]
+  );
 
   if (accounts.length === 0) {
     return (
@@ -54,27 +64,42 @@ function CardsSection() {
     );
   }
 
+  const handleCardClick = () => {
+    setActiveCardIndex((prev) => (prev + 1) % accounts.length);
+  };
+
+  const activeAccount = accounts[activeCardIndex];
+
   return (
     <div className="space-y-6">
       {/* Card Stack - constrained width for better proportions */}
-      <div className="relative min-h-[220px] sm:min-h-[240px] max-w-[320px] mx-auto">
-        <AnimatePresence>
-          {accounts.map((account, index) => (
-            <CreditCardComponent
-              key={account._id}
-              account={account}
-              index={index}
-              totalCards={accounts.length}
-              isExpanded={expandedCard === account._id}
-              onToggleExpand={() =>
-                setExpandedCard(
-                  expandedCard === account._id ? null : account._id
-                )
-              }
-            />
-          ))}
+      <div
+        className="relative min-h-[220px] sm:min-h-[240px] max-w-[320px] mx-auto cursor-pointer"
+        onClick={handleCardClick}
+      >
+        <AnimatePresence mode="popLayout">
+          {accounts.map((account, index) => {
+            const isActive = index === activeCardIndex;
+            const offset =
+              (index - activeCardIndex + accounts.length) % accounts.length;
+
+            return (
+              <CreditCardComponent
+                key={account._id}
+                account={account}
+                index={index}
+                offset={offset}
+                tilt={cardTilts[index]}
+                isActive={isActive}
+                totalCards={accounts.length}
+              />
+            );
+          })}
         </AnimatePresence>
       </div>
+
+      {/* Transactions for active card */}
+      {activeAccount && <TransactionsList accountId={activeAccount._id} />}
     </div>
   );
 }
@@ -89,17 +114,19 @@ interface CreditCardProps {
     createdAt: number;
   };
   index: number;
+  offset: number; // Position relative to active card
+  tilt: number; // Random rotation in degrees
+  isActive: boolean;
   totalCards: number;
-  isExpanded: boolean;
-  onToggleExpand: () => void;
 }
 
 function CreditCardComponent({
   account,
   index,
+  offset,
+  tilt,
+  isActive,
   totalCards,
-  isExpanded,
-  onToggleExpand,
 }: CreditCardProps) {
   // Generate a unique gradient for each institution
   const gradients = [
@@ -112,9 +139,8 @@ function CreditCardComponent({
 
   const gradient = gradients[index % gradients.length];
 
-  // Calculate card offset in stack
-  const stackOffset = isExpanded ? 0 : index * 12;
-  const zIndex = totalCards - index;
+  // Calculate z-index: active card on top, then by offset
+  const zIndex = isActive ? 100 : totalCards - offset;
 
   // Format last sync date
   const lastSyncText = account.lastSyncedAt
@@ -136,11 +162,12 @@ function CreditCardComponent({
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 20, rotate: 0 }}
       animate={{
-        opacity: 1,
-        y: isExpanded ? index * 280 : stackOffset,
-        scale: isExpanded ? 1 : 1 - index * 0.02,
+        opacity: offset === 0 ? 1 : 0.4 + offset * 0.1, // Active card fully visible
+        y: offset * 8, // Stack offset
+        scale: offset === 0 ? 1 : 1 - offset * 0.03, // Slight scaling
+        rotate: offset === 0 ? 0 : tilt, // Apply random tilt to stacked cards
       }}
       exit={{ opacity: 0, scale: 0.8 }}
       transition={{
@@ -148,8 +175,7 @@ function CreditCardComponent({
         stiffness: 300,
         damping: 30,
       }}
-      onClick={onToggleExpand}
-      className="absolute inset-x-0 cursor-pointer select-none"
+      className="absolute inset-x-0 pointer-events-none select-none"
       style={{ zIndex }}
     >
       <div
@@ -324,6 +350,110 @@ function EmptyCardPlaceholder() {
         <p className="text-xs sm:text-sm mt-1 opacity-75">
           Link a card to start earning rewards
         </p>
+      </div>
+    </div>
+  );
+}
+
+interface TransactionsListProps {
+  accountId: Id<"plaidAccounts">;
+}
+
+function TransactionsList({ accountId }: TransactionsListProps) {
+  const { data: transactions } = useSuspenseQuery(
+    convexQuery(api.consumer.accounts.getAccountTransactions, { accountId })
+  );
+
+  if (transactions.length === 0) {
+    return (
+      <div className="mt-8">
+        <h3 className="text-lg font-semibold mb-4">Recent Transactions</h3>
+        <div className="text-center py-8 text-muted-foreground">
+          <p className="text-sm">No transactions found for this card</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-8">
+      <h3 className="text-lg font-semibold mb-4">Recent Transactions</h3>
+      <div className="space-y-3">
+        {transactions.map((transaction) => (
+          <TransactionItem key={transaction._id} transaction={transaction} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+interface TransactionItemProps {
+  transaction: {
+    _id: Id<"transactions">;
+    merchantName?: string;
+    businessName?: string;
+    amount: number;
+    date: string;
+    currentVisits?: number;
+    totalVisits?: number;
+    status: "pending" | "matched" | "unmatched";
+  };
+}
+
+function TransactionItem({ transaction }: TransactionItemProps) {
+  const displayName =
+    transaction.businessName || transaction.merchantName || "Unknown Merchant";
+  const isMatched = transaction.status === "matched";
+  const hasProgress =
+    transaction.currentVisits !== undefined &&
+    transaction.totalVisits !== undefined;
+
+  // Format amount
+  const formattedAmount = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(Math.abs(transaction.amount) / 100);
+
+  // Format date
+  const formattedDate = new Date(transaction.date).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  return (
+    <div className="flex items-center justify-between p-4 rounded-lg bg-card border border-border hover:bg-accent/50 transition-colors">
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <p className="font-medium truncate">{displayName}</p>
+          {isMatched && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
+              Matched
+            </span>
+          )}
+        </div>
+        <p className="text-sm text-muted-foreground mt-0.5">{formattedDate}</p>
+        {hasProgress && (
+          <div className="flex items-center gap-2 mt-2">
+            <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary rounded-full transition-all"
+                style={{
+                  width: `${
+                    (transaction.currentVisits! / transaction.totalVisits!) *
+                    100
+                  }%`,
+                }}
+              />
+            </div>
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              {transaction.currentVisits}/{transaction.totalVisits}
+            </span>
+          </div>
+        )}
+      </div>
+      <div className="ml-4 shrink-0">
+        <p className="font-semibold">{formattedAmount}</p>
       </div>
     </div>
   );
