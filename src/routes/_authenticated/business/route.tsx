@@ -11,6 +11,8 @@ import { Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BottomFade } from "@/components/consumer/BottomFade";
 import { BusinessRoutePrefetcher } from "@/components/business/RoutePrefetcher";
+import { useQuery } from "convex/react";
+import { api } from "../../../../convex/_generated/api";
 
 export const Route = createFileRoute("/_authenticated/business")({
   component: BusinessLayout,
@@ -20,6 +22,10 @@ function BusinessLayout() {
   const matchRoute = useMatchRoute();
   const navigate = useNavigate();
   const router = useRouter();
+  
+  // Check onboarding status to hide nav during redirect
+  const onboardingStatus = useQuery(api.onboarding.queries.getOnboardingStatus);
+  const needsOnboarding = onboardingStatus?.needsOnboarding ?? false;
 
   // Detect if we're on a main route (show header) or detail route (hide header)
   const isDashboard = !!matchRoute({ to: "/business/dashboard" });
@@ -29,7 +35,7 @@ function BusinessLayout() {
   const isProgramsCreate = !!matchRoute({ to: "/business/programs/create" });
 
   const showHeader = isDashboard || isPrograms || isAnalytics || isSettings;
-  const showNav = !isProgramsCreate; // Hide nav on programs/create
+  const showNav = !isProgramsCreate && !needsOnboarding; // Hide nav on programs/create and during onboarding
 
   // Get title based on route
   const getTitle = () => {

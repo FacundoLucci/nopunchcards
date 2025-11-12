@@ -1,5 +1,5 @@
 import { Link, useMatchRoute, useRouter } from "@tanstack/react-router";
-import { Home, Search, ArrowLeft } from "lucide-react";
+import { Home, Search, ArrowLeft, Wallet } from "lucide-react";
 import { motion } from "framer-motion";
 import { useCallback } from "react";
 
@@ -9,6 +9,7 @@ export function BottomNav() {
 
   const isDashboard = !!matchRoute({ to: "/consumer/dashboard" });
   const isMerchants = !!matchRoute({ to: "/consumer/merchants" });
+  const isCards = !!matchRoute({ to: "/consumer/cards" });
   const isNotifications = !!matchRoute({ to: "/consumer/notifications" });
   const isSettings = !!matchRoute({ to: "/consumer/settings" });
   const isRewards = !!matchRoute({ to: "/consumer/rewards" });
@@ -68,6 +69,27 @@ export function BottomNav() {
               className="w-6 h-6 transition-all relative z-10"
               fill={isDashboard ? "currentColor" : "none"}
               strokeWidth={isDashboard ? 2 : 1.5}
+            />
+          </Link>
+          <Link
+            to="/consumer/cards"
+            onTouchStart={() => handleTouchStart("/consumer/cards")}
+            className="flex items-center justify-center transition-all p-2 rounded-full hover:bg-accent/50 min-w-[40px] min-h-[40px] relative z-10"
+          >
+            {isCards && (
+              <motion.div
+                layoutId="nav-highlight"
+                className="absolute inset-0 bg-primary/10 rounded-full"
+                transition={{
+                  type: "spring",
+                  stiffness: 500,
+                  damping: 35,
+                }}
+              />
+            )}
+            <Wallet
+              className="w-6 h-6 transition-all relative z-10"
+              strokeWidth={isCards ? 2 : 1.5}
             />
           </Link>
           <Link

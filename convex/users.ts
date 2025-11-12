@@ -147,6 +147,24 @@ export async function requireRole(
   return userWithProfile;
 }
 
+// Helper: Try to require role, but return null instead of throwing if profile missing
+// Useful for queries that should gracefully handle incomplete onboarding
+export async function tryRequireRole(
+  ctx: QueryCtx | MutationCtx,
+  allowedRoles: Array<"consumer" | "business_owner" | "admin">
+) {
+  try {
+    return await requireRole(ctx, allowedRoles);
+  } catch (error: any) {
+    if (error.message?.includes("Profile not found")) {
+      // Return null if profile not found - let frontend handle redirect
+      return null;
+    }
+    // Re-throw other errors (authentication, authorization)
+    throw error;
+  }
+}
+
 // Update user's name in Better Auth user table
 export const updateName = mutation({
   args: {

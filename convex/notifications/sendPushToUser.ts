@@ -4,11 +4,14 @@ import { internal } from "../_generated/api";
 import { v } from "convex/values";
 import webpush from "web-push";
 
-webpush.setVapidDetails(
-  "mailto:support@nopunchcards.com",
-  process.env.VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+// Only set VAPID details if environment variables are provided
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    "mailto:support@nopunchcards.com",
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+}
 
 export const sendPushToUser = internalAction({
   args: {

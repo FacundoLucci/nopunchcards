@@ -24,6 +24,7 @@ import { Route as AuthenticatedConsumerOnboardingRouteImport } from './routes/_a
 import { Route as AuthenticatedConsumerNotificationsRouteImport } from './routes/_authenticated/consumer/notifications'
 import { Route as AuthenticatedConsumerMerchantsRouteImport } from './routes/_authenticated/consumer/merchants'
 import { Route as AuthenticatedConsumerDashboardRouteImport } from './routes/_authenticated/consumer/dashboard'
+import { Route as AuthenticatedConsumerCardsRouteImport } from './routes/_authenticated/consumer/cards'
 import { Route as AuthenticatedBusinessSettingsRouteImport } from './routes/_authenticated/business/settings'
 import { Route as AuthenticatedBusinessRegisterRouteImport } from './routes/_authenticated/business/register'
 import { Route as AuthenticatedBusinessDashboardRouteImport } from './routes/_authenticated/business/dashboard'
@@ -113,6 +114,12 @@ const AuthenticatedConsumerDashboardRoute =
     path: '/dashboard',
     getParentRoute: () => AuthenticatedConsumerRouteRoute,
   } as any)
+const AuthenticatedConsumerCardsRoute =
+  AuthenticatedConsumerCardsRouteImport.update({
+    id: '/cards',
+    path: '/cards',
+    getParentRoute: () => AuthenticatedConsumerRouteRoute,
+  } as any)
 const AuthenticatedBusinessSettingsRoute =
   AuthenticatedBusinessSettingsRouteImport.update({
     id: '/settings',
@@ -169,6 +176,7 @@ export interface FileRoutesByFullPath {
   '/business/dashboard': typeof AuthenticatedBusinessDashboardRoute
   '/business/register': typeof AuthenticatedBusinessRegisterRoute
   '/business/settings': typeof AuthenticatedBusinessSettingsRoute
+  '/consumer/cards': typeof AuthenticatedConsumerCardsRoute
   '/consumer/dashboard': typeof AuthenticatedConsumerDashboardRoute
   '/consumer/merchants': typeof AuthenticatedConsumerMerchantsRoute
   '/consumer/notifications': typeof AuthenticatedConsumerNotificationsRoute
@@ -192,6 +200,7 @@ export interface FileRoutesByTo {
   '/business/dashboard': typeof AuthenticatedBusinessDashboardRoute
   '/business/register': typeof AuthenticatedBusinessRegisterRoute
   '/business/settings': typeof AuthenticatedBusinessSettingsRoute
+  '/consumer/cards': typeof AuthenticatedConsumerCardsRoute
   '/consumer/dashboard': typeof AuthenticatedConsumerDashboardRoute
   '/consumer/merchants': typeof AuthenticatedConsumerMerchantsRoute
   '/consumer/notifications': typeof AuthenticatedConsumerNotificationsRoute
@@ -217,6 +226,7 @@ export interface FileRoutesById {
   '/_authenticated/business/dashboard': typeof AuthenticatedBusinessDashboardRoute
   '/_authenticated/business/register': typeof AuthenticatedBusinessRegisterRoute
   '/_authenticated/business/settings': typeof AuthenticatedBusinessSettingsRoute
+  '/_authenticated/consumer/cards': typeof AuthenticatedConsumerCardsRoute
   '/_authenticated/consumer/dashboard': typeof AuthenticatedConsumerDashboardRoute
   '/_authenticated/consumer/merchants': typeof AuthenticatedConsumerMerchantsRoute
   '/_authenticated/consumer/notifications': typeof AuthenticatedConsumerNotificationsRoute
@@ -242,6 +252,7 @@ export interface FileRouteTypes {
     | '/business/dashboard'
     | '/business/register'
     | '/business/settings'
+    | '/consumer/cards'
     | '/consumer/dashboard'
     | '/consumer/merchants'
     | '/consumer/notifications'
@@ -265,6 +276,7 @@ export interface FileRouteTypes {
     | '/business/dashboard'
     | '/business/register'
     | '/business/settings'
+    | '/consumer/cards'
     | '/consumer/dashboard'
     | '/consumer/merchants'
     | '/consumer/notifications'
@@ -289,6 +301,7 @@ export interface FileRouteTypes {
     | '/_authenticated/business/dashboard'
     | '/_authenticated/business/register'
     | '/_authenticated/business/settings'
+    | '/_authenticated/consumer/cards'
     | '/_authenticated/consumer/dashboard'
     | '/_authenticated/consumer/merchants'
     | '/_authenticated/consumer/notifications'
@@ -417,6 +430,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedConsumerDashboardRouteImport
       parentRoute: typeof AuthenticatedConsumerRouteRoute
     }
+    '/_authenticated/consumer/cards': {
+      id: '/_authenticated/consumer/cards'
+      path: '/cards'
+      fullPath: '/consumer/cards'
+      preLoaderRoute: typeof AuthenticatedConsumerCardsRouteImport
+      parentRoute: typeof AuthenticatedConsumerRouteRoute
+    }
     '/_authenticated/business/settings': {
       id: '/_authenticated/business/settings'
       path: '/settings'
@@ -496,6 +516,7 @@ const AuthenticatedBusinessRouteRouteWithChildren =
   )
 
 interface AuthenticatedConsumerRouteRouteChildren {
+  AuthenticatedConsumerCardsRoute: typeof AuthenticatedConsumerCardsRoute
   AuthenticatedConsumerDashboardRoute: typeof AuthenticatedConsumerDashboardRoute
   AuthenticatedConsumerMerchantsRoute: typeof AuthenticatedConsumerMerchantsRoute
   AuthenticatedConsumerNotificationsRoute: typeof AuthenticatedConsumerNotificationsRoute
@@ -506,6 +527,7 @@ interface AuthenticatedConsumerRouteRouteChildren {
 
 const AuthenticatedConsumerRouteRouteChildren: AuthenticatedConsumerRouteRouteChildren =
   {
+    AuthenticatedConsumerCardsRoute: AuthenticatedConsumerCardsRoute,
     AuthenticatedConsumerDashboardRoute: AuthenticatedConsumerDashboardRoute,
     AuthenticatedConsumerMerchantsRoute: AuthenticatedConsumerMerchantsRoute,
     AuthenticatedConsumerNotificationsRoute:

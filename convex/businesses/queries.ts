@@ -1,6 +1,6 @@
 import { query } from "../_generated/server";
 import { v } from "convex/values";
-import { requireRole } from "../users";
+import { tryRequireRole } from "../users";
 
 export const getMyBusinesses = query({
   args: {},
@@ -23,7 +23,15 @@ export const getMyBusinesses = query({
     })
   ),
   handler: async (ctx) => {
-    const user = await requireRole(ctx, ["business_owner", "admin"]);
+    // Try to get user with role, but handle missing profile gracefully
+    const user = await tryRequireRole(ctx, ["business_owner", "admin"]);
+    
+    // If no profile (user hasn't completed onboarding), return empty array
+    // OnboardingGuard will redirect user to onboarding
+    if (!user) {
+      console.log("getMyBusinesses: No profile found, returning empty array");
+      return [];
+    }
 
     return await ctx.db
       .query("businesses")
@@ -41,7 +49,11 @@ export const getDashboardStats = query({
     averageVisits: v.number(),
   }),
   handler: async (ctx, args) => {
-    const user = await requireRole(ctx, ["business_owner", "admin"]);
+    const user = await tryRequireRole(ctx, ["business_owner", "admin"]);
+    
+    if (!user) {
+      throw new Error("Not authenticated or profile not found");
+    }
 
     const business = await ctx.db.get(args.businessId);
     if (!business) {

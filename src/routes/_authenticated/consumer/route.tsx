@@ -23,9 +23,14 @@ function ConsumerLayout() {
   // Detect if we're on a main route (show header) or detail route (hide header)
   const isDashboard = !!matchRoute({ to: "/consumer/dashboard" });
   const isMerchants = !!matchRoute({ to: "/consumer/merchants" });
-  const showHeader = isDashboard || isMerchants;
+  const isCards = !!matchRoute({ to: "/consumer/cards" });
+  const isOnboarding = !!matchRoute({ to: "/consumer/onboarding" });
+  const showHeader = isDashboard || isMerchants || isCards;
 
   const isNotifications = !!matchRoute({ to: "/consumer/notifications" });
+
+  // Hide nav and header on onboarding
+  const showNav = !isOnboarding;
 
   // Preload on touchstart for instant navigation
   const handleTouchStart = (to: string) => {
@@ -33,12 +38,12 @@ function ConsumerLayout() {
   };
 
   return (
-    <div className="pb-28">
+    <div className={showNav ? "pb-28" : ""}>
       {/* Prefetch all consumer routes for instant navigation */}
-      <ConsumerRoutePrefetcher />
+      {showNav && <ConsumerRoutePrefetcher />}
 
       {/* Conditional Header - shown only on main routes */}
-      {showHeader && (
+      {showHeader && showNav && (
         <header className="sticky top-0 bg-background/80 backdrop-blur-sm py-4 px-4 flex items-center justify-between z-10">
           <h1 className="text-lg font-black text-white bg-[#F03D0C] rounded-md px-1.5 py-0">
             NO PUNCH CARDS
@@ -64,10 +69,10 @@ function ConsumerLayout() {
       <Outlet />
 
       {/* Fade effect behind navigation */}
-      <BottomFade />
+      {showNav && <BottomFade />}
 
-      {/* Navigation - always visible */}
-      <BottomNav />
+      {/* Navigation - conditionally visible */}
+      {showNav && <BottomNav />}
     </div>
   );
 }

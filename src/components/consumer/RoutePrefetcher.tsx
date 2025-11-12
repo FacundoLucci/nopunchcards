@@ -12,6 +12,7 @@ export function ConsumerRoutePrefetcher() {
     // Prefetch all main consumer routes immediately
     const routesToPrefetch = [
       "/consumer/dashboard",
+      "/consumer/cards",
       "/consumer/merchants",
       "/consumer/notifications",
       "/consumer/settings",

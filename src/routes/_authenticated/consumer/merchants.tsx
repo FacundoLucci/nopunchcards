@@ -39,14 +39,14 @@ function MerchantsContent() {
         (error) => {
           console.error("Error getting location:", error);
           setLocationError("Unable to get your location");
-          // Use default location (San Francisco) as fallback
-          setUserLocation({ lat: 37.7749, lng: -122.4194 });
+          // Use Chicago as fallback (where demo businesses are located)
+          setUserLocation({ lat: 41.8781, lng: -87.6298 });
         }
       );
     } else {
       setLocationError("Geolocation not supported");
-      // Use default location (San Francisco) as fallback
-      setUserLocation({ lat: 37.7749, lng: -122.4194 });
+      // Use Chicago as fallback (where demo businesses are located)
+      setUserLocation({ lat: 41.8781, lng: -87.6298 });
     }
   }, []);
 
@@ -72,7 +72,7 @@ function NearbyRewardsList({
     convexQuery(api.consumer.queries.getNearbyRewards, {
       userLat: userLocation.lat,
       userLng: userLocation.lng,
-      radiusMeters: 50000, // 50km radius
+      radiusMeters: 100000, // 100km radius (increased for better coverage)
     })
   );
 
