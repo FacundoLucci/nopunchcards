@@ -1,13 +1,29 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
 });
 
 function LandingPage() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Detect if the app is running in standalone mode (saved to home screen)
+    const isStandalone =
+      // iOS Safari
+      (window.navigator as any).standalone ||
+      // Other browsers supporting display-mode
+      window.matchMedia("(display-mode: standalone)").matches;
+
+    // If in standalone mode, redirect to login
+    if (isStandalone) {
+      navigate({ to: "/login", search: { redirect: "/app" } });
+    }
+  }, [navigate]);
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}

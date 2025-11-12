@@ -1,11 +1,11 @@
 {
-  "name": "Favicon App",
-  "short_name": "Favicon",
-  "description": "Generated favicon application",
+  "name": "No Punch Cards",
+  "short_name": "NoPunchCards",
+  "description": "Loyalty without the cards - Automatic rewards every time you shop locally",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "theme_color": "#F03D0C",
   "icons": [
     {
       "src": "favicon-16x16.png",
@@ -36,6 +36,21 @@
       "src": "favicon-256x256.png",
       "sizes": "256x256",
       "type": "image/png"
+    },
+    {
+      "src": "logo192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "orientation": "portrait",
+  "scope": "/",
+  "categories": ["shopping", "business", "lifestyle"]
 }
