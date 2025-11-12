@@ -424,7 +424,7 @@ export const createDemoData = internalMutation({
           if (rewardProgram.type === "visit" && "visits" in rules) {
             const currentVisits = transactions.length;
             const totalEarned = Math.floor(currentVisits / rules.visits);
-            const lastTransaction = transactions.sort((a, b) => b.createdAt - a.createdAt)[0];
+            const lastTransaction = [...transactions].sort((a, b) => b.createdAt - a.createdAt)[0];
             
             await ctx.db.insert("rewardProgress", {
               userId: consumerId,
