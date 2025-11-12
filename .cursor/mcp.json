@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "favicon-generator": {
+      "command": "uvx",
+      "args": ["auto-favicon"],
+      "env": {}
+    }
+  }
+}
+
+
