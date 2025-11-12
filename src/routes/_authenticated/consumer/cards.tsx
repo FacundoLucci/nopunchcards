@@ -3,10 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "../../../../convex/_generated/api";
 import { Suspense, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { CreditCard, Plus } from "lucide-react";
-import { useAction } from "convex/react";
-import { toast } from "sonner";
+import { CreditCard } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export const Route = createFileRoute("/_authenticated/consumer/cards")({
@@ -24,7 +21,7 @@ function CardsPage() {
         </div>
       }
     >
-      <div className="p-4 sm:p-6 space-y-6 sm:space-y-8 pb-8">
+      <div className="p-4 sm:p-6 space-y-6 sm:space-y-8 pb-24">
         {/* Header */}
         <div>
           <h2 className="text-xl sm:text-2xl font-bold mb-2">Your Cards</h2>
@@ -44,55 +41,15 @@ function CardsSection() {
   const { data: accounts } = useSuspenseQuery(
     convexQuery(api.consumer.accounts.listLinkedAccounts, {})
   );
-  const createLinkToken = useAction(api.plaid.linkToken.createLinkToken);
-  const exchangeToken = useAction(api.plaid.exchangeToken.exchangePublicToken);
-  const [linking, setLinking] = useState(false);
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
-
-  const handleAddCard = async () => {
-    if (linking) return;
-
-    setLinking(true);
-    try {
-      const { linkToken } = await createLinkToken({});
-
-      // Initialize Plaid Link
-      // @ts-ignore - Plaid Link will be loaded via script tag
-      const handler = window.Plaid.create({
-        token: linkToken,
-        onSuccess: async (publicToken: string) => {
-          try {
-            await exchangeToken({ publicToken });
-            toast.success("Card linked successfully!");
-          } catch (error) {
-            toast.error("Failed to link card");
-          }
-        },
-        onExit: () => {
-          setLinking(false);
-        },
-      });
-
-      handler.open();
-    } catch (error) {
-      toast.error("Failed to start Plaid Link");
-      setLinking(false);
-    }
-  };
 
   if (accounts.length === 0) {
     return (
       <div className="space-y-4 max-w-[320px] mx-auto">
         <EmptyCardPlaceholder />
-        <Button
-          onClick={handleAddCard}
-          disabled={linking}
-          className="w-full"
-          size="lg"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          {linking ? "Opening Plaid..." : "Link Your First Card"}
-        </Button>
+        <p className="text-center text-sm text-muted-foreground">
+          Click "Add Card" below to link your first card
+        </p>
       </div>
     );
   }
@@ -117,20 +74,6 @@ function CardsSection() {
             />
           ))}
         </AnimatePresence>
-      </div>
-
-      {/* Add Card Button */}
-      <div className="max-w-[320px] mx-auto">
-        <Button
-          onClick={handleAddCard}
-          disabled={linking}
-          variant="outline"
-          className="w-full"
-          size="lg"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          {linking ? "Opening Plaid..." : "Add Another Card"}
-        </Button>
       </div>
     </div>
   );
@@ -187,8 +130,8 @@ function CreditCardComponent({
     account.status === "active"
       ? "text-emerald-400"
       : account.status === "error"
-        ? "text-red-400"
-        : "text-gray-400";
+      ? "text-red-400"
+      : "text-gray-400";
 
   return (
     <motion.div
@@ -210,8 +153,49 @@ function CreditCardComponent({
       style={{ zIndex }}
     >
       <div
-        className={`relative w-full aspect-[1.586/1] rounded-2xl bg-gradient-to-br ${gradient} p-6 shadow-xl overflow-hidden`}
+        className={`relative w-full aspect-[1.586/1] rounded-2xl bg-linear-to-br ${gradient} p-6 overflow-hidden`}
+        style={{
+          boxShadow: `
+            0 1px 0 0 rgba(255, 255, 255, 0.1),
+            0 -1px 0 0 rgba(0, 0, 0, 0.1),
+            0 20px 60px -10px rgba(0, 0, 0, 0.3)
+          `,
+        }}
       >
+        {/* Top Edge - crisp highlight */}
+        <div
+          className="absolute top-0 left-0 right-0 h-px pointer-events-none rounded-t-3xl"
+          style={{
+            background:
+              "linear-gradient(to bottom, rgba(255, 255, 255, 0.4), transparent)",
+          }}
+        />
+
+        {/* Bottom Edge - crisp shadow */}
+        <div
+          className="absolute bottom-0 left-0 right-0 h-px pointer-events-none rounded-b-3xl"
+          style={{
+            background:
+              "linear-gradient(to top, rgba(0, 0, 0, 0.1), transparent)",
+          }}
+        />
+
+        {/* Side edges for 3D thickness */}
+        <div
+          className="absolute top-0 bottom-0 left-0 w-px pointer-events-none rounded-l-3xl"
+          style={{
+            background:
+              "linear-gradient(to right, rgba(0, 0, 0, 0.1), transparent)",
+          }}
+        />
+        <div
+          className="absolute top-0 bottom-0 right-0 w-px pointer-events-none rounded-r-3xl"
+          style={{
+            background:
+              "linear-gradient(to left, rgba(0, 0, 0, 0.1), transparent)",
+          }}
+        />
+
         {/* Card Pattern/Texture */}
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjA1IiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-50" />
 
@@ -229,8 +213,8 @@ function CreditCardComponent({
                     account.status === "active"
                       ? "bg-emerald-400"
                       : account.status === "error"
-                        ? "bg-red-400"
-                        : "bg-gray-400"
+                      ? "bg-red-400"
+                      : "bg-gray-400"
                   }`}
                 />
                 <span className={`text-xs ${statusColor} capitalize`}>
@@ -278,7 +262,7 @@ function CreditCardComponent({
         </div>
 
         {/* Shine Effect */}
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
+        <div className="absolute top-0 left-0 w-full h-full bg-linear-to-br from-white/10 to-transparent pointer-events-none" />
       </div>
     </motion.div>
   );
@@ -286,7 +270,50 @@ function CreditCardComponent({
 
 function EmptyCardPlaceholder() {
   return (
-    <div className="relative w-full aspect-[1.586/1] rounded-2xl bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-900 p-6 shadow-xl overflow-hidden border-2 border-dashed border-gray-400 dark:border-gray-600">
+    <div
+      className="relative w-full aspect-[1.586/1] rounded-xl bg-linear-to-br from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-900 p-6 overflow-hidden border-2 border-dashed border-gray-400 dark:border-gray-600"
+      style={{
+        boxShadow: `
+          0 1px 0 0 rgba(255, 255, 255, 0.15),
+          0 -1px 0 0 rgba(0, 0, 0, 0.15),
+          0 20px 60px -10px rgba(0, 0, 0, 0.2)
+        `,
+      }}
+    >
+      {/* Top Edge - crisp highlight */}
+      <div
+        className="absolute top-0 left-0 right-0 h-px pointer-events-none rounded-t-3xl"
+        style={{
+          background:
+            "linear-gradient(to bottom, rgba(255, 255, 255, 0.2), transparent)",
+        }}
+      />
+
+      {/* Bottom Edge - crisp shadow */}
+      <div
+        className="absolute bottom-0 left-0 right-0 h-[2px] pointer-events-none rounded-b-2xl"
+        style={{
+          background:
+            "linear-gradient(to top, rgba(0, 0, 0, 0.2), transparent)",
+        }}
+      />
+
+      {/* Side edges for 3D thickness */}
+      <div
+        className="absolute top-0 bottom-0 left-0 w-[2px] pointer-events-none rounded-l-2xl"
+        style={{
+          background:
+            "linear-gradient(to right, rgba(0, 0, 0, 0.15), transparent)",
+        }}
+      />
+      <div
+        className="absolute top-0 bottom-0 right-0 w-[2px] pointer-events-none rounded-r-2xl"
+        style={{
+          background:
+            "linear-gradient(to left, rgba(0, 0, 0, 0.1), transparent)",
+        }}
+      />
+
       {/* Card Pattern */}
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjA1IiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-30" />
 
@@ -301,4 +328,3 @@ function EmptyCardPlaceholder() {
     </div>
   );
 }
-

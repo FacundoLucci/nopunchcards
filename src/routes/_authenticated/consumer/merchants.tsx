@@ -3,7 +3,6 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "../../../../convex/_generated/api";
 import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { useState, Suspense, useEffect } from "react";
 import { OnboardingGuard } from "@/components/OnboardingGuard";
 import { MapPin } from "lucide-react";
@@ -15,7 +14,9 @@ export const Route = createFileRoute("/_authenticated/consumer/merchants")({
 
 function MerchantsPage() {
   return (
-    <Suspense fallback={<div className="p-6 text-muted-foreground">Loading...</div>}>
+    <Suspense
+      fallback={<div className="p-6 text-muted-foreground">Loading...</div>}
+    >
       <OnboardingGuard>
         <MerchantsContent />
       </OnboardingGuard>
@@ -24,7 +25,10 @@ function MerchantsPage() {
 }
 
 function MerchantsContent() {
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -58,7 +62,12 @@ function MerchantsContent() {
     );
   }
 
-  return <NearbyRewardsList userLocation={userLocation} locationError={locationError} />;
+  return (
+    <NearbyRewardsList
+      userLocation={userLocation}
+      locationError={locationError}
+    />
+  );
 }
 
 function NearbyRewardsList({
@@ -82,73 +91,95 @@ function NearbyRewardsList({
     return `${(meters / 1000).toFixed(1)}km`;
   };
 
+  // Group rewards by business
+  const businessMap = new Map<
+    string,
+    {
+      businessName: string;
+      distance?: number;
+      rewards: Array<{ description: string; visits: number }>;
+    }
+  >();
+
+  nearbyRewards.forEach((reward) => {
+    const businessId = reward._id;
+    if (!businessMap.has(businessId)) {
+      businessMap.set(businessId, {
+        businessName: reward.businessName,
+        distance: reward.distance,
+        rewards: [],
+      });
+    }
+    const business = businessMap.get(businessId)!;
+    business.rewards.push({
+      description: reward.rewardDescription,
+      visits: reward.visitsRequired,
+    });
+  });
+
+  const businesses = Array.from(businessMap.values());
+
   return (
     <div className="p-4 sm:p-6 space-y-4">
-        <div>
-          <h2 className="text-xl font-semibold">Nearby Rewards</h2>
-          {locationError && (
-            <p className="text-xs text-muted-foreground mt-1">
-              {locationError} - showing default area
-            </p>
-          )}
-        </div>
+      <div>
+        <h2 className="text-xl font-semibold">Nearby Rewards</h2>
+        {locationError && (
+          <p className="text-xs text-muted-foreground mt-1">
+            {locationError} - showing default area
+          </p>
+        )}
+      </div>
 
-        {nearbyRewards.length === 0 ? (
-          <Card>
-            <CardContent className="pt-6 text-center text-muted-foreground">
-              <p>No rewards nearby</p>
-              <p className="text-sm mt-2">Check back soon for new businesses!</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-2">
-            {nearbyRewards.map((reward, index) => (
-              <Card
-                key={`${reward._id}-${index}`}
-                className="hover:bg-accent transition-colors"
-              >
-                <CardContent className="py-3 px-4">
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold truncate">
-                          {reward.businessName}
-                        </h3>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {reward.rewardDescription}
-                        </p>
-                        {reward.distance && (
-                          <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                            <MapPin className="w-3 h-3" />
-                            <span>{formatDistance(reward.distance)} away</span>
-                          </div>
-                        )}
+      {businesses.length === 0 ? (
+        <Card>
+          <CardContent className="pt-6 text-center text-muted-foreground">
+            <p>No rewards nearby</p>
+            <p className="text-sm mt-2">Check back soon for new businesses!</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-2">
+          {businesses.map((business, index) => (
+            <Card
+              key={`${business.businessName}-${index}`}
+              className="hover:bg-accent transition-colors py-0"
+            >
+              <CardContent className="p-4">
+                <div className="space-y-2">
+                  <div>
+                    <h3 className="font-semibold">{business.businessName}</h3>
+                    {business.distance !== undefined && (
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <MapPin className="w-3 h-3" />
+                        <span>{formatDistance(business.distance)} away</span>
                       </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-sm font-medium">
-                          {reward.currentProgress
-                            ? `${reward.currentProgress.currentVisits}/${reward.visitsRequired}`
-                            : `0/${reward.visitsRequired}`}
-                        </p>
-                      </div>
-                    </div>
-                    {reward.currentProgress && (
-                      <Progress
-                        value={
-                          (reward.currentProgress.currentVisits /
-                            reward.visitsRequired) *
-                          100
-                        }
-                        className="h-1.5"
-                      />
                     )}
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+                  <ul className="space-y-1 list-disc list-inside">
+                    {business.rewards.slice(0, 3).map((reward, idx) => (
+                      <li
+                        key={idx}
+                        className="text-sm text-muted-foreground"
+                        style={{
+                          textIndent: "-1.25rem",
+                          paddingLeft: "1.25rem",
+                        }}
+                      >
+                        Visit {reward.visits} times, get {reward.description}
+                      </li>
+                    ))}
+                    {business.rewards.length > 3 && (
+                      <li className="text-sm text-muted-foreground italic list-none">
+                        +{business.rewards.length - 3} more rewards
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
-

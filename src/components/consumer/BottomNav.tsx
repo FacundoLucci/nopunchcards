@@ -48,7 +48,7 @@ export function BottomNav() {
   return (
     <nav className="fixed bottom-6 left-0 right-0 z-50 pointer-events-none">
       <div className="max-w-[480px] mx-auto px-6 flex justify-center">
-        <div className="pointer-events-auto bg-background/80 backdrop-blur-lg border shadow-lg rounded-full px-3 py-2 flex items-center gap-4">
+        <div className="pointer-events-auto bg-background/80 backdrop-blur-lg border shadow-lg rounded-full px-2 py-2 flex items-center gap-4">
           <Link
             to="/consumer/dashboard"
             onTouchStart={() => handleTouchStart("/consumer/dashboard")}

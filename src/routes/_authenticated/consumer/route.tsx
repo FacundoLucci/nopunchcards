@@ -9,8 +9,12 @@ import { BottomNav } from "@/components/consumer/BottomNav";
 import { BottomFade } from "@/components/consumer/BottomFade";
 import { UserMenu } from "@/components/UserMenu";
 import { Button } from "@/components/ui/button";
-import { Bell } from "lucide-react";
+import { Bell, CreditCard } from "lucide-react";
 import { ConsumerRoutePrefetcher } from "@/components/consumer/RoutePrefetcher";
+import { useAction } from "convex/react";
+import { api } from "../../../../convex/_generated/api";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/consumer")({
   component: ConsumerLayout,
@@ -31,6 +35,42 @@ function ConsumerLayout() {
 
   // Hide nav and header on onboarding
   const showNav = !isOnboarding;
+
+  // Plaid link functionality for Add Card button
+  const createLinkToken = useAction(api.plaid.linkToken.createLinkToken);
+  const exchangeToken = useAction(api.plaid.exchangeToken.exchangePublicToken);
+  const [linking, setLinking] = useState(false);
+
+  const handleAddCard = async () => {
+    if (linking) return;
+
+    setLinking(true);
+    try {
+      const { linkToken } = await createLinkToken({});
+
+      // Initialize Plaid Link
+      // @ts-ignore - Plaid Link will be loaded via script tag
+      const handler = window.Plaid.create({
+        token: linkToken,
+        onSuccess: async (publicToken: string) => {
+          try {
+            await exchangeToken({ publicToken });
+            toast.success("Card linked successfully!");
+          } catch (error) {
+            toast.error("Failed to link card");
+          }
+        },
+        onExit: () => {
+          setLinking(false);
+        },
+      });
+
+      handler.open();
+    } catch (error) {
+      toast.error("Failed to start Plaid Link");
+      setLinking(false);
+    }
+  };
 
   // Preload on touchstart for instant navigation
   const handleTouchStart = (to: string) => {
@@ -67,6 +107,24 @@ function ConsumerLayout() {
 
       {/* Content Area - swapped via Outlet */}
       <Outlet />
+
+      {/* Add Card Button - always mounted, visibility controlled by CSS */}
+      <div
+        className={`fixed bottom-24 left-0 right-0 flex justify-center z-40 transition-all ease-out duration-200 ${
+          isCards
+            ? "opacity-100 translate-y-0 scale-100"
+            : "opacity-0 translate-y-8 scale-90 pointer-events-none"
+        }`}
+      >
+        <button
+          onClick={handleAddCard}
+          disabled={linking}
+          className="bg-primary font-semibold text-primary-foreground px-6 py-2 rounded-full shadow-lg flex items-center gap-2 hover:scale-105 transition-transform text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <CreditCard className="size-5 text-white/90" />
+          {linking ? "Opening Plaid..." : "Add a card"}
+        </button>
+      </div>
 
       {/* Fade effect behind navigation */}
       {showNav && <BottomFade />}
