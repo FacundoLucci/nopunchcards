@@ -81,11 +81,21 @@ export const getUnmatchedTransactions = internalQuery({
     })
   ),
   handler: async (ctx, args) => {
-    return await ctx.db
+    const transactions = await ctx.db
       .query("transactions")
       .withIndex("by_status", (q) => q.eq("status", "unmatched"))
       .order("desc") // Newest first
       .take(args.limit);
+    
+    // Map to only return fields specified in the validator
+    return transactions.map((tx) => ({
+      _id: tx._id,
+      userId: tx.userId,
+      merchantName: tx.merchantName,
+      amount: tx.amount,
+      date: tx.date,
+      category: tx.category,
+    }));
   },
 });
 

@@ -122,8 +122,8 @@ function ActiveRewardsSection() {
         <div className="space-y-3">
           <div className="relative">
             {/* Example badge cutout */}
-            <div className="absolute -top-3 -right-2 z-10 bg-muted border border-border px-3 pt-0 py-0.5 rounded-full">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            <div className="absolute -top-3 -right-2 z-10 bg-yellow-50 border border-yellow-200 px-3 pt-0 py-0.5 rounded-full">
+              <span className="text-xs font-semibold text-yellow-900 uppercase tracking-wide">
                 Example
               </span>
             </div>
