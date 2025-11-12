@@ -70,12 +70,21 @@ function GreetingMessage() {
   );
 
   if (activeProgress && activeProgress.length > 0) {
-    return (
-      <p className="text-muted-foreground">
-        You're {activeProgress[0].totalVisits - activeProgress[0].currentVisits}{" "}
-        visits away from earning {activeProgress[0].rewardDescription}!
-      </p>
-    );
+    const first = activeProgress[0];
+    if (first.programType === "visit") {
+      return (
+        <p className="text-muted-foreground">
+          You're {first.totalVisits - first.currentVisits} visits away from earning {first.rewardDescription}!
+        </p>
+      );
+    } else {
+      const remaining = (first.totalSpendCents - first.currentSpendCents) / 100;
+      return (
+        <p className="text-muted-foreground">
+          You're ${remaining.toFixed(2)} away from earning {first.rewardDescription}!
+        </p>
+      );
+    }
   }
 
   return (
@@ -128,14 +137,15 @@ function ActiveRewardsSection() {
               </span>
             </div>
 
-            <div className="opacity-90">
-              <ProgressCard
-                businessName="The Coffee Shop"
-                currentVisits={3}
-                totalVisits={10}
-                rewardDescription="Free medium coffee"
-              />
-            </div>
+          <div className="opacity-90">
+            <ProgressCard
+              businessName="The Coffee Shop"
+              programType="visit"
+              currentVisits={3}
+              totalVisits={10}
+              rewardDescription="Free medium coffee"
+            />
+          </div>
           </div>
 
           <Link to="/consumer/find-rewards">
@@ -147,15 +157,32 @@ function ActiveRewardsSection() {
         </div>
       ) : (
         <>
-          {topRewards.map((progress) => (
-            <ProgressCard
-              key={progress._id}
-              businessName={progress.businessName}
-              currentVisits={progress.currentVisits}
-              totalVisits={progress.totalVisits}
-              rewardDescription={progress.rewardDescription}
-            />
-          ))}
+          {topRewards.map((progress) => {
+            if (progress.programType === "visit") {
+              return (
+                <ProgressCard
+                  key={progress._id}
+                  businessName={progress.businessName}
+                  programType="visit"
+                  currentVisits={progress.currentVisits}
+                  totalVisits={progress.totalVisits}
+                  minimumSpendCents={progress.minimumSpendCents}
+                  rewardDescription={progress.rewardDescription}
+                />
+              );
+            } else {
+              return (
+                <ProgressCard
+                  key={progress._id}
+                  businessName={progress.businessName}
+                  programType="spend"
+                  currentSpendCents={progress.currentSpendCents}
+                  totalSpendCents={progress.totalSpendCents}
+                  rewardDescription={progress.rewardDescription}
+                />
+              );
+            }
+          })}
           {activeProgress.length > 3 && (
             <Link to="/consumer/rewards" onTouchStart={handleTouchStart}>
               <Button variant="outline" className="w-full">

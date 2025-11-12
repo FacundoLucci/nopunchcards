@@ -7,7 +7,18 @@ export const create = mutation({
     businessId: v.id("businesses"),
     name: v.string(),
     description: v.optional(v.string()),
-    rules: v.object({ visits: v.number(), reward: v.string() }),
+    type: v.union(v.literal("visit"), v.literal("spend")),
+    rules: v.union(
+      v.object({ 
+        visits: v.number(), 
+        reward: v.string(),
+        minimumSpendCents: v.optional(v.number())
+      }),
+      v.object({ 
+        spendAmountCents: v.number(), 
+        reward: v.string() 
+      })
+    ),
   },
   returns: v.id("rewardPrograms"),
   handler: async (ctx, args) => {
@@ -31,7 +42,7 @@ export const create = mutation({
       businessId: args.businessId,
       name: args.name,
       description: args.description,
-      type: "visit",
+      type: args.type,
       rules: args.rules,
       status: "active",
       createdAt: Date.now(),
@@ -49,7 +60,18 @@ export const update = mutation({
     programId: v.id("rewardPrograms"),
     name: v.optional(v.string()),
     description: v.optional(v.string()),
-    rules: v.optional(v.object({ visits: v.number(), reward: v.string() })),
+    type: v.optional(v.union(v.literal("visit"), v.literal("spend"))),
+    rules: v.optional(v.union(
+      v.object({ 
+        visits: v.number(), 
+        reward: v.string(),
+        minimumSpendCents: v.optional(v.number())
+      }),
+      v.object({ 
+        spendAmountCents: v.number(), 
+        reward: v.string() 
+      })
+    )),
     status: v.optional(
       v.union(v.literal("active"), v.literal("paused"), v.literal("archived"))
     ),
@@ -89,7 +111,17 @@ export const listByBusiness = query({
       name: v.string(),
       description: v.optional(v.string()),
       type: v.string(),
-      rules: v.object({ visits: v.number(), reward: v.string() }),
+      rules: v.union(
+        v.object({ 
+          visits: v.number(), 
+          reward: v.string(),
+          minimumSpendCents: v.optional(v.number())
+        }),
+        v.object({ 
+          spendAmountCents: v.number(), 
+          reward: v.string() 
+        })
+      ),
       status: v.string(),
       createdAt: v.number(),
     })
