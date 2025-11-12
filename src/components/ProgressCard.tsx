@@ -20,6 +20,15 @@ export function ProgressCard({
   className,
   onClick,
 }: ProgressCardProps) {
+  // Generate deterministic random offset for punch hole effect
+  const getPunchOffset = (index: number) => {
+    // Use index to generate consistent but varied offsets
+    const seed = index * 2654435761; // Large prime for distribution
+    const x = ((seed * 1103515245 + 12345) % 5) - 2; // -2 to 2 pixels
+    const y = ((seed * 1664525 + 1013904223) % 5) - 2; // -2 to 2 pixels
+    return { x, y };
+  };
+
   return (
     <Card
       className={cn(
@@ -38,17 +47,28 @@ export function ProgressCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Progress dots */}
-        <div className="flex gap-2">
-          {Array.from({ length: totalVisits }).map((_, i) => (
-            <div
-              key={i}
-              className={cn(
-                "w-3 h-3 rounded-full transition-colors",
-                i < currentVisits ? "bg-primary" : "bg-muted"
-              )}
-            />
-          ))}
+        {/* Progress dots with punch hole effect */}
+        <div className="flex flex-wrap gap-3">
+          {Array.from({ length: totalVisits }).map((_, i) => {
+            const offset = getPunchOffset(i);
+            return (
+              <div key={i} className="relative">
+                {/* Main dot - 32px, always grey */}
+                <div className="w-7 h-7 rounded-full bg-gray-300 transition-all relative">
+                  {/* Punch hole - 16px with random offset, almost black */}
+                  {i < currentVisits && (
+                    <div
+                      className="absolute w-4 h-4 bg-black rounded-full"
+                      style={{
+                        left: `calc(50% - 0.5rem + ${offset.x}px)`,
+                        top: `calc(50% - 0.5rem + ${offset.y}px)`,
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         <p className="text-sm text-muted-foreground">
@@ -62,4 +82,3 @@ export function ProgressCard({
     </Card>
   );
 }
-

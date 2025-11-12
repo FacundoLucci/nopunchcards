@@ -3,15 +3,12 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "../../../../convex/_generated/api";
 import { ProgressCard } from "@/components/ProgressCard";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-clients";
 import { OnboardingProgress } from "@/components/OnboardingProgress";
 import { OnboardingGuard } from "@/components/OnboardingGuard";
-import { Suspense, useState } from "react";
-import { CreditCard, Plus } from "lucide-react";
-import { useAction } from "convex/react";
-import { toast } from "sonner";
+import { Suspense } from "react";
+import { ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/consumer/dashboard")({
   // Client-side rendering for instant navigation
@@ -50,11 +47,6 @@ function ConsumerDashboard() {
           {/* Onboarding Progress - loads independently */}
           <Suspense fallback={null}>
             <OnboardingBanner />
-          </Suspense>
-
-          {/* Add Card CTA - loads independently */}
-          <Suspense fallback={null}>
-            <AddCardCTA />
           </Suspense>
 
           {/* Active Rewards - loads independently */}
@@ -111,77 +103,6 @@ function OnboardingBanner() {
   return null;
 }
 
-function AddCardCTA() {
-  const { data: onboardingStatus } = useSuspenseQuery(
-    convexQuery(api.onboarding.queries.getOnboardingStatus, {})
-  );
-  const createLinkToken = useAction(api.plaid.linkToken.createLinkToken);
-  const exchangeToken = useAction(api.plaid.exchangeToken.exchangePublicToken);
-  const [linking, setLinking] = useState(false);
-
-  // Only show if onboarding is complete but user might want to add more cards
-  if (!onboardingStatus?.isComplete) {
-    return null;
-  }
-
-  const handleAddCard = async () => {
-    if (linking) return;
-
-    setLinking(true);
-    try {
-      const { linkToken } = await createLinkToken({});
-
-      // Initialize Plaid Link
-      // @ts-ignore - Plaid Link will be loaded via script tag
-      const handler = window.Plaid.create({
-        token: linkToken,
-        onSuccess: async (publicToken: string) => {
-          try {
-            await exchangeToken({ publicToken });
-            toast.success("Card linked successfully!");
-          } catch (error) {
-            toast.error("Failed to link card");
-          }
-        },
-        onExit: () => {
-          setLinking(false);
-        },
-      });
-
-      handler.open();
-    } catch (error) {
-      toast.error("Failed to start Plaid Link");
-      setLinking(false);
-    }
-  };
-
-  return (
-    <div
-      className="gradient-cta-card cursor-pointer py-0"
-      onClick={handleAddCard}
-    >
-      <div className="flex items-center gap-4">
-        <div className="relative shrink-0">
-          <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
-            <CreditCard className="size-6 text-white" />
-          </div>
-          <div className="absolute -top-1 -left-1 bg-white rounded-full p-0.5 shadow-md">
-            <Plus className="size-3 text-emerald-600" />
-          </div>
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-white font-semibold text-base mb-1">
-            {linking ? "Opening Plaid..." : "Add Another Card"}
-          </h3>
-          <p className="text-white/90 text-sm">
-            Link more cards to earn rewards on all your purchases
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function ActiveRewardsSection() {
   const router = useRouter();
   const { data: activeProgress } = useSuspenseQuery(
@@ -197,16 +118,33 @@ function ActiveRewardsSection() {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold">Your Rewards</h3>
       {activeProgress.length === 0 ? (
-        <Card>
-          <CardContent className="pt-6 text-center text-muted-foreground">
-            <p>No active rewards yet</p>
-            <p className="text-sm mt-2">
-              Shop at participating businesses to start earning
-            </p>
-          </CardContent>
-        </Card>
+        <div className="space-y-3">
+          <div className="relative">
+            {/* Example badge cutout */}
+            <div className="absolute -top-3 -right-2 z-10 bg-muted border border-border px-3 pt-0 py-0.5 rounded-full">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Example
+              </span>
+            </div>
+
+            <div className="opacity-90">
+              <ProgressCard
+                businessName="The Coffee Shop"
+                currentVisits={3}
+                totalVisits={10}
+                rewardDescription="Free medium coffee"
+              />
+            </div>
+          </div>
+
+          <Link to="/consumer/merchants">
+            <Button variant="ghost" className="w-full group">
+              Find participating businesses
+              <ArrowRight className="ml-2 size-4 transition-transform group-hover:translate-x-1" />
+            </Button>
+          </Link>
+        </div>
       ) : (
         <>
           {topRewards.map((progress) => (
