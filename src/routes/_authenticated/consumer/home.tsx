@@ -10,13 +10,13 @@ import { OnboardingGuard } from "@/components/OnboardingGuard";
 import { Suspense } from "react";
 import { ArrowRight } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/consumer/dashboard")({
+export const Route = createFileRoute("/_authenticated/consumer/home")({
   // Client-side rendering for instant navigation
   ssr: false,
-  component: ConsumerDashboard,
+  component: ConsumerHome,
 });
 
-function ConsumerDashboard() {
+function ConsumerHome() {
   const { data: session } = authClient.useSession();
   const firstName = session?.user?.name?.split(" ")[0] || "there";
 
@@ -138,7 +138,7 @@ function ActiveRewardsSection() {
             </div>
           </div>
 
-          <Link to="/consumer/merchants">
+          <Link to="/consumer/find-rewards">
             <Button variant="ghost" className="w-full group">
               Find participating businesses
               <ArrowRight className="ml-2 size-4 transition-transform group-hover:translate-x-1" />

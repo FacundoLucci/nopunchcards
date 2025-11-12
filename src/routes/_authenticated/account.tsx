@@ -112,7 +112,7 @@ function AccountContent() {
   // Determine back link based on user role
   const backLink = accountInfo?.role === "business_owner" 
     ? "/business/dashboard" 
-    : "/consumer/dashboard";
+    : "/consumer/home";
 
   return (
     <div className="container max-w-4xl py-4 px-4 sm:py-8 sm:px-6 space-y-6">

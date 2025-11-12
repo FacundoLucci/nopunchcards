@@ -21,8 +21,9 @@ export const listLinkedAccounts = query({
     })
   ),
   handler: async (ctx) => {
-    const user = await authComponent.getAuthUser(ctx);
-    if (!user) throw new Error("Not authenticated");
+    const user = await authComponent.safeGetAuthUser(ctx);
+    // Return empty array if not authenticated instead of throwing
+    if (!user) return [];
 
     const userId = user.userId || user._id;
 
@@ -64,15 +65,16 @@ export const getAccountTransactions = query({
     })
   ),
   handler: async (ctx, args) => {
-    const user = await authComponent.getAuthUser(ctx);
-    if (!user) throw new Error("Not authenticated");
+    const user = await authComponent.safeGetAuthUser(ctx);
+    // Return empty array if not authenticated instead of throwing
+    if (!user) return [];
 
     const userId = user.userId || user._id;
 
     // Verify the account belongs to the user
     const account = await ctx.db.get(args.accountId);
     if (!account || account.userId !== userId) {
-      throw new Error("Account not found or unauthorized");
+      return [];
     }
 
     const transactions = await ctx.db
@@ -136,7 +138,7 @@ export const disconnectAccount = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const user = await authComponent.getAuthUser(ctx);
+    const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) throw new Error("Not authenticated");
 
     const userId = user.userId || user._id;
@@ -168,7 +170,7 @@ export const deleteAccount = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const user = await authComponent.getAuthUser(ctx);
+    const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) throw new Error("Not authenticated");
 
     const userId = user.userId || user._id;

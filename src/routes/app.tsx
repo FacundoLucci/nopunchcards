@@ -44,7 +44,7 @@ const getAppRedirect = createServerFn({ method: "GET" }).handler(async () => {
   if (profile?.role === "business_owner") {
     throw redirect({ to: "/business/dashboard" });
   } else {
-    throw redirect({ to: "/consumer/dashboard" });
+    throw redirect({ to: "/consumer/home" });
   }
 });
 

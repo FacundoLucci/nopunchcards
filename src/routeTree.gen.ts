@@ -22,8 +22,8 @@ import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthenticatedConsumerSettingsRouteImport } from './routes/_authenticated/consumer/settings'
 import { Route as AuthenticatedConsumerOnboardingRouteImport } from './routes/_authenticated/consumer/onboarding'
 import { Route as AuthenticatedConsumerNotificationsRouteImport } from './routes/_authenticated/consumer/notifications'
-import { Route as AuthenticatedConsumerMerchantsRouteImport } from './routes/_authenticated/consumer/merchants'
-import { Route as AuthenticatedConsumerDashboardRouteImport } from './routes/_authenticated/consumer/dashboard'
+import { Route as AuthenticatedConsumerHomeRouteImport } from './routes/_authenticated/consumer/home'
+import { Route as AuthenticatedConsumerFindRewardsRouteImport } from './routes/_authenticated/consumer/find-rewards'
 import { Route as AuthenticatedConsumerCardsRouteImport } from './routes/_authenticated/consumer/cards'
 import { Route as AuthenticatedBusinessSettingsRouteImport } from './routes/_authenticated/business/settings'
 import { Route as AuthenticatedBusinessRegisterRouteImport } from './routes/_authenticated/business/register'
@@ -102,16 +102,16 @@ const AuthenticatedConsumerNotificationsRoute =
     path: '/notifications',
     getParentRoute: () => AuthenticatedConsumerRouteRoute,
   } as any)
-const AuthenticatedConsumerMerchantsRoute =
-  AuthenticatedConsumerMerchantsRouteImport.update({
-    id: '/merchants',
-    path: '/merchants',
+const AuthenticatedConsumerHomeRoute =
+  AuthenticatedConsumerHomeRouteImport.update({
+    id: '/home',
+    path: '/home',
     getParentRoute: () => AuthenticatedConsumerRouteRoute,
   } as any)
-const AuthenticatedConsumerDashboardRoute =
-  AuthenticatedConsumerDashboardRouteImport.update({
-    id: '/dashboard',
-    path: '/dashboard',
+const AuthenticatedConsumerFindRewardsRoute =
+  AuthenticatedConsumerFindRewardsRouteImport.update({
+    id: '/find-rewards',
+    path: '/find-rewards',
     getParentRoute: () => AuthenticatedConsumerRouteRoute,
   } as any)
 const AuthenticatedConsumerCardsRoute =
@@ -177,8 +177,8 @@ export interface FileRoutesByFullPath {
   '/business/register': typeof AuthenticatedBusinessRegisterRoute
   '/business/settings': typeof AuthenticatedBusinessSettingsRoute
   '/consumer/cards': typeof AuthenticatedConsumerCardsRoute
-  '/consumer/dashboard': typeof AuthenticatedConsumerDashboardRoute
-  '/consumer/merchants': typeof AuthenticatedConsumerMerchantsRoute
+  '/consumer/find-rewards': typeof AuthenticatedConsumerFindRewardsRoute
+  '/consumer/home': typeof AuthenticatedConsumerHomeRoute
   '/consumer/notifications': typeof AuthenticatedConsumerNotificationsRoute
   '/consumer/onboarding': typeof AuthenticatedConsumerOnboardingRoute
   '/consumer/settings': typeof AuthenticatedConsumerSettingsRoute
@@ -201,8 +201,8 @@ export interface FileRoutesByTo {
   '/business/register': typeof AuthenticatedBusinessRegisterRoute
   '/business/settings': typeof AuthenticatedBusinessSettingsRoute
   '/consumer/cards': typeof AuthenticatedConsumerCardsRoute
-  '/consumer/dashboard': typeof AuthenticatedConsumerDashboardRoute
-  '/consumer/merchants': typeof AuthenticatedConsumerMerchantsRoute
+  '/consumer/find-rewards': typeof AuthenticatedConsumerFindRewardsRoute
+  '/consumer/home': typeof AuthenticatedConsumerHomeRoute
   '/consumer/notifications': typeof AuthenticatedConsumerNotificationsRoute
   '/consumer/onboarding': typeof AuthenticatedConsumerOnboardingRoute
   '/consumer/settings': typeof AuthenticatedConsumerSettingsRoute
@@ -227,8 +227,8 @@ export interface FileRoutesById {
   '/_authenticated/business/register': typeof AuthenticatedBusinessRegisterRoute
   '/_authenticated/business/settings': typeof AuthenticatedBusinessSettingsRoute
   '/_authenticated/consumer/cards': typeof AuthenticatedConsumerCardsRoute
-  '/_authenticated/consumer/dashboard': typeof AuthenticatedConsumerDashboardRoute
-  '/_authenticated/consumer/merchants': typeof AuthenticatedConsumerMerchantsRoute
+  '/_authenticated/consumer/find-rewards': typeof AuthenticatedConsumerFindRewardsRoute
+  '/_authenticated/consumer/home': typeof AuthenticatedConsumerHomeRoute
   '/_authenticated/consumer/notifications': typeof AuthenticatedConsumerNotificationsRoute
   '/_authenticated/consumer/onboarding': typeof AuthenticatedConsumerOnboardingRoute
   '/_authenticated/consumer/settings': typeof AuthenticatedConsumerSettingsRoute
@@ -253,8 +253,8 @@ export interface FileRouteTypes {
     | '/business/register'
     | '/business/settings'
     | '/consumer/cards'
-    | '/consumer/dashboard'
-    | '/consumer/merchants'
+    | '/consumer/find-rewards'
+    | '/consumer/home'
     | '/consumer/notifications'
     | '/consumer/onboarding'
     | '/consumer/settings'
@@ -277,8 +277,8 @@ export interface FileRouteTypes {
     | '/business/register'
     | '/business/settings'
     | '/consumer/cards'
-    | '/consumer/dashboard'
-    | '/consumer/merchants'
+    | '/consumer/find-rewards'
+    | '/consumer/home'
     | '/consumer/notifications'
     | '/consumer/onboarding'
     | '/consumer/settings'
@@ -302,8 +302,8 @@ export interface FileRouteTypes {
     | '/_authenticated/business/register'
     | '/_authenticated/business/settings'
     | '/_authenticated/consumer/cards'
-    | '/_authenticated/consumer/dashboard'
-    | '/_authenticated/consumer/merchants'
+    | '/_authenticated/consumer/find-rewards'
+    | '/_authenticated/consumer/home'
     | '/_authenticated/consumer/notifications'
     | '/_authenticated/consumer/onboarding'
     | '/_authenticated/consumer/settings'
@@ -416,18 +416,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedConsumerNotificationsRouteImport
       parentRoute: typeof AuthenticatedConsumerRouteRoute
     }
-    '/_authenticated/consumer/merchants': {
-      id: '/_authenticated/consumer/merchants'
-      path: '/merchants'
-      fullPath: '/consumer/merchants'
-      preLoaderRoute: typeof AuthenticatedConsumerMerchantsRouteImport
+    '/_authenticated/consumer/home': {
+      id: '/_authenticated/consumer/home'
+      path: '/home'
+      fullPath: '/consumer/home'
+      preLoaderRoute: typeof AuthenticatedConsumerHomeRouteImport
       parentRoute: typeof AuthenticatedConsumerRouteRoute
     }
-    '/_authenticated/consumer/dashboard': {
-      id: '/_authenticated/consumer/dashboard'
-      path: '/dashboard'
-      fullPath: '/consumer/dashboard'
-      preLoaderRoute: typeof AuthenticatedConsumerDashboardRouteImport
+    '/_authenticated/consumer/find-rewards': {
+      id: '/_authenticated/consumer/find-rewards'
+      path: '/find-rewards'
+      fullPath: '/consumer/find-rewards'
+      preLoaderRoute: typeof AuthenticatedConsumerFindRewardsRouteImport
       parentRoute: typeof AuthenticatedConsumerRouteRoute
     }
     '/_authenticated/consumer/cards': {
@@ -517,8 +517,8 @@ const AuthenticatedBusinessRouteRouteWithChildren =
 
 interface AuthenticatedConsumerRouteRouteChildren {
   AuthenticatedConsumerCardsRoute: typeof AuthenticatedConsumerCardsRoute
-  AuthenticatedConsumerDashboardRoute: typeof AuthenticatedConsumerDashboardRoute
-  AuthenticatedConsumerMerchantsRoute: typeof AuthenticatedConsumerMerchantsRoute
+  AuthenticatedConsumerFindRewardsRoute: typeof AuthenticatedConsumerFindRewardsRoute
+  AuthenticatedConsumerHomeRoute: typeof AuthenticatedConsumerHomeRoute
   AuthenticatedConsumerNotificationsRoute: typeof AuthenticatedConsumerNotificationsRoute
   AuthenticatedConsumerOnboardingRoute: typeof AuthenticatedConsumerOnboardingRoute
   AuthenticatedConsumerSettingsRoute: typeof AuthenticatedConsumerSettingsRoute
@@ -528,8 +528,9 @@ interface AuthenticatedConsumerRouteRouteChildren {
 const AuthenticatedConsumerRouteRouteChildren: AuthenticatedConsumerRouteRouteChildren =
   {
     AuthenticatedConsumerCardsRoute: AuthenticatedConsumerCardsRoute,
-    AuthenticatedConsumerDashboardRoute: AuthenticatedConsumerDashboardRoute,
-    AuthenticatedConsumerMerchantsRoute: AuthenticatedConsumerMerchantsRoute,
+    AuthenticatedConsumerFindRewardsRoute:
+      AuthenticatedConsumerFindRewardsRoute,
+    AuthenticatedConsumerHomeRoute: AuthenticatedConsumerHomeRoute,
     AuthenticatedConsumerNotificationsRoute:
       AuthenticatedConsumerNotificationsRoute,
     AuthenticatedConsumerOnboardingRoute: AuthenticatedConsumerOnboardingRoute,

@@ -25,11 +25,11 @@ function ConsumerLayout() {
   const router = useRouter();
 
   // Detect if we're on a main route (show header) or detail route (hide header)
-  const isDashboard = !!matchRoute({ to: "/consumer/dashboard" });
-  const isMerchants = !!matchRoute({ to: "/consumer/merchants" });
+  const isHome = !!matchRoute({ to: "/consumer/home" });
+  const isFindRewards = !!matchRoute({ to: "/consumer/find-rewards" });
   const isCards = !!matchRoute({ to: "/consumer/cards" });
   const isOnboarding = !!matchRoute({ to: "/consumer/onboarding" });
-  const showHeader = isDashboard || isMerchants || isCards;
+  const showHeader = isHome || isFindRewards || isCards;
 
   const isNotifications = !!matchRoute({ to: "/consumer/notifications" });
 

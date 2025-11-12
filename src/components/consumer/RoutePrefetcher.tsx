@@ -11,9 +11,9 @@ export function ConsumerRoutePrefetcher() {
   useEffect(() => {
     // Prefetch all main consumer routes immediately
     const routesToPrefetch = [
-      "/consumer/dashboard",
+      "/consumer/home",
       "/consumer/cards",
-      "/consumer/merchants",
+      "/consumer/find-rewards",
       "/consumer/notifications",
       "/consumer/settings",
       "/consumer/rewards",

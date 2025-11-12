@@ -55,7 +55,7 @@ function RewardsContent() {
             </div>
           </div>
 
-          <Link to="/consumer/merchants">
+          <Link to="/consumer/find-rewards">
             <Button variant="ghost" className="w-full group">
               Find participating businesses
               <ArrowRight className="ml-2 size-4 transition-transform group-hover:translate-x-1" />

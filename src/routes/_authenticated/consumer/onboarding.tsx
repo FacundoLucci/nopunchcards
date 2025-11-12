@@ -53,7 +53,7 @@ function ConsumerOnboarding() {
           try {
             await exchangeToken({ publicToken });
             toast.success("Card linked successfully!");
-            navigate({ to: "/consumer/dashboard" });
+            navigate({ to: "/consumer/home" });
           } catch (error) {
             toast.error("Failed to link card");
           }

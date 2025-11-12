@@ -36,7 +36,7 @@ function PublicBusinessPage() {
   const handleStartEarning = () => {
     if (session) {
       // Already logged in, redirect to dashboard
-      navigate({ to: "/consumer/dashboard" });
+      navigate({ to: "/consumer/home" });
     } else {
       // Not logged in, redirect to signup with ref param
       navigate({ to: "/signup", search: { ref: slug } });

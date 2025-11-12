@@ -7,24 +7,24 @@ import { useState, Suspense, useEffect } from "react";
 import { OnboardingGuard } from "@/components/OnboardingGuard";
 import { MapPin } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/consumer/merchants")({
+export const Route = createFileRoute("/_authenticated/consumer/find-rewards")({
   ssr: false,
-  component: MerchantsPage,
+  component: FindRewardsPage,
 });
 
-function MerchantsPage() {
+function FindRewardsPage() {
   return (
     <Suspense
       fallback={<div className="p-6 text-muted-foreground">Loading...</div>}
     >
       <OnboardingGuard>
-        <MerchantsContent />
+        <FindRewardsContent />
       </OnboardingGuard>
     </Suspense>
   );
 }
 
-function MerchantsContent() {
+function FindRewardsContent() {
   const [userLocation, setUserLocation] = useState<{
     lat: number;
     lng: number;

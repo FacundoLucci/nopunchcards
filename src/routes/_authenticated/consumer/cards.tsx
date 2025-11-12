@@ -179,7 +179,7 @@ function CreditCardComponent({
       style={{ zIndex }}
     >
       <div
-        className={`relative w-full aspect-[1.586/1] rounded-2xl bg-linear-to-br ${gradient} p-6 overflow-hidden`}
+        className={`relative w-full aspect-[1.586/1] rounded-2xl bg-linear-to-br ${gradient} p-4 sm:p-6 overflow-hidden`}
         style={{
           boxShadow: `
             0 1px 0 0 rgba(255, 255, 255, 0.1),
@@ -229,13 +229,13 @@ function CreditCardComponent({
         <div className="relative h-full flex flex-col justify-between text-white">
           {/* Top Section - Bank Name & Logo */}
           <div className="flex items-start justify-between">
-            <div>
-              <p className="text-xs sm:text-sm font-medium opacity-90 mb-1">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs sm:text-sm font-medium opacity-90 mb-0.5 sm:mb-1 truncate">
                 {account.institutionName || "Bank Account"}
               </p>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <div
-                  className={`w-2 h-2 rounded-full ${
+                  className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${
                     account.status === "active"
                       ? "bg-emerald-400"
                       : account.status === "error"
@@ -243,17 +243,17 @@ function CreditCardComponent({
                       : "bg-gray-400"
                   }`}
                 />
-                <span className={`text-xs ${statusColor} capitalize`}>
+                <span className={`text-[10px] sm:text-xs ${statusColor} capitalize`}>
                   {account.status}
                 </span>
               </div>
             </div>
-            <CreditCard className="w-8 h-8 sm:w-10 sm:h-10 opacity-80" />
+            <CreditCard className="w-7 h-7 sm:w-10 sm:h-10 opacity-80 flex-shrink-0 ml-2" />
           </div>
 
           {/* Middle Section - Card Number (masked) */}
-          <div className="space-y-1">
-            <div className="flex gap-3 sm:gap-4 font-mono text-base sm:text-lg tracking-wider">
+          <div className="space-y-0.5 sm:space-y-1">
+            <div className="flex gap-2 sm:gap-3 md:gap-4 font-mono text-sm sm:text-base md:text-lg tracking-wider">
               <span>••••</span>
               <span>••••</span>
               <span>••••</span>
@@ -262,7 +262,7 @@ function CreditCardComponent({
               </span>
             </div>
             {account.accountIds.length > 1 && (
-              <p className="text-xs opacity-75">
+              <p className="text-[10px] sm:text-xs opacity-75">
                 +{account.accountIds.length - 1} more account
                 {account.accountIds.length > 2 ? "s" : ""}
               </p>
@@ -270,14 +270,14 @@ function CreditCardComponent({
           </div>
 
           {/* Bottom Section - Dates & Info */}
-          <div className="flex items-end justify-between text-xs sm:text-sm">
-            <div>
-              <p className="opacity-75 text-xs mb-1">Last Synced</p>
-              <p className="font-medium">{lastSyncText}</p>
+          <div className="flex items-end justify-between text-[10px] sm:text-xs md:text-sm gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="opacity-75 text-[9px] sm:text-[10px] mb-0.5 sm:mb-1">Last Synced</p>
+              <p className="font-medium truncate">{lastSyncText}</p>
             </div>
-            <div className="text-right">
-              <p className="opacity-75 text-xs mb-1">Linked</p>
-              <p className="font-medium">
+            <div className="text-right min-w-0 flex-1">
+              <p className="opacity-75 text-[9px] sm:text-[10px] mb-0.5 sm:mb-1">Linked</p>
+              <p className="font-medium truncate">
                 {new Date(account.createdAt).toLocaleDateString("en-US", {
                   month: "short",
                   year: "numeric",
