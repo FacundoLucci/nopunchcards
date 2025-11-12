@@ -149,7 +149,8 @@ export const calculateRewards = internalMutation({
         const updatedTxIds = [...progress.transactionIds, args.transactionId];
 
         // Check if user reached spend threshold
-        const thresholdReached = currentSpendCents >= rules.spendAmountCents;
+        const threshold = rules.spendAmountCents;
+        const thresholdReached = currentSpendCents >= threshold;
 
         if (thresholdReached) {
           // User earned a reward!
@@ -177,14 +178,15 @@ export const calculateRewards = internalMutation({
           });
 
           // Create new active rewardProgress for next reward cycle (auto-renew)
+          const carryOver = currentSpendCents - threshold;
           await ctx.db.insert("rewardProgress", {
             userId: args.userId,
             businessId: args.businessId,
             rewardProgramId: program._id,
             currentVisits: 0,
-            currentSpendCents: 0,
+            currentSpendCents: Math.max(carryOver, 0),
             totalEarned: 0,
-            transactionIds: [],
+            transactionIds: carryOver > 0 ? [args.transactionId] : [],
             status: "active",
             createdAt: Date.now(),
           });
