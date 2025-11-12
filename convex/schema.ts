@@ -91,8 +91,18 @@ export default defineSchema({
     businessId: v.id("businesses"),
     name: v.string(),
     description: v.optional(v.string()),
-    type: v.literal("visit"), // MVP only supports visit-based
-    rules: v.object({ visits: v.number(), reward: v.string() }),
+    type: v.union(v.literal("visit"), v.literal("spend")),
+    rules: v.union(
+      v.object({ 
+        visits: v.number(), 
+        reward: v.string(),
+        minimumSpendCents: v.optional(v.number()) // Minimum spend per visit for visit-based programs
+      }),
+      v.object({ 
+        spendAmountCents: v.number(), // Total spend needed
+        reward: v.string() 
+      })
+    ),
     status: v.union(
       v.literal("active"),
       v.literal("paused"),
@@ -109,7 +119,8 @@ export default defineSchema({
     userId: v.string(), // Better Auth user.id
     businessId: v.id("businesses"),
     rewardProgramId: v.id("rewardPrograms"),
-    currentVisits: v.number(),
+    currentVisits: v.number(), // For visit-based programs
+    currentSpendCents: v.optional(v.number()), // For spend-based programs
     totalEarned: v.number(),
     lastVisitDate: v.optional(v.string()),
     transactionIds: v.array(v.id("transactions")),

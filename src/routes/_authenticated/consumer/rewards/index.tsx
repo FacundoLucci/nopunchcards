@@ -48,6 +48,7 @@ function RewardsContent() {
             <div className="opacity-0">
               <ProgressCard
                 businessName="The Coffee Shop"
+                programType="visit"
                 currentVisits={3}
                 totalVisits={10}
                 rewardDescription="Free medium coffee"
@@ -81,14 +82,22 @@ function RewardsContent() {
                       </p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-sm font-medium">
-                        {progress.currentVisits}/{progress.totalVisits}
-                      </p>
+                      {progress.programType === "visit" ? (
+                        <p className="text-sm font-medium">
+                          {progress.currentVisits}/{progress.totalVisits}
+                        </p>
+                      ) : (
+                        <p className="text-sm font-medium">
+                          ${(progress.currentSpendCents / 100).toFixed(2)}/${(progress.totalSpendCents / 100).toFixed(2)}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <Progress
                     value={
-                      (progress.currentVisits / progress.totalVisits) * 100
+                      progress.programType === "visit"
+                        ? (progress.currentVisits / progress.totalVisits) * 100
+                        : (progress.currentSpendCents / progress.totalSpendCents) * 100
                     }
                     className="h-1.5"
                   />

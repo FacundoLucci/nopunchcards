@@ -53,7 +53,17 @@ export const getActivePrograms = query({
       name: v.string(),
       description: v.optional(v.string()),
       type: v.string(),
-      rules: v.object({ visits: v.number(), reward: v.string() }),
+      rules: v.union(
+        v.object({ 
+          visits: v.number(), 
+          reward: v.string(),
+          minimumSpendCents: v.optional(v.number())
+        }),
+        v.object({ 
+          spendAmountCents: v.number(), 
+          reward: v.string() 
+        })
+      ),
     })
   ),
   handler: async (ctx, args) => {

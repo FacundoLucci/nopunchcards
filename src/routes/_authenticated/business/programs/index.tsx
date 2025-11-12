@@ -72,30 +72,50 @@ function ProgramsList({ businessId }: { businessId: any }) {
     );
   }
 
-  return programs.map((program) => (
-    <Card key={program._id}>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">{program.name}</CardTitle>
-          <span
-            className={`px-2 py-1 text-xs font-medium rounded-full ${
-              program.status === "active"
-                ? "bg-green-500/20 text-green-600"
-                : "bg-muted text-muted-foreground"
-            }`}
-          >
-            {program.status}
-          </span>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <p className="text-sm text-muted-foreground mb-2">
-          {program.rules.visits} visits → {program.rules.reward}
-        </p>
-        {program.description && (
-          <p className="text-sm">{program.description}</p>
-        )}
-      </CardContent>
-    </Card>
-  ));
+  return programs.map((program) => {
+    const isVisitBased = program.type === "visit";
+    const rules = program.rules as any;
+    
+    let programDetails = "";
+    if (isVisitBased && "visits" in rules) {
+      programDetails = `${rules.visits} visits → ${rules.reward}`;
+      if (rules.minimumSpendCents) {
+        programDetails += ` (Min $${(rules.minimumSpendCents / 100).toFixed(2)}/visit)`;
+      }
+    } else if ("spendAmountCents" in rules) {
+      programDetails = `Spend $${(rules.spendAmountCents / 100).toFixed(2)} → ${rules.reward}`;
+    }
+    
+    return (
+      <Card key={program._id}>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg">{program.name}</CardTitle>
+              <span className="text-xs text-muted-foreground capitalize mt-1">
+                {program.type}-based
+              </span>
+            </div>
+            <span
+              className={`px-2 py-1 text-xs font-medium rounded-full ${
+                program.status === "active"
+                  ? "bg-green-500/20 text-green-600"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {program.status}
+            </span>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-2">
+            {programDetails}
+          </p>
+          {program.description && (
+            <p className="text-sm">{program.description}</p>
+          )}
+        </CardContent>
+      </Card>
+    );
+  });
 }
