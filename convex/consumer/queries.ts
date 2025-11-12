@@ -7,16 +7,31 @@ import { Id } from "../_generated/dataModel";
 export const getActiveProgress = query({
   args: {},
   returns: v.array(
-    v.object({
-      _id: v.id("rewardProgress"),
-      businessId: v.id("businesses"),
-      businessName: v.string(),
-      currentVisits: v.number(),
-      totalVisits: v.number(),
-      rewardDescription: v.string(),
-      programName: v.string(),
-      lastActivityDate: v.optional(v.string()),
-    })
+    v.union(
+      v.object({
+        _id: v.id("rewardProgress"),
+        businessId: v.id("businesses"),
+        businessName: v.string(),
+        programType: v.literal("visit"),
+        currentVisits: v.number(),
+        totalVisits: v.number(),
+        minimumSpendCents: v.optional(v.number()),
+        rewardDescription: v.string(),
+        programName: v.string(),
+        lastActivityDate: v.optional(v.string()),
+      }),
+      v.object({
+        _id: v.id("rewardProgress"),
+        businessId: v.id("businesses"),
+        businessName: v.string(),
+        programType: v.literal("spend"),
+        currentSpendCents: v.number(),
+        totalSpendCents: v.number(),
+        rewardDescription: v.string(),
+        programName: v.string(),
+        lastActivityDate: v.optional(v.string()),
+      })
+    )
   ),
   handler: async (ctx) => {
     const user = await authComponent.safeGetAuthUser(ctx);
@@ -45,16 +60,34 @@ export const getActiveProgress = query({
           .order("desc")
           .first();
 
-        result.push({
-          _id: progress._id,
-          businessId: progress.businessId,
-          businessName: business.name,
-          currentVisits: progress.currentVisits,
-          totalVisits: program.rules.visits,
-          rewardDescription: program.rules.reward,
-          programName: program.name,
-          lastActivityDate: lastTransaction?.date,
-        });
+        const rules = program.rules as any;
+
+        if (program.type === "visit" && "visits" in rules) {
+          result.push({
+            _id: progress._id,
+            businessId: progress.businessId,
+            businessName: business.name,
+            programType: "visit" as const,
+            currentVisits: progress.currentVisits,
+            totalVisits: rules.visits,
+            minimumSpendCents: rules.minimumSpendCents,
+            rewardDescription: rules.reward,
+            programName: program.name,
+            lastActivityDate: lastTransaction?.date,
+          });
+        } else if (program.type === "spend" && "spendAmountCents" in rules) {
+          result.push({
+            _id: progress._id,
+            businessId: progress.businessId,
+            businessName: business.name,
+            programType: "spend" as const,
+            currentSpendCents: progress.currentSpendCents || 0,
+            totalSpendCents: rules.spendAmountCents,
+            rewardDescription: rules.reward,
+            programName: program.name,
+            lastActivityDate: lastTransaction?.date,
+          });
+        }
       }
     }
 
@@ -83,11 +116,15 @@ export const getNearbyRewards = query({
       address: v.optional(v.string()),
       distance: v.optional(v.number()),
       programName: v.string(),
+      programType: v.string(),
       rewardDescription: v.string(),
-      visitsRequired: v.number(),
+      visitsRequired: v.optional(v.number()),
+      spendAmountCents: v.optional(v.number()),
+      minimumSpendCents: v.optional(v.number()),
       currentProgress: v.optional(
         v.object({
-          currentVisits: v.number(),
+          currentVisits: v.optional(v.number()),
+          currentSpendCents: v.optional(v.number()),
           progressId: v.id("rewardProgress"),
         })
       ),
@@ -137,9 +174,15 @@ export const getNearbyRewards = query({
           if (distance > radiusMeters) continue;
         }
 
+        const rules = program.rules as any;
+
         // Get user's progress on this program if authenticated
         let currentProgress:
-          | { currentVisits: number; progressId: Id<"rewardProgress"> }
+          | { 
+              currentVisits?: number; 
+              currentSpendCents?: number;
+              progressId: Id<"rewardProgress"> 
+            }
           | undefined;
         if (userId) {
           const progress = await ctx.db
@@ -156,7 +199,8 @@ export const getNearbyRewards = query({
 
           if (progress) {
             currentProgress = {
-              currentVisits: progress.currentVisits,
+              currentVisits: program.type === "visit" ? progress.currentVisits : undefined,
+              currentSpendCents: program.type === "spend" ? progress.currentSpendCents || 0 : undefined,
               progressId: progress._id,
             };
           }
@@ -169,8 +213,11 @@ export const getNearbyRewards = query({
           address: business.address,
           distance,
           programName: program.name,
-          rewardDescription: program.rules.reward,
-          visitsRequired: program.rules.visits,
+          programType: program.type,
+          rewardDescription: rules.reward,
+          visitsRequired: "visits" in rules ? rules.visits : undefined,
+          spendAmountCents: "spendAmountCents" in rules ? rules.spendAmountCents : undefined,
+          minimumSpendCents: "minimumSpendCents" in rules ? rules.minimumSpendCents : undefined,
           currentProgress,
         });
       }
@@ -196,8 +243,11 @@ export const getRecentTransactions = query({
       businessName: v.optional(v.string()),
       amount: v.number(),
       date: v.string(),
+      programType: v.optional(v.string()),
       currentVisits: v.optional(v.number()),
       totalVisits: v.optional(v.number()),
+      currentSpendCents: v.optional(v.number()),
+      totalSpendCents: v.optional(v.number()),
     })
   ),
   handler: async (ctx, args) => {
@@ -216,8 +266,11 @@ export const getRecentTransactions = query({
     const result = [];
     for (const tx of transactions) {
       let businessName = undefined;
+      let programType = undefined;
       let currentVisits = undefined;
       let totalVisits = undefined;
+      let currentSpendCents = undefined;
+      let totalSpendCents = undefined;
 
       if (tx.businessId) {
         const business = await ctx.db.get(tx.businessId);
@@ -238,8 +291,16 @@ export const getRecentTransactions = query({
         if (progress) {
           const program = await ctx.db.get(progress.rewardProgramId);
           if (program) {
-            currentVisits = progress.currentVisits;
-            totalVisits = program.rules.visits;
+            programType = program.type;
+            const rules = program.rules as any;
+            
+            if (program.type === "visit" && "visits" in rules) {
+              currentVisits = progress.currentVisits;
+              totalVisits = rules.visits;
+            } else if (program.type === "spend" && "spendAmountCents" in rules) {
+              currentSpendCents = progress.currentSpendCents || 0;
+              totalSpendCents = rules.spendAmountCents;
+            }
           }
         }
       }
@@ -250,8 +311,11 @@ export const getRecentTransactions = query({
         businessName,
         amount: tx.amount,
         date: tx.date,
+        programType,
         currentVisits,
         totalVisits,
+        currentSpendCents,
+        totalSpendCents,
       });
     }
 

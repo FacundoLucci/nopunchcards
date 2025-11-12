@@ -97,7 +97,13 @@ function NearbyRewardsList({
     {
       businessName: string;
       distance?: number;
-      rewards: Array<{ description: string; visits: number }>;
+      rewards: Array<{ 
+        description: string; 
+        programType: string;
+        visits?: number; 
+        spendAmountCents?: number;
+        minimumSpendCents?: number;
+      }>;
     }
   >();
 
@@ -113,7 +119,10 @@ function NearbyRewardsList({
     const business = businessMap.get(businessId)!;
     business.rewards.push({
       description: reward.rewardDescription,
+      programType: reward.programType,
       visits: reward.visitsRequired,
+      spendAmountCents: reward.spendAmountCents,
+      minimumSpendCents: reward.minimumSpendCents,
     });
   });
 
@@ -156,18 +165,31 @@ function NearbyRewardsList({
                     )}
                   </div>
                   <ul className="space-y-1 list-disc list-inside">
-                    {business.rewards.slice(0, 3).map((reward, idx) => (
-                      <li
-                        key={idx}
-                        className="text-sm text-muted-foreground"
-                        style={{
-                          textIndent: "-1.25rem",
-                          paddingLeft: "1.25rem",
-                        }}
-                      >
-                        Visit {reward.visits} times, get {reward.description}
-                      </li>
-                    ))}
+                    {business.rewards.slice(0, 3).map((reward, idx) => {
+                      let rewardText = "";
+                      if (reward.programType === "visit" && reward.visits) {
+                        rewardText = `Visit ${reward.visits} times`;
+                        if (reward.minimumSpendCents) {
+                          rewardText += ` (min $${(reward.minimumSpendCents / 100).toFixed(2)}/visit)`;
+                        }
+                        rewardText += `, get ${reward.description}`;
+                      } else if (reward.programType === "spend" && reward.spendAmountCents) {
+                        rewardText = `Spend $${(reward.spendAmountCents / 100).toFixed(2)}, get ${reward.description}`;
+                      }
+                      
+                      return (
+                        <li
+                          key={idx}
+                          className="text-sm text-muted-foreground"
+                          style={{
+                            textIndent: "-1.25rem",
+                            paddingLeft: "1.25rem",
+                          }}
+                        >
+                          {rewardText}
+                        </li>
+                      );
+                    })}
                     {business.rewards.length > 3 && (
                       <li className="text-sm text-muted-foreground italic list-none">
                         +{business.rewards.length - 3} more rewards

@@ -171,7 +171,15 @@ function ProgramsSection({ businessId }: { businessId: any }) {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-2">
-                {program.rules.visits} visits → {program.rules.reward}
+                {(() => {
+                  const rules = program.rules as any;
+                  if (program.type === "visit" && "visits" in rules) {
+                    return `${rules.visits} visits → ${rules.reward}`;
+                  } else if ("spendAmountCents" in rules) {
+                    return `Spend $${(rules.spendAmountCents / 100).toFixed(2)} → ${rules.reward}`;
+                  }
+                  return "";
+                })()}
               </p>
               {program.description && (
                 <p className="text-sm">{program.description}</p>

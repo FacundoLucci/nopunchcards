@@ -109,8 +109,11 @@ export const getAccountTransactions = query({
         if (progress) {
           const program = await ctx.db.get(progress.rewardProgramId);
           if (program) {
-            currentVisits = progress.currentVisits;
-            totalVisits = program.rules.visits;
+            const rules = program.rules as any;
+            if (program.type === "visit" && "visits" in rules) {
+              currentVisits = progress.currentVisits;
+              totalVisits = rules.visits;
+            }
           }
         }
       }
