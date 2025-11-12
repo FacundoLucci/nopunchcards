@@ -169,33 +169,56 @@ function PublicBusinessPage() {
               </CardContent>
             </Card>
           ) : (
-            programs.map((program) => (
-              <Card key={program._id}>
-                <CardContent className="pt-6 space-y-4">
-                  <h3 className="text-xl font-semibold text-center">
-                    {program.name}
-                  </h3>
-                  <div className="flex gap-2 justify-center">
-                    {Array.from({ length: program.rules.visits }).map(
-                      (_, i) => (
-                        <div
-                          key={i}
-                          className="w-4 h-4 rounded-full bg-muted"
-                        />
-                      )
-                    )}
-                  </div>
-                  <div className="bg-muted rounded-lg p-4 text-center">
-                    <p className="text-sm text-muted-foreground mb-1">
-                      Visit {program.rules.visits} times, earn:
-                    </p>
-                    <p className="text-lg font-semibold">
-                      {program.rules.reward}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+            programs.map((program: any) => {
+              const rules = program.rules as any;
+              const isVisitBased = program.type === "visit" && "visits" in rules;
+              
+              return (
+                <Card key={program._id}>
+                  <CardContent className="pt-6 space-y-4">
+                    <h3 className="text-xl font-semibold text-center">
+                      {program.name}
+                    </h3>
+                    {isVisitBased ? (
+                      <>
+                        <div className="flex gap-2 justify-center">
+                          {Array.from({ length: rules.visits }).map(
+                            (_, i) => (
+                              <div
+                                key={i}
+                                className="w-4 h-4 rounded-full bg-muted"
+                              />
+                            )
+                          )}
+                        </div>
+                        <div className="bg-muted rounded-lg p-4 text-center">
+                          <p className="text-sm text-muted-foreground mb-1">
+                            Visit {rules.visits} times, earn:
+                          </p>
+                          <p className="text-lg font-semibold">
+                            {rules.reward}
+                          </p>
+                          {rules.minimumSpendCents && (
+                            <p className="text-xs text-muted-foreground mt-2">
+                              Min ${(rules.minimumSpendCents / 100).toFixed(2)} per visit
+                            </p>
+                          )}
+                        </div>
+                      </>
+                    ) : "spendAmountCents" in rules ? (
+                      <div className="bg-muted rounded-lg p-4 text-center">
+                        <p className="text-sm text-muted-foreground mb-1">
+                          Spend ${(rules.spendAmountCents / 100).toFixed(2)}, earn:
+                        </p>
+                        <p className="text-lg font-semibold">
+                          {rules.reward}
+                        </p>
+                      </div>
+                    ) : null}
+                  </CardContent>
+                </Card>
+              );
+            })
           )}
         </div>
 

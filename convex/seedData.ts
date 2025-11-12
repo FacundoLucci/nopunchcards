@@ -419,22 +419,27 @@ export const createDemoData = internalMutation({
           .first();
         
         if (rewardProgram && transactions.length > 0) {
-          const currentVisits = transactions.length;
-          const totalEarned = Math.floor(currentVisits / rewardProgram.rules.visits);
-          const lastTransaction = transactions.sort((a, b) => b.createdAt - a.createdAt)[0];
-          
-          await ctx.db.insert("rewardProgress", {
-            userId: consumerId,
-            businessId: businessId,
-            rewardProgramId: rewardProgram._id,
-            currentVisits: currentVisits % rewardProgram.rules.visits,
-            totalEarned: totalEarned,
-            lastVisitDate: lastTransaction.date,
-            transactionIds: transactions.map(t => t._id),
-            status: "active" as const,
-            createdAt: transactions[0].createdAt,
-          });
-          progressCount++;
+          const rules = rewardProgram.rules as any;
+          // Only create progress for visit-based programs in seed data
+          if (rewardProgram.type === "visit" && "visits" in rules) {
+            const currentVisits = transactions.length;
+            const totalEarned = Math.floor(currentVisits / rules.visits);
+            const lastTransaction = transactions.sort((a, b) => b.createdAt - a.createdAt)[0];
+            
+            await ctx.db.insert("rewardProgress", {
+              userId: consumerId,
+              businessId: businessId,
+              rewardProgramId: rewardProgram._id,
+              currentVisits: currentVisits % rules.visits,
+              currentSpendCents: 0,
+              totalEarned: totalEarned,
+              lastVisitDate: lastTransaction.date,
+              transactionIds: transactions.map(t => t._id),
+              status: "active" as const,
+              createdAt: transactions[0].createdAt,
+            });
+            progressCount++;
+          }
         }
       }
     }
@@ -851,22 +856,27 @@ export const resetWithDemoData = internalMutation({
           .first();
         
         if (rewardProgram && transactions.length > 0) {
-          const currentVisits = transactions.length;
-          const totalEarned = Math.floor(currentVisits / rewardProgram.rules.visits);
-          const lastTransaction = transactions.sort((a, b) => b.createdAt - a.createdAt)[0];
-          
-          await ctx.db.insert("rewardProgress", {
-            userId: consumerId,
-            businessId: businessId,
-            rewardProgramId: rewardProgram._id,
-            currentVisits: currentVisits % rewardProgram.rules.visits,
-            totalEarned: totalEarned,
-            lastVisitDate: lastTransaction.date,
-            transactionIds: transactions.map(t => t._id),
-            status: "active" as const,
-            createdAt: transactions[0].createdAt,
-          });
-          progressCount++;
+          const rules = rewardProgram.rules as any;
+          // Only create progress for visit-based programs in seed data
+          if (rewardProgram.type === "visit" && "visits" in rules) {
+            const currentVisits = transactions.length;
+            const totalEarned = Math.floor(currentVisits / rules.visits);
+            const lastTransaction = transactions.sort((a, b) => b.createdAt - a.createdAt)[0];
+            
+            await ctx.db.insert("rewardProgress", {
+              userId: consumerId,
+              businessId: businessId,
+              rewardProgramId: rewardProgram._id,
+              currentVisits: currentVisits % rules.visits,
+              currentSpendCents: 0,
+              totalEarned: totalEarned,
+              lastVisitDate: lastTransaction.date,
+              transactionIds: transactions.map(t => t._id),
+              status: "active" as const,
+              createdAt: transactions[0].createdAt,
+            });
+            progressCount++;
+          }
         }
       }
     }
