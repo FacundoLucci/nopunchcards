@@ -35,6 +35,7 @@ import type * as plaid_exchangeToken from "../plaid/exchangeToken.js";
 import type * as plaid_helpers from "../plaid/helpers.js";
 import type * as plaid_linkToken from "../plaid/linkToken.js";
 import type * as plaid_syncTransactions from "../plaid/syncTransactions.js";
+import type * as plaid_testWebhook from "../plaid/testWebhook.js";
 import type * as plaid_webhookVerification from "../plaid/webhookVerification.js";
 import type * as rewardPrograms_mutations from "../rewardPrograms/mutations.js";
 import type * as seedData from "../seedData.js";
@@ -83,6 +84,7 @@ declare const fullApi: ApiFromModules<{
   "plaid/helpers": typeof plaid_helpers;
   "plaid/linkToken": typeof plaid_linkToken;
   "plaid/syncTransactions": typeof plaid_syncTransactions;
+  "plaid/testWebhook": typeof plaid_testWebhook;
   "plaid/webhookVerification": typeof plaid_webhookVerification;
   "rewardPrograms/mutations": typeof rewardPrograms_mutations;
   seedData: typeof seedData;

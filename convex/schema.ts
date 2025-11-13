@@ -78,7 +78,8 @@ export default defineSchema({
     status: v.union(
       v.literal("pending"),
       v.literal("matched"),
-      v.literal("unmatched")
+      v.literal("unmatched"),
+      v.literal("no_match") // Processed but no business matched
     ),
     createdAt: v.number(),
   })

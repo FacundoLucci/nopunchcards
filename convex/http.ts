@@ -35,7 +35,11 @@ http.route({
     const bodyText = await request.text();
 
     // 4. Verify JWS signature using Plaid's public key
-    const isValid = await verifyPlaidWebhook(bodyText, plaidVerification, keyId);
+    const isValid = await verifyPlaidWebhook(
+      bodyText,
+      plaidVerification,
+      keyId
+    );
     if (!isValid) {
       console.error("Invalid Plaid webhook signature");
       return new Response("Invalid signature", { status: 401 });
@@ -52,31 +56,50 @@ http.route({
       case "INITIAL_UPDATE":
         // Initial transaction data is ready (right after Link)
         console.log("Initial update - scheduling sync");
-        await ctx.scheduler.runAfter(0, internal.plaid.syncTransactions.syncTransactions, {
-          plaidItemId: item_id,
-        });
+        await ctx.scheduler.runAfter(
+          0,
+          internal.plaid.syncTransactions.syncTransactions,
+          {
+            plaidItemId: item_id,
+          }
+        );
         break;
 
       case "HISTORICAL_UPDATE":
         // Historical data finished loading (2+ years)
         console.log("Historical update complete - scheduling sync");
-        await ctx.scheduler.runAfter(0, internal.plaid.syncTransactions.syncTransactions, {
-          plaidItemId: item_id,
-        });
+        await ctx.scheduler.runAfter(
+          0,
+          internal.plaid.syncTransactions.syncTransactions,
+          {
+            plaidItemId: item_id,
+          }
+        );
         break;
 
       case "DEFAULT_UPDATE":
         // New transaction data available (regular updates)
         console.log("Default update - scheduling sync");
-        await ctx.scheduler.runAfter(0, internal.plaid.syncTransactions.syncTransactions, {
-          plaidItemId: item_id,
-        });
+        await ctx.scheduler.runAfter(
+          0,
+          internal.plaid.syncTransactions.syncTransactions,
+          {
+            plaidItemId: item_id,
+          }
+        );
         break;
 
       case "TRANSACTIONS_REMOVED":
         // Transactions were deleted/refunded (rare)
         console.log("Transactions removed - handling separately");
         // Could schedule a full re-sync or handle removed_transactions array
+        break;
+
+      case "NEW_ACCOUNTS_AVAILABLE":
+        // New accounts are available for the Item (test webhook)
+        console.log("New accounts available for item:", item_id);
+        // In production, you might want to re-link the item or notify the user
+        // For now, just log it (this is mainly used for webhook testing)
         break;
 
       default:

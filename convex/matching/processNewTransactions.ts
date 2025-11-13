@@ -52,8 +52,15 @@ export const processNewTransactions = internalAction({
           businessId: matchedBusinessId,
           transactionId: tx._id,
         });
+      } else {
+        // No match found - mark as "no_match" to prevent reprocessing
+        await ctx.runMutation(
+          internal.matching.processNewTransactions.markNoMatch,
+          {
+            transactionId: tx._id,
+          }
+        );
       }
-      // If null returned, transaction remains status="unmatched" for next run
     }
 
     // 3. If processed full batch (100), there may be more unmatched transactions
@@ -109,6 +116,19 @@ export const updateMatchedTransaction = internalMutation({
     await ctx.db.patch(args.transactionId, {
       businessId: args.businessId,
       status: "matched",
+    });
+    return null;
+  },
+});
+
+export const markNoMatch = internalMutation({
+  args: {
+    transactionId: v.id("transactions"),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.transactionId, {
+      status: "no_match",
     });
     return null;
   },

@@ -31,6 +31,59 @@ export const getAccountByItemId = internalQuery({
   },
 });
 
+export const getAccountById = internalQuery({
+  args: { accountId: v.id("plaidAccounts") },
+  returns: v.union(
+    v.null(),
+    v.object({
+      _id: v.id("plaidAccounts"),
+      _creationTime: v.number(),
+      userId: v.string(),
+      plaidItemId: v.string(),
+      plaidAccessTokenCiphertext: v.string(),
+      accountIds: v.array(v.string()),
+      status: v.union(
+        v.literal("active"),
+        v.literal("disconnected"),
+        v.literal("error")
+      ),
+      institutionName: v.optional(v.string()),
+      lastSyncedAt: v.optional(v.number()),
+      syncCursor: v.optional(v.string()),
+      createdAt: v.number(),
+    })
+  ),
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.accountId);
+  },
+});
+
+export const getAllAccounts = internalQuery({
+  args: {},
+  returns: v.array(
+    v.object({
+      _id: v.id("plaidAccounts"),
+      _creationTime: v.number(),
+      userId: v.string(),
+      plaidItemId: v.string(),
+      plaidAccessTokenCiphertext: v.string(),
+      accountIds: v.array(v.string()),
+      status: v.union(
+        v.literal("active"),
+        v.literal("disconnected"),
+        v.literal("error")
+      ),
+      institutionName: v.optional(v.string()),
+      lastSyncedAt: v.optional(v.number()),
+      syncCursor: v.optional(v.string()),
+      createdAt: v.number(),
+    })
+  ),
+  handler: async (ctx) => {
+    return await ctx.db.query("plaidAccounts").collect();
+  },
+});
+
 export const getTransactionByPlaidId = internalQuery({
   args: { plaidTransactionId: v.string() },
   returns: v.union(
