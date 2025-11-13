@@ -75,70 +75,154 @@ function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-muted/50">
-      <div className="fixed top-4 right-4">
+    <div className="min-h-screen flex flex-col lg:flex-row">
+      {/* Theme Toggle */}
+      <div className="fixed top-4 right-4 z-50">
         <ThemeToggle />
       </div>
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl">
-            {isBusiness ? "Business Owner Sign Up" : "Create Account"}
-          </CardTitle>
-          <CardDescription>
-            {searchParams.ref
-              ? "Sign up once, get loyalty everywhere"
-              : isBusiness
-              ? "Create an account to register your business"
-              : "Start earning rewards at local businesses"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSignup} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Your name"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Creating account..." : "Sign Up"}
-            </Button>
-          </form>
-          <p className="text-center text-sm text-muted-foreground mt-4">
-            Already have an account?{" "}
-            <a href="/login" className="text-primary hover:underline">
-              Sign in
-            </a>
+
+      {/* Left Side - Branding (Desktop only) */}
+      <div className="hidden lg:flex lg:flex-1 bg-gradient-to-br from-orange-500 to-orange-600 dark:from-orange-600 dark:to-orange-700 items-center justify-center p-12">
+        <div className="max-w-md text-white space-y-6">
+          <img
+            src="/NO PUNCH CARDS LOGO.png"
+            alt="No Punch Cards"
+            className="w-full max-w-sm mx-auto drop-shadow-2xl"
+          />
+          <h1 className="text-4xl font-bold text-center">
+            {isBusiness ? "Grow Your Business" : "Join the Revolution"}
+          </h1>
+          <p className="text-xl text-center text-orange-50">
+            {isBusiness
+              ? "Create modern loyalty programs that keep customers coming back"
+              : "Say goodbye to punch cards and hello to automatic rewards"}
           </p>
-        </CardContent>
-      </Card>
+          <div className="pt-4 space-y-3 text-orange-50">
+            {isBusiness ? (
+              <>
+                <div className="flex items-start gap-3">
+                  <div className="mt-1">✓</div>
+                  <div>
+                    <strong>Easy Setup</strong>
+                    <p className="text-sm">Create your loyalty program in minutes</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="mt-1">✓</div>
+                  <div>
+                    <strong>Automatic Tracking</strong>
+                    <p className="text-sm">No more punch cards or apps to maintain</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="mt-1">✓</div>
+                  <div>
+                    <strong>Happy Customers</strong>
+                    <p className="text-sm">Reward loyalty and drive repeat business</p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-start gap-3">
+                  <div className="mt-1">✓</div>
+                  <div>
+                    <strong>Automatic Rewards</strong>
+                    <p className="text-sm">Earn points with every purchase, no punch cards needed</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="mt-1">✓</div>
+                  <div>
+                    <strong>Support Local</strong>
+                    <p className="text-sm">Discover and support independent businesses in your area</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="mt-1">✓</div>
+                  <div>
+                    <strong>One Account</strong>
+                    <p className="text-sm">Track all your loyalty programs in one place</p>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Right Side - Form */}
+      <div className="flex-1 flex flex-col items-center justify-center p-6 bg-background">
+        {/* Mobile Logo */}
+        <div className="lg:hidden mb-8">
+          <img
+            src="/NO PUNCH CARDS LOGO.png"
+            alt="No Punch Cards"
+            className="w-64 mx-auto"
+          />
+        </div>
+
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-2xl">
+              {isBusiness ? "Business Owner Sign Up" : "Create Account"}
+            </CardTitle>
+            <CardDescription>
+              {searchParams.ref
+                ? "Sign up once, get loyalty everywhere"
+                : isBusiness
+                ? "Create an account to register your business"
+                : "Start earning rewards at local businesses"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSignup} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your name"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Creating account..." : "Sign Up"}
+              </Button>
+            </form>
+            <p className="text-center text-sm text-muted-foreground mt-4">
+              Already have an account?{" "}
+              <a href="/login" className="text-primary hover:underline">
+                Sign in
+              </a>
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
