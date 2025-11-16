@@ -1,11 +1,11 @@
 {
-  "name": "Favicon App",
-  "short_name": "Favicon",
-  "description": "Generated favicon application",
+  "name": "Laso Loyalty",
+  "short_name": "Laso",
+  "description": "The last loyalty program humanity will ever need. Earn rewards automatically when you shop at participating businesses.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "theme_color": "#1a1625",
   "icons": [
     {
       "src": "favicon-16x16.png",
@@ -36,6 +36,18 @@
       "src": "favicon-256x256.png",
       "sizes": "256x256",
       "type": "image/png"
+    },
+    {
+      "src": "logo192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }

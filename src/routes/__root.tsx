@@ -39,23 +39,24 @@ const fetchAuth = createServerFn({ method: "GET" }).handler(async () => {
 });
 
 // Cache auth result to prevent duplicate calls during route preloading
-let authCache: { userId?: string; token?: string; timestamp: number } | null = null;
+let authCache: { userId?: string; token?: string; timestamp: number } | null =
+  null;
 const CACHE_DURATION = 1000; // 1 second cache
 
 async function getCachedAuth() {
   const now = Date.now();
-  
+
   // Return cached result if fresh (< 1 second old)
   if (authCache && now - authCache.timestamp < CACHE_DURATION) {
     return { userId: authCache.userId, token: authCache.token };
   }
-  
+
   // Fetch fresh auth data
   const { userId, token } = await fetchAuth();
-  
+
   // Update cache
   authCache = { userId, token, timestamp: now };
-  
+
   return { userId, token };
 }
 
@@ -77,6 +78,32 @@ export const Route = createRootRouteWithContext<{
       },
       {
         title: "Laso - The last loyalty program humanity will ever need",
+      },
+      // PWA: Dynamic theme color based on color scheme
+      {
+        name: "theme-color",
+        content: "#ffffff",
+        media: "(prefers-color-scheme: light)",
+      },
+      {
+        name: "theme-color",
+        content: "#1a1625",
+        media: "(prefers-color-scheme: dark)",
+      },
+      // iOS PWA: Enable standalone mode
+      {
+        name: "apple-mobile-web-app-capable",
+        content: "yes",
+      },
+      // iOS PWA: Status bar style (translucent allows background color to show)
+      {
+        name: "apple-mobile-web-app-status-bar-style",
+        content: "black-translucent",
+      },
+      // iOS PWA: App title
+      {
+        name: "apple-mobile-web-app-title",
+        content: "Laso",
       },
     ],
     links: [
@@ -111,10 +138,10 @@ export const Route = createRootRouteWithContext<{
   beforeLoad: async (ctx) => {
     // all queries, mutations and action made with TanStack Query will be
     // authenticated by an identity token.
-    
+
     // Use cached auth to prevent duplicate server calls during preloading
     const { userId, token } = await getCachedAuth();
-    
+
     // During SSR only (the only time serverHttpClient exists),
     // set the auth token to make HTTP queries with.
     if (token) {
