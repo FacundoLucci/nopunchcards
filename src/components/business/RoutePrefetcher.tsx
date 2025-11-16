@@ -1,5 +1,6 @@
 import { useRouter } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { authClient } from "@/lib/auth-clients";
 
 /**
  * Aggressively prefetches all main business routes on mount
@@ -7,8 +8,13 @@ import { useEffect } from "react";
  */
 export function BusinessRoutePrefetcher() {
   const router = useRouter();
+  const { data: session } = authClient.useSession();
 
   useEffect(() => {
+    if (!session) {
+      return;
+    }
+
     // Prefetch all main business routes immediately
     const routesToPrefetch = [
       "/business/dashboard",
@@ -27,8 +33,7 @@ export function BusinessRoutePrefetcher() {
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [router]);
+  }, [router, session]);
 
   return null; // This component doesn't render anything
 }
-

@@ -1,8 +1,8 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated")({
-  // No SSR needed - auth check happens client-side now
-  ssr: false,
+  // Enable SSR for server-side auth checks and instant redirects
+  ssr: true,
   beforeLoad: async ({ location, context }) => {
     // Use cached auth from root route (already checked via fetchAuth)
     // This is instant - no HTTP request!
@@ -27,4 +27,3 @@ function AuthenticatedLayout() {
     </div>
   );
 }
-

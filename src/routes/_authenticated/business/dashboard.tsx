@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "../../../../convex/_generated/api";
@@ -7,6 +7,7 @@ import { ShareYourPageCard } from "@/components/ShareYourPageCard";
 import { Plus, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Suspense, useEffect, useState } from "react";
+import { authClient } from "@/lib/auth-clients";
 import { Input } from "@/components/ui/input";
 import { useMutation } from "convex/react";
 import { toast } from "sonner";
@@ -14,11 +15,42 @@ import { formatDistanceToNow } from "date-fns";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
 export const Route = createFileRoute("/_authenticated/business/dashboard")({
-  ssr: false,
+  ssr: true,
+  beforeLoad: ({ context, location }) => {
+    if (!context.userId) {
+      throw redirect({
+        to: "/login",
+        search: { redirect: location.href },
+      });
+    }
+  },
   component: BusinessDashboard,
 });
 
 function BusinessDashboard() {
+  const navigate = useNavigate();
+  const {
+    data: session,
+    isPending: sessionPending,
+  } = authClient.useSession();
+
+  useEffect(() => {
+    if (!sessionPending && !session) {
+      navigate({
+        to: "/login",
+        search: { redirect: "/business/dashboard" },
+      });
+    }
+  }, [sessionPending, session, navigate]);
+
+  if (sessionPending || !session) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <Suspense
       fallback={

@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/card";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { LogoIcon } from "@/components/LogoIcon";
 
 export const Route = createFileRoute("/signup")({
   // SSR disabled for auth flows
@@ -41,7 +42,7 @@ function SignupPage() {
     setLoading(true);
 
     try {
-      const { data, error } = await authClient.signUp.email({
+      const { error } = await authClient.signUp.email({
         email,
         password,
         name,
@@ -82,11 +83,15 @@ function SignupPage() {
       </div>
 
       {/* Left Side - Branding (Desktop only) */}
-      <div className="hidden lg:flex lg:flex-1 bg-gradient-to-br from-orange-500 to-orange-600 dark:from-orange-600 dark:to-orange-700 items-center justify-center p-12">
+      <div className="hidden lg:flex lg:flex-1 bg-linear-to-br from-orange-500 to-orange-600 dark:from-orange-600 dark:to-orange-700 items-center justify-center p-12">
         <div className="max-w-md text-white space-y-6">
-          <h1 className="text-6xl font-bold text-center">
-            Laso
-          </h1>
+          <LogoIcon
+            withWordmark
+            size={112}
+            className="justify-center"
+            wordmarkClassName="text-white text-6xl"
+            imageClassName="ring-4 ring-white/30"
+          />
           <h2 className="text-4xl font-bold text-center">
             {isBusiness ? "Grow Your Business" : "Join Laso"}
           </h2>
@@ -102,21 +107,27 @@ function SignupPage() {
                   <div className="mt-1">✓</div>
                   <div>
                     <strong>Easy Setup</strong>
-                    <p className="text-sm">Create your loyalty program in minutes</p>
+                    <p className="text-sm">
+                      Create your loyalty program in minutes
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="mt-1">✓</div>
                   <div>
                     <strong>Automatic Tracking</strong>
-                    <p className="text-sm">No more punch cards or apps to maintain</p>
+                    <p className="text-sm">
+                      No more punch cards or apps to maintain
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="mt-1">✓</div>
                   <div>
                     <strong>Happy Customers</strong>
-                    <p className="text-sm">Reward loyalty and drive repeat business</p>
+                    <p className="text-sm">
+                      Reward loyalty and drive repeat business
+                    </p>
                   </div>
                 </div>
               </>
@@ -126,21 +137,27 @@ function SignupPage() {
                   <div className="mt-1">✓</div>
                   <div>
                     <strong>Automatic Rewards</strong>
-                    <p className="text-sm">Earn points with every purchase, no punch cards needed</p>
+                    <p className="text-sm">
+                      Earn points with every purchase, no punch cards needed
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="mt-1">✓</div>
                   <div>
                     <strong>Support Local</strong>
-                    <p className="text-sm">Discover and support independent businesses in your area</p>
+                    <p className="text-sm">
+                      Discover and support independent businesses in your area
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="mt-1">✓</div>
                   <div>
                     <strong>One Account</strong>
-                    <p className="text-sm">Track all your loyalty programs in one place</p>
+                    <p className="text-sm">
+                      Track all your loyalty programs in one place
+                    </p>
                   </div>
                 </div>
               </>
@@ -153,9 +170,12 @@ function SignupPage() {
       <div className="flex-1 flex flex-col items-center justify-center p-6 bg-background">
         {/* Mobile Logo */}
         <div className="lg:hidden mb-8">
-          <h1 className="text-5xl font-bold text-center text-[#F03D0C]">
-            Laso
-          </h1>
+          <LogoIcon
+            withWordmark
+            size={80}
+            className="justify-center"
+            wordmarkClassName="text-[#F03D0C] text-5xl"
+          />
         </div>
 
         <Card className="w-full max-w-md">
@@ -223,7 +243,12 @@ function SignupPage() {
                     Not a business owner?{" "}
                     <button
                       type="button"
-                      onClick={() => navigate({ to: "/signup", search: { mode: "consumer" } })}
+                      onClick={() =>
+                        navigate({
+                          to: "/signup",
+                          search: { mode: "consumer" },
+                        })
+                      }
                       className="text-primary hover:underline"
                     >
                       Sign up as a customer
@@ -234,7 +259,12 @@ function SignupPage() {
                     Are you a business owner?{" "}
                     <button
                       type="button"
-                      onClick={() => navigate({ to: "/signup", search: { mode: "business" } })}
+                      onClick={() =>
+                        navigate({
+                          to: "/signup",
+                          search: { mode: "business" },
+                        })
+                      }
                       className="text-primary hover:underline"
                     >
                       Sign up for business

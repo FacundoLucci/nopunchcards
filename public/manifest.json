@@ -1,11 +1,11 @@
 {
-  "name": "Laso",
+  "name": "Laso Loyalty",
   "short_name": "Laso",
-  "description": "The last loyalty program humanity will ever need",
+  "description": "The last loyalty program humanity will ever need. Earn rewards automatically when you shop at participating businesses.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#F03D0C",
+  "theme_color": "#1a1625",
   "icons": [
     {
       "src": "favicon-16x16.png",
@@ -49,8 +49,5 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ],
-  "orientation": "portrait",
-  "scope": "/",
-  "categories": ["shopping", "business", "lifestyle"]
+  ]
 }
