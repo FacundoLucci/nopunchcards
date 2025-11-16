@@ -64,19 +64,19 @@ export const getDashboardStats = query({
       throw new Error("Forbidden");
     }
 
-    // Get all progress records for this business
-    const progressRecords = await ctx.db
-      .query("rewardProgress")
-      .withIndex("by_businessId", (q) => q.eq("businessId", args.businessId))
-      .collect();
+      // Get all progress records for this business
+      const progressRecords = await ctx.db
+        .query("rewardProgress")
+        .withIndex("by_businessId", (q) => q.eq("businessId", args.businessId))
+        .collect();
 
-    const totalVisits = progressRecords.reduce(
-      (sum, p) => sum + p.currentVisits,
-      0
-    );
-    const totalRewards = progressRecords.filter(
-      (p) => p.status === "completed"
-    ).length;
+      const totalVisits = progressRecords.reduce(
+        (sum, p) => sum + p.currentVisits,
+        0
+      );
+      const totalRewards = progressRecords.filter(
+        (p) => p.status === "completed" || p.status === "redeemed"
+      ).length;
     const uniqueCustomers = new Set(progressRecords.map((p) => p.userId)).size;
     const averageVisits =
       uniqueCustomers > 0 ? totalVisits / uniqueCustomers : 0;

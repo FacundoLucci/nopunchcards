@@ -32,6 +32,7 @@ import { Route as AuthenticatedBusinessAnalyticsRouteImport } from './routes/_au
 import { Route as AuthenticatedConsumerRewardsIndexRouteImport } from './routes/_authenticated/consumer/rewards/index'
 import { Route as AuthenticatedBusinessProgramsIndexRouteImport } from './routes/_authenticated/business/programs/index'
 import { Route as AuthenticatedBusinessProgramsCreateRouteImport } from './routes/_authenticated/business/programs/create'
+import { Route as AuthenticatedConsumerRewardsClaimIdClaimRouteImport } from './routes/_authenticated/consumer/rewards/$claimId/claim'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -162,6 +163,12 @@ const AuthenticatedBusinessProgramsCreateRoute =
     path: '/programs/create',
     getParentRoute: () => AuthenticatedBusinessRouteRoute,
   } as any)
+const AuthenticatedConsumerRewardsClaimIdClaimRoute =
+  AuthenticatedConsumerRewardsClaimIdClaimRouteImport.update({
+    id: '/rewards/$claimId/claim',
+    path: '/rewards/$claimId/claim',
+    getParentRoute: () => AuthenticatedConsumerRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -186,6 +193,7 @@ export interface FileRoutesByFullPath {
   '/business/programs/create': typeof AuthenticatedBusinessProgramsCreateRoute
   '/business/programs': typeof AuthenticatedBusinessProgramsIndexRoute
   '/consumer/rewards': typeof AuthenticatedConsumerRewardsIndexRoute
+  '/consumer/rewards/$claimId/claim': typeof AuthenticatedConsumerRewardsClaimIdClaimRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -210,6 +218,7 @@ export interface FileRoutesByTo {
   '/business/programs/create': typeof AuthenticatedBusinessProgramsCreateRoute
   '/business/programs': typeof AuthenticatedBusinessProgramsIndexRoute
   '/consumer/rewards': typeof AuthenticatedConsumerRewardsIndexRoute
+  '/consumer/rewards/$claimId/claim': typeof AuthenticatedConsumerRewardsClaimIdClaimRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -236,6 +245,7 @@ export interface FileRoutesById {
   '/_authenticated/business/programs/create': typeof AuthenticatedBusinessProgramsCreateRoute
   '/_authenticated/business/programs/': typeof AuthenticatedBusinessProgramsIndexRoute
   '/_authenticated/consumer/rewards/': typeof AuthenticatedConsumerRewardsIndexRoute
+  '/_authenticated/consumer/rewards/$claimId/claim': typeof AuthenticatedConsumerRewardsClaimIdClaimRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -262,6 +272,7 @@ export interface FileRouteTypes {
     | '/business/programs/create'
     | '/business/programs'
     | '/consumer/rewards'
+    | '/consumer/rewards/$claimId/claim'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -286,6 +297,7 @@ export interface FileRouteTypes {
     | '/business/programs/create'
     | '/business/programs'
     | '/consumer/rewards'
+    | '/consumer/rewards/$claimId/claim'
   id:
     | '__root__'
     | '/'
@@ -311,6 +323,7 @@ export interface FileRouteTypes {
     | '/_authenticated/business/programs/create'
     | '/_authenticated/business/programs/'
     | '/_authenticated/consumer/rewards/'
+    | '/_authenticated/consumer/rewards/$claimId/claim'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -486,6 +499,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBusinessProgramsCreateRouteImport
       parentRoute: typeof AuthenticatedBusinessRouteRoute
     }
+    '/_authenticated/consumer/rewards/$claimId/claim': {
+      id: '/_authenticated/consumer/rewards/$claimId/claim'
+      path: '/rewards/$claimId/claim'
+      fullPath: '/consumer/rewards/$claimId/claim'
+      preLoaderRoute: typeof AuthenticatedConsumerRewardsClaimIdClaimRouteImport
+      parentRoute: typeof AuthenticatedConsumerRouteRoute
+    }
   }
 }
 
@@ -523,6 +543,7 @@ interface AuthenticatedConsumerRouteRouteChildren {
   AuthenticatedConsumerOnboardingRoute: typeof AuthenticatedConsumerOnboardingRoute
   AuthenticatedConsumerSettingsRoute: typeof AuthenticatedConsumerSettingsRoute
   AuthenticatedConsumerRewardsIndexRoute: typeof AuthenticatedConsumerRewardsIndexRoute
+  AuthenticatedConsumerRewardsClaimIdClaimRoute: typeof AuthenticatedConsumerRewardsClaimIdClaimRoute
 }
 
 const AuthenticatedConsumerRouteRouteChildren: AuthenticatedConsumerRouteRouteChildren =
@@ -537,6 +558,8 @@ const AuthenticatedConsumerRouteRouteChildren: AuthenticatedConsumerRouteRouteCh
     AuthenticatedConsumerSettingsRoute: AuthenticatedConsumerSettingsRoute,
     AuthenticatedConsumerRewardsIndexRoute:
       AuthenticatedConsumerRewardsIndexRoute,
+    AuthenticatedConsumerRewardsClaimIdClaimRoute:
+      AuthenticatedConsumerRewardsClaimIdClaimRoute,
   }
 
 const AuthenticatedConsumerRouteRouteWithChildren =

@@ -116,25 +116,49 @@ export default defineSchema({
     .index("by_businessId", ["businessId"])
     .index("by_status", ["status"]),
 
-  rewardProgress: defineTable({
-    userId: v.string(), // Better Auth user.id
-    businessId: v.id("businesses"),
-    rewardProgramId: v.id("rewardPrograms"),
-    currentVisits: v.number(), // For visit-based programs
-    currentSpendCents: v.optional(v.number()), // For spend-based programs
-    totalEarned: v.number(),
-    lastVisitDate: v.optional(v.string()),
-    transactionIds: v.array(v.id("transactions")),
-    status: v.union(
-      v.literal("active"),
-      v.literal("completed"),
-      v.literal("expired")
-    ),
-    createdAt: v.number(),
-  })
+    rewardProgress: defineTable({
+      userId: v.string(), // Better Auth user.id
+      businessId: v.id("businesses"),
+      rewardProgramId: v.id("rewardPrograms"),
+      currentVisits: v.number(), // For visit-based programs
+      currentSpendCents: v.optional(v.number()), // For spend-based programs
+      totalEarned: v.number(),
+      lastVisitDate: v.optional(v.string()),
+      transactionIds: v.array(v.id("transactions")),
+      status: v.union(
+        v.literal("active"),
+        v.literal("completed"),
+        v.literal("redeemed"),
+        v.literal("expired")
+      ),
+      redeemedAt: v.optional(v.number()),
+      createdAt: v.number(),
+    })
     .index("by_userId", ["userId"])
     .index("by_businessId", ["businessId"])
     .index("by_rewardProgramId", ["rewardProgramId"]),
+
+    rewardClaims: defineTable({
+      userId: v.string(),
+      businessId: v.id("businesses"),
+      rewardProgramId: v.id("rewardPrograms"),
+      rewardProgressId: v.id("rewardProgress"),
+      rewardDescription: v.string(),
+      programName: v.string(),
+      rewardCode: v.string(),
+      status: v.union(
+        v.literal("pending"),
+        v.literal("redeemed"),
+        v.literal("cancelled")
+      ),
+      issuedAt: v.number(),
+      redeemedAt: v.optional(v.number()),
+      redeemedByUserId: v.optional(v.string()),
+    })
+      .index("by_userId_status", ["userId", "status"])
+      .index("by_businessId_status", ["businessId", "status"])
+      .index("by_rewardCode", ["rewardCode"])
+      .index("by_rewardProgressId", ["rewardProgressId"]),
 
   notifications: defineTable({
     userId: v.string(), // Better Auth user.id

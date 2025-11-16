@@ -12,6 +12,7 @@ export const sendRewardEarned = internalAction({
     businessName: v.string(), // Pass name from caller to avoid extra query
     rewardDescription: v.string(),
     programName: v.string(),
+    rewardClaimId: v.optional(v.id("rewardClaims")),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -26,6 +27,7 @@ export const sendRewardEarned = internalAction({
         data: {
           businessId: args.businessId,
           programName: args.programName,
+          rewardClaimId: args.rewardClaimId,
         },
         channel: "push",
         status: "sent",
@@ -37,7 +39,11 @@ export const sendRewardEarned = internalAction({
       userId: args.userId,
       title: `Reward Earned at ${args.businessName}!`,
       body: `You've earned: ${args.rewardDescription}`,
-      data: { notificationId, businessId: args.businessId },
+      data: {
+        notificationId,
+        businessId: args.businessId,
+        rewardClaimId: args.rewardClaimId,
+      },
     });
 
     // 3. Send email notification using Resend component

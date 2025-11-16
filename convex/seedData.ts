@@ -24,6 +24,13 @@ export const clearAllData = internalMutation({
     }
     console.log(`Deleted ${rewardProgress.length} reward progress records`);
 
+    // Delete all rewardClaims
+    const rewardClaims = await ctx.db.query("rewardClaims").collect();
+    for (const claim of rewardClaims) {
+      await ctx.db.delete(claim._id);
+    }
+    console.log(`Deleted ${rewardClaims.length} reward claim records`);
+
     // Delete all rewardPrograms
     const rewardPrograms = await ctx.db.query("rewardPrograms").collect();
     for (const program of rewardPrograms) {
@@ -470,6 +477,13 @@ export const resetWithDemoData = internalMutation({
       await ctx.db.delete(progress._id);
     }
     console.log(`Deleted ${rewardProgress.length} reward progress records`);
+
+    // Delete all rewardClaims
+    const rewardClaims = await ctx.db.query("rewardClaims").collect();
+    for (const claim of rewardClaims) {
+      await ctx.db.delete(claim._id);
+    }
+    console.log(`Deleted ${rewardClaims.length} reward claim records`);
 
     // Delete all rewardPrograms
     const rewardPrograms = await ctx.db.query("rewardPrograms").collect();

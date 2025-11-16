@@ -6,7 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShareYourPageCard } from "@/components/ShareYourPageCard";
 import { Plus, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { Input } from "@/components/ui/input";
+import { useMutation } from "convex/react";
+import { toast } from "sonner";
+import { formatDistanceToNow } from "date-fns";
+import type { Id } from "../../../../convex/_generated/dataModel";
 
 export const Route = createFileRoute("/_authenticated/business/dashboard")({
   ssr: false,
@@ -57,7 +62,10 @@ function DashboardContent() {
         <StatsSection businessId={business._id} navigate={navigate} />
       </Suspense>
 
-      {/* Share Page Card */}
+        {/* Redemption */}
+        <RedeemRewardSection businessId={business._id} />
+
+        {/* Share Page Card */}
       <ShareYourPageCard slug={business.slug} />
 
       {/* Active Programs */}
@@ -76,7 +84,7 @@ function StatsSection({
   businessId,
   navigate,
 }: {
-  businessId: any;
+  businessId: Id<"businesses">;
   navigate: ReturnType<typeof useNavigate>;
 }) {
   const { data: stats } = useSuspenseQuery(
@@ -125,7 +133,179 @@ function StatsSection({
   );
 }
 
-function ProgramsSection({ businessId }: { businessId: any }) {
+type RewardClaimSummary = {
+  _id: Id<"rewardClaims">;
+  businessId: Id<"businesses">;
+  programName: string;
+  rewardDescription: string;
+  status: "pending" | "redeemed" | "cancelled";
+  issuedAt: number;
+  redeemedAt?: number;
+};
+
+type RewardActionResult = {
+  outcome: "not_found" | "wrong_business" | "already_redeemed" | "success";
+  claim?: RewardClaimSummary;
+};
+
+function RedeemRewardSection({ businessId }: { businessId: Id<"businesses"> }) {
+  const [code, setCode] = useState("");
+  const [result, setResult] = useState<RewardActionResult | null>(null);
+  const [isChecking, setIsChecking] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
+  const previewReward = useMutation(api.businesses.mutations.previewRewardCode);
+  const confirmReward = useMutation(
+    api.businesses.mutations.confirmRewardRedemption
+  );
+
+  const normalizedCode = code.trim().toUpperCase();
+  const claim = result?.claim;
+  const canConfirm =
+    result?.outcome === "success" && claim?.status === "pending";
+
+  const handlePreview = async () => {
+    if (!normalizedCode) {
+      toast.error("Enter a reward code");
+      return;
+    }
+    setIsChecking(true);
+    try {
+      const response = (await previewReward({
+        businessId,
+        rewardCode: normalizedCode,
+      })) as RewardActionResult;
+      setResult(response);
+      if (response.outcome === "success") {
+        toast.success("Reward ready to redeem");
+      } else if (response.outcome === "already_redeemed") {
+        toast.info("Reward already redeemed");
+      } else if (response.outcome === "wrong_business") {
+        toast.error("Code belongs to another business");
+      } else {
+        toast.error("Reward code not found");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Unable to verify reward code");
+    } finally {
+      setIsChecking(false);
+    }
+  };
+
+  const handleConfirm = async () => {
+    if (!normalizedCode || !canConfirm) return;
+    setIsConfirming(true);
+    try {
+      const response = (await confirmReward({
+        businessId,
+        rewardCode: normalizedCode,
+      })) as RewardActionResult;
+      setResult(response);
+      if (response.outcome === "success") {
+        toast.success("Reward marked as redeemed");
+        setCode("");
+      } else if (response.outcome === "already_redeemed") {
+        toast.info("Reward already redeemed");
+      } else if (response.outcome === "wrong_business") {
+        toast.error("Code belongs to another business");
+      } else {
+        toast.error("Reward code not found");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Unable to confirm reward");
+    } finally {
+      setIsConfirming(false);
+    }
+  };
+
+  let statusMessage: { text: string; tone: "success" | "info" | "error" } | null =
+    null;
+  if (result) {
+    if (result.outcome === "success") {
+      statusMessage = { text: "Code verified. You can redeem it now.", tone: "success" };
+    } else if (result.outcome === "already_redeemed") {
+      statusMessage = { text: "This reward has already been redeemed.", tone: "info" };
+    } else if (result.outcome === "wrong_business") {
+      statusMessage = { text: "This code belongs to another business.", tone: "error" };
+    } else {
+      statusMessage = { text: "We couldn't find that reward code.", tone: "error" };
+    }
+  }
+
+  const statusClasses =
+    statusMessage?.tone === "success"
+      ? "border-green-500/30 bg-green-50 text-green-800"
+      : statusMessage?.tone === "info"
+        ? "border-amber-400/40 bg-amber-50 text-amber-800"
+        : "border-red-400/40 bg-red-50 text-red-800";
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">Redeem a reward</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">
+            Enter customer code
+          </label>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input
+              value={code}
+              onChange={(event) => setCode(event.target.value.toUpperCase())}
+              placeholder="E.g. 8-character code"
+              className="uppercase"
+            />
+            <Button
+              onClick={handlePreview}
+              disabled={isChecking}
+              className="sm:w-36"
+            >
+              {isChecking ? "Checking..." : "Verify"}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Customers can show you a QR or tell you this code after checkout.
+          </p>
+        </div>
+
+        {result && statusMessage && (
+          <div className={`rounded-lg border px-4 py-3 ${statusClasses}`}>
+            <p className="font-medium">{statusMessage.text}</p>
+            {claim && (
+              <p className="text-sm">
+                {claim.rewardDescription} • Earned{" "}
+                {formatDistanceToNow(new Date(claim.issuedAt), {
+                  addSuffix: true,
+                })}
+              </p>
+            )}
+            {result.outcome === "already_redeemed" && claim?.redeemedAt && (
+              <p className="text-xs mt-1">
+                Redeemed{" "}
+                {formatDistanceToNow(new Date(claim.redeemedAt), {
+                  addSuffix: true,
+                })}
+              </p>
+            )}
+          </div>
+        )}
+
+        <Button
+          className="w-full"
+          variant="default"
+          disabled={!canConfirm || isConfirming}
+          onClick={handleConfirm}
+        >
+          {isConfirming ? "Confirming..." : "Mark as redeemed"}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ProgramsSection({ businessId }: { businessId: Id<"businesses"> }) {
   const navigate = useNavigate();
   const { data: programs } = useSuspenseQuery(
     convexQuery(api.rewardPrograms.mutations.listByBusiness, { businessId })
