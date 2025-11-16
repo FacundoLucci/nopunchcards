@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { authClient } from "@/lib/auth-clients";
 
 export const Route = createFileRoute("/_authenticated/business/register")({
   component: BusinessRegister,
@@ -234,6 +235,11 @@ function BusinessRegister() {
     }
   };
 
+  const handleLogout = async () => {
+    await authClient.signOut();
+    navigate({ to: "/login" });
+  };
+
   // Show loading state while profile is being created
   if (!profileReady) {
     return (
@@ -243,5 +249,11 @@ function BusinessRegister() {
     );
   }
 
-  return <MultistepForm steps={steps} onComplete={handleComplete} />;
+  return (
+    <MultistepForm
+      steps={steps}
+      onComplete={handleComplete}
+      onCancel={handleLogout}
+    />
+  );
 }

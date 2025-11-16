@@ -11,8 +11,6 @@ import { Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BottomFade } from "@/components/consumer/BottomFade";
 import { BusinessRoutePrefetcher } from "@/components/business/RoutePrefetcher";
-import { useQuery } from "convex/react";
-import { api } from "../../../../convex/_generated/api";
 
 export const Route = createFileRoute("/_authenticated/business")({
   component: BusinessLayout,
@@ -22,10 +20,6 @@ function BusinessLayout() {
   const matchRoute = useMatchRoute();
   const navigate = useNavigate();
   const router = useRouter();
-  
-  // Check onboarding status to hide nav during redirect
-  const onboardingStatus = useQuery(api.onboarding.queries.getOnboardingStatus);
-  const needsOnboarding = onboardingStatus?.needsOnboarding ?? false;
 
   // Detect if we're on a main route (show header) or detail route (hide header)
   const isDashboard = !!matchRoute({ to: "/business/dashboard" });
@@ -33,9 +27,10 @@ function BusinessLayout() {
   const isAnalytics = !!matchRoute({ to: "/business/analytics" });
   const isSettings = !!matchRoute({ to: "/business/settings" });
   const isProgramsCreate = !!matchRoute({ to: "/business/programs/create" });
+  const isRegister = !!matchRoute({ to: "/business/register" });
 
   const showHeader = isDashboard || isPrograms || isAnalytics || isSettings;
-  const showNav = !isProgramsCreate && !needsOnboarding; // Hide nav on programs/create and during onboarding
+  const showNav = !isProgramsCreate && !isRegister; // Hide nav on programs/create and register
 
   // Get title based on route
   const getTitle = () => {
@@ -59,9 +54,7 @@ function BusinessLayout() {
       {showHeader && (
         <header className="sticky top-0 bg-background/80 backdrop-blur-sm py-4 px-4 flex items-center justify-between z-10">
           <div className="flex flex-col gap-0.5">
-            <h1 className="text-lg font-black text-white bg-[#F03D0C] rounded-md px-1.5 py-0">
-              NO PUNCH CARDS
-            </h1>
+            <h1 className="text-xl font-black text-[#F03D0C]">Laso</h1>
             <div className="relative h-4">
               <AnimatePresence>
                 <motion.p
@@ -103,7 +96,7 @@ function BusinessLayout() {
       </div>
 
       {/* Fade effect behind navigation */}
-      <BottomFade />
+      {showNav && <BottomFade />}
 
       {/* Navigation - conditionally visible */}
       {showNav && <BusinessNav />}

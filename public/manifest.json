@@ -1,7 +1,7 @@
 {
-  "name": "No Punch Cards",
-  "short_name": "NoPunchCards",
-  "description": "Loyalty without the cards - Automatic rewards every time you shop locally",
+  "name": "Laso",
+  "short_name": "Laso",
+  "description": "The last loyalty program humanity will ever need",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

@@ -85,9 +85,7 @@ function ConsumerLayout() {
       {/* Conditional Header - shown only on main routes */}
       {showHeader && showNav && (
         <header className="sticky top-0 bg-background/80 backdrop-blur-sm py-4 px-4 flex items-center justify-between z-10">
-          <h1 className="text-lg font-black text-white bg-[#F03D0C] rounded-md px-1.5 py-0">
-            NO PUNCH CARDS
-          </h1>
+          <h1 className="text-xl font-black text-[#F03D0C]">Laso</h1>
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" asChild>
               <Link

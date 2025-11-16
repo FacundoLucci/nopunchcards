@@ -53,7 +53,7 @@ function SignupPage() {
         return;
       }
 
-      toast.success("Account created! Welcome to No Punch Cards");
+      toast.success("Account created! Welcome to Laso!");
 
       // Note: Profile will be created automatically when user first accesses
       // protected routes. This avoids race conditions with auth session sync.
@@ -84,14 +84,12 @@ function SignupPage() {
       {/* Left Side - Branding (Desktop only) */}
       <div className="hidden lg:flex lg:flex-1 bg-gradient-to-br from-orange-500 to-orange-600 dark:from-orange-600 dark:to-orange-700 items-center justify-center p-12">
         <div className="max-w-md text-white space-y-6">
-          <img
-            src="/NO PUNCH CARDS LOGO.png"
-            alt="No Punch Cards"
-            className="w-full max-w-sm mx-auto drop-shadow-2xl"
-          />
-          <h1 className="text-4xl font-bold text-center">
-            {isBusiness ? "Grow Your Business" : "Join the Revolution"}
+          <h1 className="text-6xl font-bold text-center">
+            Laso
           </h1>
+          <h2 className="text-4xl font-bold text-center">
+            {isBusiness ? "Grow Your Business" : "Join Laso"}
+          </h2>
           <p className="text-xl text-center text-orange-50">
             {isBusiness
               ? "Create modern loyalty programs that keep customers coming back"
@@ -155,11 +153,9 @@ function SignupPage() {
       <div className="flex-1 flex flex-col items-center justify-center p-6 bg-background">
         {/* Mobile Logo */}
         <div className="lg:hidden mb-8">
-          <img
-            src="/NO PUNCH CARDS LOGO.png"
-            alt="No Punch Cards"
-            className="w-64 mx-auto"
-          />
+          <h1 className="text-5xl font-bold text-center text-[#F03D0C]">
+            Laso
+          </h1>
         </div>
 
         <Card className="w-full max-w-md">
@@ -220,6 +216,33 @@ function SignupPage() {
                 Sign in
               </a>
             </p>
+            <div className="mt-4 pt-4 border-t">
+              <p className="text-center text-sm text-muted-foreground">
+                {isBusiness ? (
+                  <>
+                    Not a business owner?{" "}
+                    <button
+                      type="button"
+                      onClick={() => navigate({ to: "/signup", search: { mode: "consumer" } })}
+                      className="text-primary hover:underline"
+                    >
+                      Sign up as a customer
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    Are you a business owner?{" "}
+                    <button
+                      type="button"
+                      onClick={() => navigate({ to: "/signup", search: { mode: "business" } })}
+                      className="text-primary hover:underline"
+                    >
+                      Sign up for business
+                    </button>
+                  </>
+                )}
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>

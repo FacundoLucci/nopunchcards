@@ -67,14 +67,12 @@ function LoginPage() {
       {/* Left Side - Branding (Desktop only) */}
       <div className="hidden lg:flex lg:flex-1 bg-gradient-to-br from-orange-500 to-orange-600 dark:from-orange-600 dark:to-orange-700 items-center justify-center p-12">
         <div className="max-w-md text-white space-y-6">
-          <img
-            src="/NO PUNCH CARDS LOGO.png"
-            alt="No Punch Cards"
-            className="w-full max-w-sm mx-auto drop-shadow-2xl"
-          />
-          <h1 className="text-4xl font-bold text-center">
-            Welcome Back
+          <h1 className="text-6xl font-bold text-center">
+            Laso
           </h1>
+          <h2 className="text-4xl font-bold text-center">
+            Welcome Back
+          </h2>
           <p className="text-xl text-center text-orange-50">
             Sign in to manage your loyalty rewards and discover local businesses
           </p>
@@ -108,17 +106,15 @@ function LoginPage() {
       <div className="flex-1 flex flex-col items-center justify-center p-6 bg-background">
         {/* Mobile Logo */}
         <div className="lg:hidden mb-8">
-          <img
-            src="/NO PUNCH CARDS LOGO.png"
-            alt="No Punch Cards"
-            className="w-64 mx-auto"
-          />
+          <h1 className="text-5xl font-bold text-center text-[#F03D0C]">
+            Laso
+          </h1>
         </div>
 
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl">Sign In</CardTitle>
-            <CardDescription>Welcome back to No Punch Cards</CardDescription>
+            <CardDescription>Welcome back to Laso</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
@@ -154,6 +150,14 @@ function LoginPage() {
                 Sign up
               </a>
             </p>
+            <div className="mt-4 pt-4 border-t">
+              <p className="text-center text-sm text-muted-foreground">
+                Are you a business owner?{" "}
+                <a href="/signup?mode=business" className="text-primary hover:underline">
+                  Sign up for business
+                </a>
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>

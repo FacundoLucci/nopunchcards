@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/card";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { authClient } from "@/lib/auth-clients";
+import { LogOut } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/consumer/onboarding")({
   component: ConsumerOnboarding,
@@ -79,10 +81,23 @@ function ConsumerOnboarding() {
     );
   }
 
+  const handleLogout = async () => {
+    await authClient.signOut();
+    navigate({ to: "/login" });
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
-      <div className="fixed top-4 right-4">
+      <div className="fixed top-4 right-4 flex items-center gap-2">
         <ThemeToggle />
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleLogout}
+          title="Logout"
+        >
+          <LogOut className="w-5 h-5" />
+        </Button>
       </div>
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">

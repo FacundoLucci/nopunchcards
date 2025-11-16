@@ -7,7 +7,7 @@ import webpush from "web-push";
 // Only set VAPID details if environment variables are provided
 if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
   webpush.setVapidDetails(
-    "mailto:support@nopunchcards.com",
+    "mailto:support@laso.app",
     process.env.VAPID_PUBLIC_KEY,
     process.env.VAPID_PRIVATE_KEY
   );

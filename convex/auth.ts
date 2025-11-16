@@ -32,7 +32,7 @@ export const createAuth = (
     database: authComponent.adapter(ctx),
     trustedOrigins: [
       "http://localhost:3000",
-      "https://nopunchcards.netlify.app",
+      "https://laso.netlify.app",
     ],
     // Configure simple, non-verified email/password to get started
     emailAndPassword: {

@@ -1,18 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useEffect, useState } from "react";
-import { RefreshCcw, ArrowRight } from "lucide-react";
+import { useEffect } from "react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
 });
 
-type UserType = "consumer" | "business" | null;
-
 function LandingPage() {
   const navigate = useNavigate();
-  const [selectedType, setSelectedType] = useState<UserType>(null);
 
   useEffect(() => {
     // Detect if the app is running in standalone mode (saved to home screen)
@@ -29,56 +26,18 @@ function LandingPage() {
   }, [navigate]);
 
   return (
-    <div
-      className={`min-h-screen relative ${
-        !selectedType ? "overflow-hidden h-screen" : ""
-      }`}
-    >
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="absolute top-0 left-0 right-0 z-50 py-6">
-        <div className="flex items-center justify-between px-6">
-          {/* Mode Switcher - Shows after selection on left */}
-          <div className="w-32">
-            {selectedType && (
-              <button
-                onClick={() =>
-                  setSelectedType(
-                    selectedType === "consumer" ? "business" : "consumer"
-                  )
-                }
-                className={`inline-flex items-center gap-2 transition-colors duration-200 rounded-lg px-3 py-2 ${
-                  selectedType === "consumer"
-                    ? "bg-[#F03D0C] text-white hover:bg-[#D03609]"
-                    : "bg-white/90 dark:bg-gray-900 text-[#F03D0C] dark:text-white hover:bg-white/80 dark:hover:bg-gray-800"
-                }`}
-              >
-                <span className="font-medium text-sm">
-                  {selectedType === "consumer" ? "Consumer" : "Business"}
-                </span>
-                <RefreshCcw className="w-4 h-4" />
-              </button>
-            )}
-          </div>
+      <header className="fixed top-0 left-0 right-0 z-50 py-6 bg-background/80 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-6">
+          {/* Logo */}
+          <h1 className="text-3xl md:text-4xl font-bold text-[#F03D0C]">Laso</h1>
 
-          {/* Centered Logo */}
-          <div className="flex items-center justify-center">
-            <img
-              src="/NO PUNCH CARDS LOGO.png"
-              alt="No Punch Cards Logo"
-              className="h-12 w-auto drop-shadow-lg"
-            />
-          </div>
-
-          {/* Sign In button on right */}
-          <div className="w-32 flex justify-end">
+          {/* Right side - Theme Toggle and Sign In */}
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
             <Link to="/login" search={{ redirect: "/app" }}>
-              <Button
-                className={`text-gray-900 dark:text-white ${
-                  selectedType === "business"
-                    ? "bg-white/90 hover:bg-white/80"
-                    : "bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800"
-                }`}
-              >
+              <Button className="bg-transparent text-[#F03D0C] hover:bg-[#F03D0C] hover:text-white">
                 Sign In
               </Button>
             </Link>
@@ -86,266 +45,224 @@ function LandingPage() {
         </div>
       </header>
 
-      {/* Split Screen Hero - Only show when no selection */}
-      {!selectedType && (
-        <div className="relative h-screen flex flex-col md:flex-row overflow-hidden">
-          {/* Consumer Side - White with Red Text */}
-          <div className="flex-1 bg-white dark:bg-gray-900 text-[#F03D0C] dark:text-[#F03D0C] flex items-center justify-center p-8 pt-24 md:p-12">
-            <div className="max-w-md">
-              <h2 className="text-3xl md:text-6xl font-bold mb-4 md:mb-6">
-                I'm a consumer, I buy things.
-              </h2>
-              <p className="hidden min-[390px]:block text-sm md:text-lg text-[#F03D0C]/80 dark:text-[#F03D0C]/70 mb-6 md:mb-8 italic">
-                But also, I hate having to signup for a loyalty program over and
-                over and over again. Don't even think about giving me a punch
-                card.
-              </p>
-              <button
-                onClick={() => setSelectedType("consumer")}
-                className="w-full"
-              >
-                <div className="bg-[#F03D0C] border border-[#F03D0C] text-white hover:bg-[#D03609] transition-colors cursor-pointer rounded-lg p-6 shadow-lg flex items-center justify-between">
-                  <div className="flex-1 text-left">
-                    <div className="text-white text-2xl md:text-3xl font-bold mb-2">
-                      Find rewards
-                    </div>
-                    <div className="text-white/90 text-sm md:text-base font-normal">
-                      And never sign up for a loyalty program again
-                    </div>
-                  </div>
-                  <ArrowRight className="w-8 h-8 md:w-10 md:h-10 shrink-0 ml-4" />
-                </div>
-              </button>
-            </div>
-          </div>
-
-          {/* Business Side - Red with White Text */}
-          <div className="flex-1 bg-[#F03D0C] text-white/90 flex items-center justify-center p-8 md:p-12">
-            <div className="max-w-md">
-              <h2 className="text-3xl md:text-6xl font-bold mb-4 md:mb-6">
-                I'm a seller, I sell stuff.
-              </h2>
-              <p className="hidden min-[390px]:block text-sm md:text-lg text-white/70 mb-6 md:mb-8 italic">
-                Also, I don't have time or patience to manage yet another
-                service let alone loyalty program. Plus, I've already got 10
-                iPads at my register.
-              </p>
-              <button
-                onClick={() => setSelectedType("business")}
-                className="w-full"
-              >
-                <div className="bg-white/90 border border-white/90 text-[#F03D0C] hover:bg-white/80 transition-colors cursor-pointer rounded-lg p-6 shadow-lg flex items-center justify-between">
-                  <div className="flex-1 text-left">
-                    <div className="text-[#F03D0C] text-2xl md:text-3xl font-bold mb-2">
-                      Make more money
-                    </div>
-                    <div className="text-[#F03D0C]/80 text-sm md:text-base font-normal">
-                      And see how universal loyalty works.
-                    </div>
-                  </div>
-                  <ArrowRight className="w-8 h-8 md:w-10 md:h-10 shrink-0 ml-4" />
-                </div>
-              </button>
-            </div>
+      {/* Hero Section - Business Focused */}
+      <section className="pt-32 pb-20 px-6">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-5xl md:text-7xl font-bold mb-6 text-foreground">
+            The last loyalty program<br />humanity will ever need
+          </h2>
+          <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+            Automatic loyalty rewards for your business. No apps, no cards, no hassle.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Link to="/signup" search={{ mode: "business" }}>
+              <Button size="lg" className="bg-[#F03D0C] hover:bg-[#D03609] text-white px-8 h-14 text-lg">
+                Get Started Free
+              </Button>
+            </Link>
           </div>
         </div>
-      )}
+      </section>
 
-      {/* Consumer Content - Full page modal */}
-      {selectedType === "consumer" && (
-        <div className="min-h-screen bg-white dark:bg-gray-900 py-20 px-6 animate-in fade-in duration-500">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-4xl md:text-5xl font-bold text-center mt-12 mb-6 text-[#F03D0C]">
-              Loyalty without the cards
-            </h2>
-            <p className="text-xl text-center text-gray-600 dark:text-gray-400 mb-12">
-              Automatic rewards every time you shop locally
+      {/* How It Works */}
+      <section className="py-20 px-6 bg-muted/30">
+        <div className="max-w-5xl mx-auto">
+          <h3 className="text-3xl md:text-4xl font-bold text-center mb-16">
+            How It Works
+          </h3>
+
+          {/* Customers link cards */}
+          <div className="mb-12 grid md:grid-cols-2 gap-8 items-center">
+            <p className="text-xl md:text-2xl order-2 md:order-1">
+              Customers link their credit cards via Plaid.
             </p>
-
-            <div className="grid md:grid-cols-3 gap-8 mb-12">
-              {[
-                {
-                  step: "1",
-                  title: "Link Your Card",
-                  description: "Securely connect the card you use most",
-                },
-                {
-                  step: "2",
-                  title: "Shop Local",
-                  description: "Visit participating businesses like normal",
-                },
-                {
-                  step: "3",
-                  title: "Earn Rewards",
-                  description:
-                    "Get rewarded automatically—no punch cards needed",
-                },
-              ].map((item) => (
-                <Card
-                  key={item.step}
-                  className="border-[#F03D0C] dark:bg-gray-800 dark:border-[#F03D0C]"
-                >
-                  <CardContent className="pt-6 text-center">
-                    <div className="w-12 h-12 rounded-full bg-[#F03D0C] text-white flex items-center justify-center font-bold text-xl mb-4 mx-auto">
-                      {item.step}
-                    </div>
-                    <h3 className="text-xl font-semibold mb-2 text-[#F03D0C]">
-                      {item.title}
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      {item.description}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            <div className="text-center mb-20">
-              <Link to="/signup">
-                <Button
-                  size="lg"
-                  className="bg-[#F03D0C] hover:bg-[#D03609] text-white px-12 h-14 text-lg"
-                >
-                  Get Started
-                </Button>
-              </Link>
+            <div className="order-1 md:order-2">
+              <div className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-[4/3] flex items-center justify-center border border-border">
+                <div className="text-center p-8">
+                  <div className="text-4xl mb-2">💳</div>
+                  <p className="text-sm text-muted-foreground">Linked cards</p>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Business Content - Full page modal */}
-      {selectedType === "business" && (
-        <div className="min-h-screen bg-[#F03D0C] py-20 px-6 animate-in fade-in duration-500">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-4xl md:text-5xl font-bold text-center mt-12 mb-6 text-white/90">
-              Loyalty that runs itself
-            </h2>
-            <p className="text-xl text-center text-white/80 mb-12">
-              No setup, no maintenance, no new hardware. Just happier customers.
+          {/* We track transactions */}
+          <div className="mb-12 grid md:grid-cols-2 gap-8 items-center">
+            <div>
+              <div className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-[4/3] flex items-center justify-center border border-border">
+                <div className="text-center p-8">
+                  <div className="text-4xl mb-2">📊</div>
+                  <p className="text-sm text-muted-foreground">Transaction tracking</p>
+                </div>
+              </div>
+            </div>
+            <p className="text-xl md:text-2xl">
+              We track their transactions and automatically reward them.
             </p>
+          </div>
 
-            <div className="grid md:grid-cols-3 gap-8 mb-12">
-              {[
-                {
-                  step: "1",
-                  title: "Zero Setup",
-                  description: "No iPads, no apps, no training required",
-                },
-                {
-                  step: "2",
-                  title: "Automatic",
-                  description:
-                    "Rewards happen behind the scenes when customers shop",
-                },
-                {
-                  step: "3",
-                  title: "Grow Sales",
-                  description:
-                    "Bring customers back more often without the work",
-                },
-              ].map((item) => (
-                <Card key={item.step} className="bg-white/90">
-                  <CardContent className="pt-6 text-center">
-                    <div className="w-12 h-12 rounded-full bg-[#F03D0C] text-white flex items-center justify-center font-bold text-xl mb-4 mx-auto">
-                      {item.step}
-                    </div>
-                    <h3 className="text-xl font-semibold mb-2 text-[#F03D0C]">
-                      {item.title}
-                    </h3>
-                    <p className="text-gray-600">{item.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            <div className="text-center mb-20">
-              <Link to="/signup" search={{ mode: "business" }}>
-                <Button
-                  size="lg"
-                  className="bg-white/90 hover:bg-white/80 text-[#F03D0C] px-12 h-14 text-lg"
-                >
-                  Get Started
-                </Button>
-              </Link>
+          {/* Businesses set rules */}
+          <div className="mb-12 grid md:grid-cols-2 gap-8 items-center">
+            <p className="text-xl md:text-2xl order-2 md:order-1">
+              Businesses create rewards based on visits or total spend.
+            </p>
+            <div className="order-1 md:order-2">
+              <div className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-[4/3] flex items-center justify-center border border-border">
+                <div className="text-center p-8">
+                  <div className="text-4xl mb-2">🎯</div>
+                  <p className="text-sm text-muted-foreground">Program setup</p>
+                </div>
+              </div>
             </div>
           </div>
+
+          {/* Notifications */}
+          <div className="mb-12 grid md:grid-cols-2 gap-8 items-center">
+            <div>
+              <div className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-[4/3] flex items-center justify-center border border-border">
+                <div className="text-center p-8">
+                  <div className="text-4xl mb-2">🔔</div>
+                  <p className="text-sm text-muted-foreground">Notifications</p>
+                </div>
+              </div>
+            </div>
+            <p className="text-xl md:text-2xl">
+              Customers get push notifications, email, or text when they earn a reward.
+            </p>
+          </div>
+
+          {/* Redemption */}
+          <div className="mb-12 grid md:grid-cols-2 gap-8 items-center">
+            <p className="text-xl md:text-2xl order-2 md:order-1">
+              Businesses verify rewards by scanning a QR code or entering a code.
+            </p>
+            <div className="order-1 md:order-2">
+              <div className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-[4/3] flex items-center justify-center border border-border">
+                <div className="text-center p-8">
+                  <div className="text-4xl mb-2">📱</div>
+                  <p className="text-sm text-muted-foreground">QR redemption</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Network effect */}
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div>
+              <div className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-[4/3] flex items-center justify-center border border-border">
+                <div className="text-center p-8">
+                  <div className="text-4xl mb-2">🌐</div>
+                  <p className="text-sm text-muted-foreground">Network growth</p>
+                </div>
+              </div>
+            </div>
+            <p className="text-xl md:text-2xl">
+              Once in the network, customers are automatically enrolled at other stores.
+            </p>
+          </div>
         </div>
-      )}
+      </section>
+
+      {/* Benefits Section */}
+      <section className="py-20 px-6">
+        <div className="max-w-6xl mx-auto">
+          <h3 className="text-3xl md:text-4xl font-bold text-center mb-12">
+            Why Businesses Choose Laso
+          </h3>
+          <div className="grid md:grid-cols-2 gap-8">
+            {[
+              {
+                title: "Zero Hardware Costs",
+                description: "No iPads, no scanners, no point-of-sale integrations. Works with your existing payment processor.",
+              },
+              {
+                title: "Set It and Forget It",
+                description: "Create your program once. Everything else happens automatically in the background.",
+              },
+              {
+                title: "Automatic Customer Tracking",
+                description: "Know exactly who your best customers are without asking them to fill out forms.",
+              },
+              {
+                title: "Network Effect",
+                description: "Your customers can discover you through Laso's network of participating businesses.",
+              },
+            ].map((benefit, idx) => (
+              <Card key={idx} className="border-border">
+                <CardContent className="pt-6">
+                  <h4 className="text-xl font-semibold mb-3 text-[#F03D0C]">
+                    {benefit.title}
+                  </h4>
+                  <p className="text-muted-foreground">
+                    {benefit.description}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="py-20 px-6 bg-[#F03D0C]">
+        <div className="max-w-4xl mx-auto text-center">
+          <h3 className="text-4xl md:text-5xl font-bold mb-6 text-white">
+            Ready to grow your business?
+          </h3>
+          <p className="text-xl text-white/90 mb-8">
+            Join hundreds of local businesses using Laso to increase customer loyalty.
+          </p>
+          <Link to="/signup" search={{ mode: "business" }}>
+            <Button size="lg" className="bg-white text-[#F03D0C] hover:bg-white/90 px-12 h-14 text-lg">
+              Get Started Free
+            </Button>
+          </Link>
+        </div>
+      </section>
 
       {/* SEO Content - Hidden but rendered for crawlers */}
       <div className="sr-only">
         <section>
-          <h2>For Consumers</h2>
+          <h1>Laso - The Last Loyalty Program Humanity Will Ever Need</h1>
+          <h2>Automatic Loyalty Rewards for Local Businesses</h2>
           <p>
-            I'm a consumer, I buy things. But also, I hate having to signup for
-            a loyalty program over and over and over again. Don't even think
-            about giving me a punch card.
+            Laso is the automatic loyalty platform for small businesses. No apps to download,
+            no punch cards to manage, no hardware to install. Create modern loyalty programs
+            that work automatically when customers pay with their linked cards.
           </p>
-          <h3>Loyalty without the cards</h3>
-          <p>Automatic rewards every time you shop locally</p>
+          <h3>How Laso Works</h3>
           <ul>
-            <li>Link Your Card - Securely connect the card you use most</li>
-            <li>Shop Local - Visit participating businesses like normal</li>
-            <li>
-              Earn Rewards - Get rewarded automatically—no punch cards needed
-            </li>
+            <li>Create Your Program - Set up a loyalty program in under 5 minutes</li>
+            <li>Customers Shop Normally - They pay with their linked card</li>
+            <li>Rewards Happen Automatically - We match transactions and notify customers</li>
+          </ul>
+          <h3>Benefits for Businesses</h3>
+          <ul>
+            <li>Zero Hardware Costs - No iPads, scanners, or POS integrations required</li>
+            <li>Set It and Forget It - Everything happens automatically</li>
+            <li>Automatic Customer Tracking - Know your best customers</li>
+            <li>Network Effect - Customers discover you through our platform</li>
           </ul>
         </section>
-        <section>
-          <h2>For Businesses</h2>
-          <p>
-            I sell stuff. Also, I don't have time or patience to manage yet
-            another service let alone loyalty program. I've already got 10 iPads
-            at my register.
-          </p>
-          <h3>Loyalty that runs itself</h3>
-          <p>
-            No setup, no maintenance, no new hardware. Just happier customers.
-          </p>
-          <ul>
-            <li>Zero Setup - No iPads, no apps, no training required</li>
-            <li>
-              Automatic - Rewards happen behind the scenes when customers shop
-            </li>
-            <li>
-              Grow Sales - Bring customers back more often without the work
-            </li>
-          </ul>
-        </section>
-        <footer>
-          <p>No Punch Cards © 2025</p>
-          <a href="#">Privacy</a>
-          <a href="#">Terms</a>
-          <a href="#">Contact</a>
-        </footer>
       </div>
 
-      {/* Footer - Only show when a selection is made */}
-      {selectedType && (
-        <footer
-          className={`py-8 px-6 border-t text-white ${
-            selectedType === "consumer"
-              ? "bg-gray-900 dark:bg-gray-950 border-gray-800 dark:border-gray-900"
-              : "bg-gray-900 border-gray-800"
-          }`}
-        >
-          <div className="max-w-7xl mx-auto text-center text-sm">
-            <p>No Punch Cards © 2025</p>
-            <div className="mt-2 space-x-4">
-              <a href="#" className="hover:text-gray-300">
-                Privacy
-              </a>
-              <a href="#" className="hover:text-gray-300">
-                Terms
-              </a>
-              <a href="#" className="hover:text-gray-300">
-                Contact
-              </a>
-            </div>
+      {/* Footer */}
+      <footer className="py-8 px-6 bg-background">
+        <div className="max-w-7xl mx-auto text-center text-sm text-muted-foreground">
+          <p>Laso © 2025</p>
+          <div className="mt-2 space-x-4">
+            <a href="#" className="hover:text-foreground transition-colors">
+              Privacy
+            </a>
+            <a href="#" className="hover:text-foreground transition-colors">
+              Terms
+            </a>
+            <a href="#" className="hover:text-foreground transition-colors">
+              Contact
+            </a>
           </div>
-        </footer>
-      )}
+        </div>
+      </footer>
     </div>
   );
 }

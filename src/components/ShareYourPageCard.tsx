@@ -8,7 +8,7 @@ interface ShareYourPageCardProps {
 }
 
 export function ShareYourPageCard({ slug }: ShareYourPageCardProps) {
-  const link = `nopunchcards.com/join/${slug}`;
+  const link = `laso.app/join/${slug}`;
 
   const copyLink = async () => {
     try {

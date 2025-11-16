@@ -1,7 +1,7 @@
 export function BottomFade() {
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 h-24 pointer-events-none z-40 md:hidden"
+      className="fixed bottom-0 left-0 right-0 h-24 pointer-events-none z-40"
       style={{
         background:
           "linear-gradient(var(--background), color-mix(in oklch, var(--background) 100%, transparent 100%))",
@@ -13,6 +13,7 @@ export function BottomFade() {
     />
   );
 }
+
 
 
 
