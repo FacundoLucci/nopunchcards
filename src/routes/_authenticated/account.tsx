@@ -3,6 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
 import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
+import { useCustomer } from "autumn-js/react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,10 +16,19 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, User, Mail, Lock, Calendar, ArrowLeft } from "lucide-react";
+import {
+  Loader2,
+  User,
+  Mail,
+  Lock,
+  Calendar,
+  ArrowLeft,
+  Crown,
+  CreditCard,
+} from "lucide-react";
 import { useState, Suspense } from "react";
 import { authClient } from "@/lib/auth-clients";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/account")({
   ssr: false,
@@ -40,11 +50,20 @@ function AccountSettings() {
 }
 
 function AccountContent() {
+  const navigate = useNavigate();
   const { data: accountInfo } = useSuspenseQuery(
     convexQuery(api.users.getAccountInfo, {})
   );
 
   const updateName = useMutation(api.users.updateName);
+
+  // Use Autumn's hooks for subscription management
+  const { customer, openBillingPortal } = useCustomer();
+  const currentPlan = customer?.products?.find(
+    (p: any) => p.status === "active"
+  );
+  const hasPremium =
+    currentPlan && !currentPlan.is_default && currentPlan.id !== "free";
 
   // Account update states
   const [isEditingName, setIsEditingName] = useState(false);
@@ -55,6 +74,7 @@ function AccountContent() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [savingName, setSavingName] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
+  const [openingBillingPortal, setOpeningBillingPortal] = useState(false);
 
   const handleUpdateName = async () => {
     if (!newName.trim()) {
@@ -91,7 +111,7 @@ function AccountContent() {
         newPassword,
         revokeOtherSessions: false,
       });
-      
+
       if (result.error) {
         toast.error(result.error.message || "Failed to change password");
       } else {
@@ -110,14 +130,32 @@ function AccountContent() {
   };
 
   // Determine back link based on user role
-  const backLink = accountInfo?.role === "business_owner" 
-    ? "/business/dashboard" 
-    : "/consumer/home";
+  const backLink =
+    accountInfo?.role === "business_owner"
+      ? "/business/dashboard"
+      : "/consumer/home";
+
+  const handleManageBilling = async () => {
+    setOpeningBillingPortal(true);
+    try {
+      const returnUrl = window.location.origin + "/account#subscription";
+      // Use Autumn's openBillingPortal hook
+      await openBillingPortal({ returnUrl });
+    } catch (error) {
+      console.error("Error opening billing portal:", error);
+      toast.error("Failed to open billing portal");
+    } finally {
+      setOpeningBillingPortal(false);
+    }
+  };
 
   return (
     <div className="container max-w-4xl py-4 px-4 sm:py-8 sm:px-6 space-y-6">
       <div>
-        <Link to={backLink} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4">
+        <Link
+          to={backLink}
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4"
+        >
           <ArrowLeft className="h-4 w-4" />
           Back to Dashboard
         </Link>
@@ -265,7 +303,10 @@ function AccountContent() {
             {isChangingPassword ? (
               <div className="space-y-3">
                 <div className="space-y-2">
-                  <Label htmlFor="current-password" className="text-sm font-normal">
+                  <Label
+                    htmlFor="current-password"
+                    className="text-sm font-normal"
+                  >
                     Current Password
                   </Label>
                   <Input
@@ -291,7 +332,10 @@ function AccountContent() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirm-password" className="text-sm font-normal">
+                  <Label
+                    htmlFor="confirm-password"
+                    className="text-sm font-normal"
+                  >
                     Confirm New Password
                   </Label>
                   <Input
@@ -358,7 +402,115 @@ function AccountContent() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Subscription Management */}
+      <Card id="subscription">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Crown className="h-5 w-5 text-amber-500" />
+            Subscription
+          </CardTitle>
+          <CardDescription>
+            Manage your subscription and billing
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {hasPremium && currentPlan ? (
+            <>
+              {/* Active Premium Subscription */}
+              <div className="flex items-start justify-between p-4 bg-linear-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-linear-to-r from-amber-500 to-orange-500 text-white">
+                      {currentPlan.name}
+                    </Badge>
+                    <Badge
+                      variant="outline"
+                      className="border-green-500 text-green-600 dark:text-green-400"
+                    >
+                      Active
+                    </Badge>
+                  </div>
+                  {currentPlan.current_period_end && (
+                    <p className="text-sm text-muted-foreground">
+                      Renews on{" "}
+                      {new Date(
+                        currentPlan.current_period_end
+                      ).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </p>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleManageBilling}
+                  disabled={openingBillingPortal}
+                >
+                  {openingBillingPortal ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Opening...
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      Manage Billing
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {/* Additional Options */}
+              <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => navigate({ to: "/upgrade" })}
+                  className="w-full sm:w-auto"
+                >
+                  View All Plans
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Free Plan / No Subscription */}
+              <div className="p-4 bg-muted rounded-lg">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">Free Plan</Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    You're currently on the free plan. Upgrade to unlock premium
+                    features.
+                  </p>
+                </div>
+              </div>
+
+              {/* Upgrade CTA */}
+              <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                <Button
+                  onClick={() => navigate({ to: "/upgrade" })}
+                  className="w-full sm:w-auto bg-linear-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+                >
+                  <Crown className="mr-2 h-4 w-4" />
+                  Upgrade to Pro
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate({ to: "/upgrade" })}
+                  className="w-full sm:w-auto"
+                >
+                  View Plans
+                </Button>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
-

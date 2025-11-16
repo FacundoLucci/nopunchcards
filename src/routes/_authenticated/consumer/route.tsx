@@ -15,6 +15,7 @@ import { useAction } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { useState } from "react";
 import { toast } from "sonner";
+import { LogoIcon } from "@/components/LogoIcon";
 
 export const Route = createFileRoute("/_authenticated/consumer")({
   component: ConsumerLayout,
@@ -85,7 +86,13 @@ function ConsumerLayout() {
       {/* Conditional Header - shown only on main routes */}
       {showHeader && showNav && (
         <header className="sticky top-0 bg-background/80 backdrop-blur-sm py-4 px-4 flex items-center justify-between z-10">
-          <h1 className="text-xl font-black text-[#F03D0C]">Laso</h1>
+          <LogoIcon
+            showIcon={false}
+            showWordmark
+            size={20}
+            wordmarkClassName="text-xl"
+            iconClassName="shadow-sm"
+          />
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" asChild>
               <Link

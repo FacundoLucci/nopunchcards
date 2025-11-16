@@ -15,6 +15,7 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as JoinSlugRouteImport } from './routes/join/$slug'
+import { Route as AuthenticatedUpgradeRouteImport } from './routes/_authenticated/upgrade'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedConsumerRouteRouteImport } from './routes/_authenticated/consumer/route'
 import { Route as AuthenticatedBusinessRouteRouteImport } from './routes/_authenticated/business/route'
@@ -61,6 +62,11 @@ const JoinSlugRoute = JoinSlugRouteImport.update({
   id: '/join/$slug',
   path: '/join/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedUpgradeRoute = AuthenticatedUpgradeRouteImport.update({
+  id: '/upgrade',
+  path: '/upgrade',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
   id: '/account',
@@ -171,6 +177,7 @@ export interface FileRoutesByFullPath {
   '/business': typeof AuthenticatedBusinessRouteRouteWithChildren
   '/consumer': typeof AuthenticatedConsumerRouteRouteWithChildren
   '/account': typeof AuthenticatedAccountRoute
+  '/upgrade': typeof AuthenticatedUpgradeRoute
   '/join/$slug': typeof JoinSlugRoute
   '/business/analytics': typeof AuthenticatedBusinessAnalyticsRoute
   '/business/dashboard': typeof AuthenticatedBusinessDashboardRoute
@@ -195,6 +202,7 @@ export interface FileRoutesByTo {
   '/business': typeof AuthenticatedBusinessRouteRouteWithChildren
   '/consumer': typeof AuthenticatedConsumerRouteRouteWithChildren
   '/account': typeof AuthenticatedAccountRoute
+  '/upgrade': typeof AuthenticatedUpgradeRoute
   '/join/$slug': typeof JoinSlugRoute
   '/business/analytics': typeof AuthenticatedBusinessAnalyticsRoute
   '/business/dashboard': typeof AuthenticatedBusinessDashboardRoute
@@ -221,6 +229,7 @@ export interface FileRoutesById {
   '/_authenticated/business': typeof AuthenticatedBusinessRouteRouteWithChildren
   '/_authenticated/consumer': typeof AuthenticatedConsumerRouteRouteWithChildren
   '/_authenticated/account': typeof AuthenticatedAccountRoute
+  '/_authenticated/upgrade': typeof AuthenticatedUpgradeRoute
   '/join/$slug': typeof JoinSlugRoute
   '/_authenticated/business/analytics': typeof AuthenticatedBusinessAnalyticsRoute
   '/_authenticated/business/dashboard': typeof AuthenticatedBusinessDashboardRoute
@@ -247,6 +256,7 @@ export interface FileRouteTypes {
     | '/business'
     | '/consumer'
     | '/account'
+    | '/upgrade'
     | '/join/$slug'
     | '/business/analytics'
     | '/business/dashboard'
@@ -271,6 +281,7 @@ export interface FileRouteTypes {
     | '/business'
     | '/consumer'
     | '/account'
+    | '/upgrade'
     | '/join/$slug'
     | '/business/analytics'
     | '/business/dashboard'
@@ -296,6 +307,7 @@ export interface FileRouteTypes {
     | '/_authenticated/business'
     | '/_authenticated/consumer'
     | '/_authenticated/account'
+    | '/_authenticated/upgrade'
     | '/join/$slug'
     | '/_authenticated/business/analytics'
     | '/_authenticated/business/dashboard'
@@ -366,6 +378,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/join/$slug'
       preLoaderRoute: typeof JoinSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/upgrade': {
+      id: '/_authenticated/upgrade'
+      path: '/upgrade'
+      fullPath: '/upgrade'
+      preLoaderRoute: typeof AuthenticatedUpgradeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/account': {
       id: '/_authenticated/account'
@@ -548,12 +567,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBusinessRouteRoute: typeof AuthenticatedBusinessRouteRouteWithChildren
   AuthenticatedConsumerRouteRoute: typeof AuthenticatedConsumerRouteRouteWithChildren
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
+  AuthenticatedUpgradeRoute: typeof AuthenticatedUpgradeRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBusinessRouteRoute: AuthenticatedBusinessRouteRouteWithChildren,
   AuthenticatedConsumerRouteRoute: AuthenticatedConsumerRouteRouteWithChildren,
   AuthenticatedAccountRoute: AuthenticatedAccountRoute,
+  AuthenticatedUpgradeRoute: AuthenticatedUpgradeRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

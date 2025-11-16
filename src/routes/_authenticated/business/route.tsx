@@ -11,6 +11,7 @@ import { Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BottomFade } from "@/components/consumer/BottomFade";
 import { BusinessRoutePrefetcher } from "@/components/business/RoutePrefetcher";
+import { LogoIcon } from "@/components/LogoIcon";
 
 export const Route = createFileRoute("/_authenticated/business")({
   component: BusinessLayout,
@@ -54,7 +55,12 @@ function BusinessLayout() {
       {showHeader && (
         <header className="sticky top-0 bg-background/80 backdrop-blur-sm py-4 px-4 flex items-center justify-between z-10">
           <div className="flex flex-col gap-0.5">
-            <h1 className="text-xl font-black text-[#F03D0C]">Laso</h1>
+            <LogoIcon
+              showIcon={false}
+              showWordmark
+              size={20}
+              wordmarkClassName="text-xl"
+            />
             <div className="relative h-4">
               <AnimatePresence>
                 <motion.p

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useEffect } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { LogoIcon } from "@/components/LogoIcon";
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
@@ -31,7 +32,11 @@ function LandingPage() {
       <header className="fixed top-0 left-0 right-0 z-50 py-6 bg-background/80 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-6">
           {/* Logo */}
-          <h1 className="text-3xl md:text-4xl font-bold text-[#F03D0C]">Laso</h1>
+          <LogoIcon
+            withWordmark
+            size={64}
+            wordmarkClassName="text-3xl md:text-4xl"
+          />
 
           {/* Right side - Theme Toggle and Sign In */}
           <div className="flex items-center gap-4">
@@ -204,16 +209,16 @@ function LandingPage() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-20 px-6 bg-[#F03D0C]">
+      <section className="py-20 px-6 bg-white">
         <div className="max-w-4xl mx-auto text-center">
-          <h3 className="text-4xl md:text-5xl font-bold mb-6 text-white">
+          <h3 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">
             Ready to grow your business?
           </h3>
-          <p className="text-xl text-white/90 mb-8">
+          <p className="text-xl text-muted-foreground mb-8">
             Join hundreds of local businesses using Laso to increase customer loyalty.
           </p>
           <Link to="/signup" search={{ mode: "business" }}>
-            <Button size="lg" className="bg-white text-[#F03D0C] hover:bg-white/90 px-12 h-14 text-lg">
+            <Button size="lg" className="bg-[#F03D0C] text-white hover:bg-[#D03609] px-12 h-14 text-lg">
               Get Started Free
             </Button>
           </Link>

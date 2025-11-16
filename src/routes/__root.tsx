@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { TanStackDevtools } from "@tanstack/react-devtools";
+import { useRef } from "react";
 
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -126,6 +127,14 @@ export const Route = createRootRouteWithContext<{
 
 function RootComponent() {
   const context = useRouteContext({ from: Route.id });
+
+  const tokenRef = useRef<string | undefined>(undefined);
+  if (tokenRef.current !== context.token) {
+    // Convex now requires an async function instead of a string
+    context.convexClient.setAuth(async () => context.token ?? null);
+    tokenRef.current = context.token;
+  }
+
   return (
     <ConvexBetterAuthProvider
       client={context.convexClient}
