@@ -33,6 +33,8 @@ export const createAuth = (
     trustedOrigins: [
       "http://localhost:3000",
       "https://laso.netlify.app",
+      "https://lasoloyalty.com",
+      "https://www.lasoloyalty.com",
     ],
     // Configure simple, non-verified email/password to get started
     emailAndPassword: {

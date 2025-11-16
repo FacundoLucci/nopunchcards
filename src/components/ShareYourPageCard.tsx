@@ -8,11 +8,12 @@ interface ShareYourPageCardProps {
 }
 
 export function ShareYourPageCard({ slug }: ShareYourPageCardProps) {
-  const link = `laso.app/join/${slug}`;
+  const link = `https://lasoloyalty.com/join/${slug}`;
+  const displayLink = link.replace(/^https?:\/\//, "");
 
   const copyLink = async () => {
     try {
-      await navigator.clipboard.writeText(`https://${link}`);
+      await navigator.clipboard.writeText(link);
       toast.success("Link copied! Share with your customers");
     } catch (error) {
       toast.error("Failed to copy link");
@@ -21,7 +22,7 @@ export function ShareYourPageCard({ slug }: ShareYourPageCardProps) {
 
   const shareToSocial = (platform: "instagram" | "facebook" | "x") => {
     const text = "Earn rewards at my business!";
-    const url = `https://${link}`;
+    const url = link;
 
     switch (platform) {
       case "instagram":
@@ -66,7 +67,7 @@ export function ShareYourPageCard({ slug }: ShareYourPageCardProps) {
         {/* Copyable link */}
         <div className="bg-background rounded-lg p-3 flex items-center gap-3">
           <code className="flex-1 text-sm text-foreground truncate">
-            {link}
+            {displayLink}
           </code>
           <Button onClick={copyLink} size="sm" variant="default">
             Copy
