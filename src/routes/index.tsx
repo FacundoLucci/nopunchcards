@@ -42,7 +42,7 @@ function LandingPage() {
           <div className="flex items-center gap-4">
             <ThemeToggle />
             <Link to="/login" search={{ redirect: "/app" }}>
-              <Button className="bg-transparent text-[#F03D0C] hover:bg-[#F03D0C] hover:text-white">
+              <Button className="bg-transparent text-[var(--brand-primary)] hover:bg-[var(--brand-primary)] hover:text-white">
                 Sign In
               </Button>
             </Link>
@@ -61,7 +61,10 @@ function LandingPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link to="/signup" search={{ mode: "business" }}>
-              <Button size="lg" className="bg-[#F03D0C] hover:bg-[#D03609] text-white px-8 h-14 text-lg">
+              <Button
+                size="lg"
+                className="bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white px-8 h-14 text-lg"
+              >
                 Get Started Free
               </Button>
             </Link>
@@ -195,7 +198,7 @@ function LandingPage() {
             ].map((benefit, idx) => (
               <Card key={idx} className="border-border">
                 <CardContent className="pt-6">
-                  <h4 className="text-xl font-semibold mb-3 text-[#F03D0C]">
+                  <h4 className="text-xl font-semibold mb-3 text-[var(--brand-primary)]">
                     {benefit.title}
                   </h4>
                   <p className="text-muted-foreground">
@@ -218,7 +221,10 @@ function LandingPage() {
             Join hundreds of local businesses using Laso to increase customer loyalty.
           </p>
           <Link to="/signup" search={{ mode: "business" }}>
-            <Button size="lg" className="bg-[#F03D0C] text-white hover:bg-[#D03609] px-12 h-14 text-lg">
+            <Button
+              size="lg"
+              className="bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-dark)] px-12 h-14 text-lg"
+            >
               Get Started Free
             </Button>
           </Link>

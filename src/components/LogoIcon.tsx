@@ -32,7 +32,7 @@ export function Logo({
       {showWordmark && (
         <span
           className={cn(
-            "font-black tracking-tight text-[#F03D0C] font-['Fraunces',serif]",
+            "font-black tracking-tight text-[var(--brand-primary)] font-['Fraunces',serif]",
             wordmarkClassName
           )}
         >

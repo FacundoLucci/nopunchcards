@@ -174,7 +174,7 @@ function SignupPage() {
             withWordmark
             size={80}
             className="justify-center"
-            wordmarkClassName="text-[#F03D0C] text-5xl"
+            wordmarkClassName="text-[var(--brand-primary)] text-5xl"
           />
         </div>
 

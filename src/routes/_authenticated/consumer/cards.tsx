@@ -243,12 +243,14 @@ function CreditCardComponent({
                       : "bg-gray-400"
                   }`}
                 />
-                <span className={`text-[10px] sm:text-xs ${statusColor} capitalize`}>
+                <span
+                  className={`text-[10px] sm:text-xs ${statusColor} capitalize`}
+                >
                   {account.status}
                 </span>
               </div>
             </div>
-            <CreditCard className="w-7 h-7 sm:w-10 sm:h-10 opacity-80 flex-shrink-0 ml-2" />
+            <CreditCard className="w-7 h-7 sm:w-10 sm:h-10 opacity-80 shrink-0 ml-2" />
           </div>
 
           {/* Middle Section - Card Number (masked) */}
@@ -272,11 +274,15 @@ function CreditCardComponent({
           {/* Bottom Section - Dates & Info */}
           <div className="flex items-end justify-between text-[10px] sm:text-xs md:text-sm gap-2">
             <div className="min-w-0 flex-1">
-              <p className="opacity-75 text-[9px] sm:text-[10px] mb-0.5 sm:mb-1">Last Synced</p>
+              <p className="opacity-75 text-[9px] sm:text-[10px] mb-0.5 sm:mb-1">
+                Last Synced
+              </p>
               <p className="font-medium truncate">{lastSyncText}</p>
             </div>
             <div className="text-right min-w-0 flex-1">
-              <p className="opacity-75 text-[9px] sm:text-[10px] mb-0.5 sm:mb-1">Linked</p>
+              <p className="opacity-75 text-[9px] sm:text-[10px] mb-0.5 sm:mb-1">
+                Linked
+              </p>
               <p className="font-medium truncate">
                 {new Date(account.createdAt).toLocaleDateString("en-US", {
                   month: "short",
@@ -396,7 +402,7 @@ interface TransactionItemProps {
     date: string;
     currentVisits?: number;
     totalVisits?: number;
-    status: "pending" | "matched" | "unmatched";
+    status: "pending" | "matched" | "unmatched" | "no_match";
   };
 }
 
