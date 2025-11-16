@@ -31,8 +31,15 @@ export const getMyProfile = query({
     v.null()
   ),
   handler: async (ctx): Promise<Doc<"profiles"> | null> => {
-    const user = await authComponent.getAuthUser(ctx);
-    if (!user) return null;
+    // IMPORTANT: authComponent.getAuthUser() throws if not authenticated
+    // Wrap in try-catch to handle session expiration gracefully
+    let user;
+    try {
+      user = await authComponent.getAuthUser(ctx);
+    } catch (error) {
+      // User is not authenticated (session expired or not logged in)
+      return null;
+    }
 
     const userId = user.userId || user._id;
 
@@ -200,8 +207,15 @@ export const getAccountInfo = query({
     v.null()
   ),
   handler: async (ctx) => {
-    const user = await authComponent.getAuthUser(ctx);
-    if (!user) return null;
+    // IMPORTANT: authComponent.getAuthUser() throws if not authenticated
+    // Wrap in try-catch to handle session expiration gracefully
+    let user;
+    try {
+      user = await authComponent.getAuthUser(ctx);
+    } catch (error) {
+      // User is not authenticated (session expired or not logged in)
+      return null;
+    }
 
     const userId = user.userId || user._id;
     const profile = await ctx.db

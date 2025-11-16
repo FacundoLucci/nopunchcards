@@ -4,26 +4,12 @@ import { convexQuery } from "@convex-dev/react-query";
 import { api } from "../../../../convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShareYourPageCard } from "@/components/ShareYourPageCard";
-import {
-  Plus,
-  BarChart3,
-  QrCode,
-  Loader2,
-  CameraOff,
-  X,
-  Flashlight,
-  FlashlightOff,
-} from "lucide-react";
+import { Plus, BarChart3, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Suspense, useCallback, useEffect, useState } from "react";
-import { createPortal } from "react-dom";
+import { Suspense, useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-clients";
-import { Input } from "@/components/ui/input";
-import { useMutation } from "convex/react";
-import { toast } from "sonner";
-import { formatDistanceToNow } from "date-fns";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import type { IDetectedBarcode, IScannerProps } from "@yudiel/react-qr-scanner";
+import { RewardRedemptionDialog } from "@/components/business/RewardRedemptionDialog";
 
 export const Route = createFileRoute("/_authenticated/business/dashboard")({
   ssr: true,
@@ -103,7 +89,7 @@ function DashboardContent() {
       </Suspense>
 
       {/* Redemption */}
-      <RedeemRewardSection businessId={business._id} />
+      <RedeemRewardCard businessId={business._id} />
 
       {/* Share Page Card */}
       <ShareYourPageCard slug={business.slug} />
@@ -173,400 +159,37 @@ function StatsSection({
   );
 }
 
-type RewardClaimSummary = {
-  _id: Id<"rewardClaims">;
-  businessId: Id<"businesses">;
-  programName: string;
-  rewardDescription: string;
-  status: "pending" | "redeemed" | "cancelled";
-  issuedAt: number;
-  redeemedAt?: number;
-};
-
-type RewardActionResult = {
-  outcome: "not_found" | "wrong_business" | "already_redeemed" | "success";
-  claim?: RewardClaimSummary;
-};
-
-function RedeemRewardSection({ businessId }: { businessId: Id<"businesses"> }) {
-  const [code, setCode] = useState("");
-  const [result, setResult] = useState<RewardActionResult | null>(null);
-  const [isChecking, setIsChecking] = useState(false);
-  const [isConfirming, setIsConfirming] = useState(false);
-  const [isScannerOpen, setIsScannerOpen] = useState(false);
-  const previewReward = useMutation(api.businesses.mutations.previewRewardCode);
-  const confirmReward = useMutation(
-    api.businesses.mutations.confirmRewardRedemption
-  );
-
-  const normalizedCode = code.trim().toUpperCase();
-  const claim = result?.claim;
-  const canConfirm =
-    result?.outcome === "success" && claim?.status === "pending";
-
-  const previewCode = useCallback(
-    async (incomingCode?: string) => {
-      const rewardCode = (incomingCode ?? code).trim().toUpperCase();
-      if (!rewardCode) {
-        toast.error("Enter a reward code");
-        return;
-      }
-      setIsChecking(true);
-      try {
-        const response = (await previewReward({
-          businessId,
-          rewardCode,
-        })) as RewardActionResult;
-        setResult(response);
-        if (response.outcome === "success") {
-          toast.success("Reward ready to redeem");
-        } else if (response.outcome === "already_redeemed") {
-          toast.info("Reward already redeemed");
-        } else if (response.outcome === "wrong_business") {
-          toast.error("Code belongs to another business");
-        } else {
-          toast.error("Reward code not found");
-        }
-      } catch (error) {
-        console.error(error);
-        toast.error("Unable to verify reward code");
-      } finally {
-        setIsChecking(false);
-      }
-    },
-    [businessId, code, previewReward]
-  );
-
-  const handlePreview = useCallback(() => {
-    void previewCode();
-  }, [previewCode]);
-
-  const handleConfirm = async () => {
-    if (!normalizedCode || !canConfirm) return;
-    setIsConfirming(true);
-    try {
-      const response = (await confirmReward({
-        businessId,
-        rewardCode: normalizedCode,
-      })) as RewardActionResult;
-      setResult(response);
-      if (response.outcome === "success") {
-        toast.success("Reward marked as redeemed");
-        setCode("");
-      } else if (response.outcome === "already_redeemed") {
-        toast.info("Reward already redeemed");
-      } else if (response.outcome === "wrong_business") {
-        toast.error("Code belongs to another business");
-      } else {
-        toast.error("Reward code not found");
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("Unable to confirm reward");
-    } finally {
-      setIsConfirming(false);
-    }
-  };
-
-  const handleScannerDetected = useCallback(
-    async (rawValue: string) => {
-      const normalized = rawValue.trim().toUpperCase();
-      if (!normalized) {
-        toast.error("Could not read that QR code");
-        return;
-      }
-      setCode(normalized);
-      setIsScannerOpen(false);
-      await previewCode(normalized);
-    },
-    [previewCode]
-  );
-
-  const handleScannerError = useCallback((message: string) => {
-    toast.error(message);
-  }, []);
-
-  let statusMessage: {
-    text: string;
-    tone: "success" | "info" | "error";
-  } | null = null;
-  if (result) {
-    if (result.outcome === "success") {
-      statusMessage = {
-        text: "Code verified. You can redeem it now.",
-        tone: "success",
-      };
-    } else if (result.outcome === "already_redeemed") {
-      statusMessage = {
-        text: "This reward has already been redeemed.",
-        tone: "info",
-      };
-    } else if (result.outcome === "wrong_business") {
-      statusMessage = {
-        text: "This code belongs to another business.",
-        tone: "error",
-      };
-    } else {
-      statusMessage = {
-        text: "We couldn't find that reward code.",
-        tone: "error",
-      };
-    }
-  }
-
-  const statusClasses =
-    statusMessage?.tone === "success"
-      ? "border-green-500/30 bg-green-50 text-green-800"
-      : statusMessage?.tone === "info"
-      ? "border-amber-400/40 bg-amber-50 text-amber-800"
-      : "border-red-400/40 bg-red-50 text-red-800";
+function RedeemRewardCard({ businessId }: { businessId: Id<"businesses"> }) {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Redeem a reward</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">
-            Enter customer code
-          </label>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Input
-              value={code}
-              onChange={(event) => setCode(event.target.value.toUpperCase())}
-              placeholder="E.g. 8-character code"
-              className="uppercase flex-1"
-            />
-            <Button
-              onClick={handlePreview}
-              disabled={isChecking}
-              className="sm:w-36"
-            >
-              {isChecking ? "Checking..." : "Verify"}
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              className="sm:w-36"
-              onClick={() => setIsScannerOpen(true)}
-              disabled={isChecking}
-            >
-              <QrCode className="w-4 h-4 mr-2" />
-              Scan QR
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Customers can show you a QR or tell you this code after checkout.
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Redeem a Reward</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            Help customers redeem their earned rewards
           </p>
-        </div>
+          <Button
+            className="w-full h-14"
+            onClick={() => setIsDialogOpen(true)}
+            size="lg"
+          >
+            <Gift className="w-5 h-5 mr-2" />
+            Start Redemption
+          </Button>
+        </CardContent>
+      </Card>
 
-        {result && statusMessage && (
-          <div className={`rounded-lg border px-4 py-3 ${statusClasses}`}>
-            <p className="font-medium">{statusMessage.text}</p>
-            {claim && (
-              <p className="text-sm">
-                {claim.rewardDescription} • Earned{" "}
-                {formatDistanceToNow(new Date(claim.issuedAt), {
-                  addSuffix: true,
-                })}
-              </p>
-            )}
-            {result.outcome === "already_redeemed" && claim?.redeemedAt && (
-              <p className="text-xs mt-1">
-                Redeemed{" "}
-                {formatDistanceToNow(new Date(claim.redeemedAt), {
-                  addSuffix: true,
-                })}
-              </p>
-            )}
-          </div>
-        )}
-
-        <Button
-          className="w-full"
-          variant="default"
-          disabled={!canConfirm || isConfirming}
-          onClick={handleConfirm}
-        >
-          {isConfirming ? "Confirming..." : "Mark as redeemed"}
-        </Button>
-        <RewardScannerDialog
-          open={isScannerOpen}
-          onOpenChange={setIsScannerOpen}
-          onDetected={handleScannerDetected}
-          onCameraError={handleScannerError}
-          isProcessing={isChecking}
-        />
-      </CardContent>
-    </Card>
+      <RewardRedemptionDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        businessId={businessId}
+      />
+    </>
   );
-}
-
-type RewardScannerDialogProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onDetected: (value: string) => void | Promise<void>;
-  onCameraError: (message: string) => void;
-  isProcessing: boolean;
-};
-
-type ScannerComponentType = (props: IScannerProps) => React.JSX.Element;
-
-function RewardScannerDialog({
-  open,
-  onOpenChange,
-  onDetected,
-  onCameraError,
-  isProcessing,
-}: RewardScannerDialogProps) {
-  const [ScannerComponent, setScannerComponent] =
-    useState<ScannerComponentType | null>(null);
-  const [cameraError, setCameraError] = useState<string | null>(null);
-  const [torchEnabled, setTorchEnabled] = useState(false);
-
-  useEffect(() => {
-    if (!open) {
-      setCameraError(null);
-      setTorchEnabled(false);
-    }
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    let cancelled = false;
-    if (!ScannerComponent && typeof window !== "undefined") {
-      void import("@yudiel/react-qr-scanner")
-        .then((module) => {
-          if (!cancelled) {
-            setScannerComponent(() => module.Scanner);
-            setCameraError(null);
-          }
-        })
-        .catch((error) => {
-          console.error("Failed to load QR scanner", error);
-          if (!cancelled) {
-            const message =
-              "Unable to load the camera module. Please refresh and try again.";
-            setCameraError(message);
-            onCameraError(message);
-          }
-        });
-    }
-    return () => {
-      cancelled = true;
-    };
-  }, [open, ScannerComponent, onCameraError]);
-
-  const handleScan = useCallback(
-    (detectedCodes: IDetectedBarcode[]) => {
-      if (!detectedCodes.length) return;
-      const nextValue = detectedCodes[0]?.rawValue;
-      if (!nextValue) return;
-      void onDetected(nextValue);
-    },
-    [onDetected]
-  );
-
-  const handleError = useCallback(
-    (error: unknown) => {
-      console.error("QR scanner error", error);
-      const message =
-        error instanceof DOMException && error.name === "NotAllowedError"
-          ? "Camera access was denied. Enable permissions and try again."
-          : "Unable to access camera. Please check permissions and retry.";
-      setCameraError(message);
-      onCameraError(message);
-    },
-    [onCameraError]
-  );
-
-  if (!open) return null;
-
-  const scannerUI = (
-    <div className="fixed inset-0 z-9999 bg-black">
-      {/* Camera view */}
-      <div className="absolute inset-0">
-        {cameraError ? (
-          <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
-            <CameraOff className="h-12 w-12 text-white/60" />
-            <p className="text-white/80">{cameraError}</p>
-          </div>
-        ) : ScannerComponent ? (
-          <ScannerComponent
-            onScan={handleScan}
-            onError={handleError}
-            constraints={{
-              facingMode: { ideal: "environment" },
-              ...(torchEnabled && { torch: true }),
-            }}
-            components={{ finder: false }}
-            styles={{
-              container: { width: "100%", height: "100%" },
-              video: { objectFit: "cover" },
-            }}
-            scanDelay={600}
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center gap-3 text-white">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <span>Preparing camera…</span>
-          </div>
-        )}
-      </div>
-
-      {/* Dark overlay with cutout - simulated via gradients */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute inset-0 bg-linear-to-b from-black/80 via-transparent to-black/80" />
-        <div className="absolute inset-0 bg-linear-to-r from-black/80 via-transparent to-black/80" />
-      </div>
-
-      {/* Top bar */}
-      <div className="absolute top-0 left-0 right-0 flex items-center justify-end p-4 z-10">
-        <Button
-          size="icon"
-          variant="ghost"
-          onClick={() => onOpenChange(false)}
-          disabled={isProcessing}
-          className="text-white hover:bg-white/20"
-        >
-          <X className="h-5 w-5" />
-        </Button>
-      </div>
-
-      {/* Bottom controls */}
-      <div className="absolute bottom-0 left-0 right-0 p-6 z-10">
-        <div className="flex items-center justify-center gap-4">
-          {!cameraError && ScannerComponent && (
-            <Button
-              size="lg"
-              variant="secondary"
-              onClick={() => setTorchEnabled(!torchEnabled)}
-              className="bg-white/20 hover:bg-white/30 text-white border-white/30"
-            >
-              {torchEnabled ? (
-                <>
-                  <FlashlightOff className="h-5 w-5 mr-2" />
-                  Torch Off
-                </>
-              ) : (
-                <>
-                  <Flashlight className="h-5 w-5 mr-2" />
-                  Torch On
-                </>
-              )}
-            </Button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-
-  return typeof document !== "undefined"
-    ? createPortal(scannerUI, document.body)
-    : null;
 }
 
 function ProgramsSection({ businessId }: { businessId: Id<"businesses"> }) {

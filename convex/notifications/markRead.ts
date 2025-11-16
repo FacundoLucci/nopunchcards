@@ -47,8 +47,16 @@ export const listForUser = query({
     })
   ),
   handler: async (ctx, args) => {
-    const user = await authComponent.getAuthUser(ctx);
-    if (!user) throw new Error("Not authenticated");
+    // IMPORTANT: authComponent.getAuthUser() throws if not authenticated
+    // Wrap in try-catch to handle session expiration gracefully
+    let user;
+    try {
+      user = await authComponent.getAuthUser(ctx);
+    } catch (error) {
+      // User is not authenticated (session expired or not logged in)
+      // Return empty array instead of throwing
+      return [];
+    }
 
     const userId = user.userId || user._id;
 
