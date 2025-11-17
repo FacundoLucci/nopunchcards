@@ -21,7 +21,6 @@ import {
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LogoIcon } from "@/components/LogoIcon";
-import { getCookieName } from "@convex-dev/better-auth/react-start";
 
 export const Route = createFileRoute("/signup")({
   // SSR disabled for auth flows
@@ -68,34 +67,26 @@ function SignupPage() {
         return;
       }
 
-      // Step 2: Refresh Convex auth token
-      // After signup, Better Auth sets a session cookie, but Convex client doesn't know about it yet
-      // We need to manually update the Convex client's auth token
-      console.log("[Signup] Refreshing Convex auth token...");
-
+      // Step 2: Get session from Better Auth
+      // Better Auth has already created the session, we need to get the token
+      console.log("[Signup] Getting session from Better Auth...");
+      
       try {
-        // Get the session cookie name
-        const { createAuth } = await import("../../convex/auth");
-        const cookieName = getCookieName(createAuth);
-
-        // Get the token from the cookie
-        const token = document.cookie
-          .split("; ")
-          .find((row) => row.startsWith(`${cookieName}=`))
-          ?.split("=")[1];
-
-        if (token) {
-          // Update Convex client with new auth token
-          await context.convexClient.setAuth(async () => token);
-          console.log("[Signup] Auth token refreshed successfully");
-
+        // Get the session from Better Auth
+        const session = await authClient.getSession();
+        
+        if (session?.session?.token) {
+          // Update Convex client with the session token
+          await context.convexClient.setAuth(async () => session.session.token);
+          console.log("[Signup] Auth token set from Better Auth session");
+          
           // Wait a moment for Convex to apply the new auth
-          await new Promise((resolve) => setTimeout(resolve, 200));
+          await new Promise((resolve) => setTimeout(resolve, 300));
         } else {
-          console.warn("[Signup] No session token found in cookies");
+          console.warn("[Signup] No session token from Better Auth", session);
         }
       } catch (authError) {
-        console.error("[Signup] Failed to refresh auth token:", authError);
+        console.error("[Signup] Failed to get session:", authError);
       }
 
       // Step 3: Create/verify profile with role

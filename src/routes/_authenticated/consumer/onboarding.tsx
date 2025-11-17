@@ -18,7 +18,6 @@ import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { authClient } from "@/lib/auth-clients";
 import { LogOut } from "lucide-react";
-import { getCookieName } from "@convex-dev/better-auth/react-start";
 
 export const Route = createFileRoute("/_authenticated/consumer/onboarding")({
   component: ConsumerOnboarding,
@@ -44,21 +43,16 @@ function ConsumerOnboarding() {
 
       // First, ensure Convex client has the auth token
       try {
-        const { createAuth } = await import("../../../../convex/auth");
-        const cookieName = getCookieName(createAuth);
-        const token = document.cookie
-          .split("; ")
-          .find((row) => row.startsWith(`${cookieName}=`))
-          ?.split("=")[1];
-
-        if (token && context.convexClient) {
-          await context.convexClient.setAuth(async () => token);
-          console.log("[Consumer Onboarding] Auth token refreshed");
+        const session = await authClient.getSession();
+        
+        if (session?.session?.token && context.convexClient) {
+          await context.convexClient.setAuth(async () => session.session.token);
+          console.log("[Consumer Onboarding] Auth token set from Better Auth session");
           // Small delay for auth to apply
-          await new Promise((resolve) => setTimeout(resolve, 100));
+          await new Promise((resolve) => setTimeout(resolve, 300));
         }
       } catch (error) {
-        console.warn("[Consumer Onboarding] Could not refresh auth:", error);
+        console.warn("[Consumer Onboarding] Could not get session:", error);
       }
 
       // Now try to create/verify profile
