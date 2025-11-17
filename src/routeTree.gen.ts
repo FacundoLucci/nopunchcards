@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as DemoShopRouteImport } from './routes/demo-shop'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -44,6 +45,11 @@ const SignupRoute = SignupRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoShopRoute = DemoShopRouteImport.update({
+  id: '/demo-shop',
+  path: '/demo-shop',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -186,6 +192,7 @@ const AuthenticatedConsumerRewardsClaimIdClaimRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRoute
+  '/demo-shop': typeof DemoShopRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/business': typeof AuthenticatedBusinessRouteRouteWithChildren
@@ -213,6 +220,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app': typeof AppRoute
+  '/demo-shop': typeof DemoShopRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/business': typeof AuthenticatedBusinessRouteRouteWithChildren
@@ -242,6 +250,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/app': typeof AppRoute
+  '/demo-shop': typeof DemoShopRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/_authenticated/business': typeof AuthenticatedBusinessRouteRouteWithChildren
@@ -271,6 +280,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/app'
+    | '/demo-shop'
     | '/login'
     | '/signup'
     | '/business'
@@ -298,6 +308,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/app'
+    | '/demo-shop'
     | '/login'
     | '/signup'
     | '/business'
@@ -326,6 +337,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/app'
+    | '/demo-shop'
     | '/login'
     | '/signup'
     | '/_authenticated/business'
@@ -355,6 +367,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AppRoute: typeof AppRoute
+  DemoShopRoute: typeof DemoShopRoute
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   JoinSlugRoute: typeof JoinSlugRoute
@@ -375,6 +388,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo-shop': {
+      id: '/demo-shop'
+      path: '/demo-shop'
+      fullPath: '/demo-shop'
+      preLoaderRoute: typeof DemoShopRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app': {
@@ -630,6 +650,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AppRoute: AppRoute,
+  DemoShopRoute: DemoShopRoute,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   JoinSlugRoute: JoinSlugRoute,

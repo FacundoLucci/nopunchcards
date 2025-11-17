@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { useAction, useMutation } from "convex/react";
+import { useAction } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,24 +23,16 @@ function ConsumerOnboarding() {
   const navigate = useNavigate();
   const createLinkToken = useAction(api.plaid.linkToken.createLinkToken);
   const exchangeToken = useAction(api.plaid.exchangeToken.exchangePublicToken);
-  const ensureProfile = useMutation(api.users.ensureProfile);
   const [loading, setLoading] = useState(false);
   const [profileReady, setProfileReady] = useState(false);
 
-  // Ensure user has consumer profile when page loads
-  // This is a fallback - profile should already exist from signup
+  // Profile should already exist from signup
+  // We don't call ensureProfile here because it could accidentally change a business owner's role
   useEffect(() => {
-    console.log("[Consumer Onboarding] Ensuring consumer profile...");
-    ensureProfile({ role: "consumer" })
-      .then((profileId) => {
-        console.log("[Consumer Onboarding] Profile ensured:", profileId);
-        setProfileReady(true);
-      })
-      .catch((error) => {
-        console.error("[Consumer Onboarding] Failed to ensure profile:", error);
-        setProfileReady(true); // Continue anyway, might already exist
-      });
-  }, [ensureProfile]);
+    console.log("[Consumer Onboarding] Profile should already exist from signup");
+    // Mark as ready immediately - profile was created during signup
+    setProfileReady(true);
+  }, []);
 
   const startPlaidLink = async () => {
     if (!profileReady) {

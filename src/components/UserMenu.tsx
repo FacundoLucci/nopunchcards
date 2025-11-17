@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { authClient } from "@/lib/auth-clients";
 import {
   LogOut,
@@ -9,6 +9,8 @@ import {
   UserCog,
   Crown,
   Sparkles,
+  Briefcase,
+  ShoppingBag,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -27,11 +29,17 @@ import { useCustomer } from "autumn-js/react";
 
 export function UserMenu() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { setTheme, theme } = useTheme();
   const { data: session, isPending: sessionPending } = authClient.useSession();
 
   // Only query profile if session is loaded
+  // @ts-ignore - Type instantiation is excessively deep
   const profile = useQuery(api.users.getMyProfile, session ? {} : "skip");
+
+  // Detect which section of the app we're in
+  const isOnBusinessRoutes = location.pathname.startsWith("/business");
+  const isOnConsumerRoutes = location.pathname.startsWith("/consumer");
 
   // Get subscription status using Autumn's hook
   const { customer } = useCustomer();
@@ -90,7 +98,10 @@ export function UserMenu() {
           </Badge>
         </Link>
       ) : (
-        <Link to="/upgrade">
+        <Link
+          to="/upgrade"
+          search={{ success: undefined, canceled: undefined }}
+        >
           <Badge
             variant="outline"
             className="border-primary text-primary hover:bg-primary hover:text-primary-foreground cursor-pointer transition-colors"
@@ -141,6 +152,35 @@ export function UserMenu() {
               </span>
             </Link>
           </DropdownMenuItem>
+          {isOnBusinessRoutes ? (
+            // On business routes → show link to consumer account
+            <DropdownMenuItem asChild>
+              <Link to="/consumer/home" className="cursor-pointer">
+                <ShoppingBag className="mr-2 h-4 w-4" />
+                <span>Consumer Account</span>
+              </Link>
+            </DropdownMenuItem>
+          ) : isOnConsumerRoutes && profile?.role === "business_owner" ? (
+            // On consumer routes with business role → show link to business account
+            <DropdownMenuItem asChild>
+              <Link to="/business/dashboard" className="cursor-pointer">
+                <Briefcase className="mr-2 h-4 w-4" />
+                <span>Business Account</span>
+              </Link>
+            </DropdownMenuItem>
+          ) : isOnConsumerRoutes ? (
+            // On consumer routes without business role → show create business link
+            <DropdownMenuItem asChild>
+              <Link
+                to="/signup"
+                search={{ mode: "business" }}
+                className="cursor-pointer"
+              >
+                <Briefcase className="mr-2 h-4 w-4" />
+                <span>Create Business Account</span>
+              </Link>
+            </DropdownMenuItem>
+          ) : null}
           <DropdownMenuSeparator />
           <DropdownMenuLabel className="text-xs text-muted-foreground">
             Theme

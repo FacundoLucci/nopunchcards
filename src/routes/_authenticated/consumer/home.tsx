@@ -74,14 +74,16 @@ function GreetingMessage() {
     if (first.programType === "visit") {
       return (
         <p className="text-muted-foreground">
-          You're {first.totalVisits - first.currentVisits} visits away from earning {first.rewardDescription}!
+          You're {first.totalVisits - first.currentVisits} visits away from
+          earning {first.rewardDescription}!
         </p>
       );
     } else {
       const remaining = (first.totalSpendCents - first.currentSpendCents) / 100;
       return (
         <p className="text-muted-foreground">
-          You're ${remaining.toFixed(2)} away from earning {first.rewardDescription}!
+          You're ${remaining.toFixed(2)} away from earning{" "}
+          {first.rewardDescription}!
         </p>
       );
     }
@@ -137,15 +139,15 @@ function ActiveRewardsSection() {
               </span>
             </div>
 
-          <div className="opacity-90">
-            <ProgressCard
-              businessName="The Coffee Shop"
-              programType="visit"
-              currentVisits={3}
-              totalVisits={10}
-              rewardDescription="Free medium coffee"
-            />
-          </div>
+            <div className="opacity-90">
+              <ProgressCard
+                businessName="The Coffee Shop"
+                programType="visit"
+                currentVisits={3}
+                totalVisits={10}
+                rewardDescription="Free medium coffee"
+              />
+            </div>
           </div>
 
           <Link to="/consumer/find-rewards">

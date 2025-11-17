@@ -68,8 +68,8 @@ code {
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --brand-primary: #ff5c28;
-  --brand-primary-dark: #e0481a;
+  --color-brand-primary: #ff5c28;
+  --color-brand-primary-dark: #e0481a;
 }
 
 :root {

@@ -148,14 +148,14 @@ function SignupPage() {
       </div>
 
       {/* Left Side - Branding (Desktop only) */}
-      <div className="hidden lg:flex lg:flex-1 bg-linear-to-br from-orange-500 to-orange-600 dark:from-orange-600 dark:to-orange-700 items-center justify-center p-12">
+      <div className="hidden lg:flex lg:flex-1 bg-linear-to-br from-brand-primary to-brand-primary-dark dark:from-brand-primary-dark dark:to-brand-primary items-center justify-center p-12">
         <div className="max-w-md text-white space-y-6">
           <LogoIcon
-            showIcon
+            showIcon={false}
             showWordmark
             size={82}
             className="justify-center"
-            wordmarkClassName="text-white text-6xl"
+            wordmarkClassName="text-white text-8xl tracking-normal"
           />
           <h2 className="text-4xl font-bold text-center">
             {isBusiness ? "Grow Your Business" : "Join Laso"}
@@ -236,7 +236,9 @@ function SignupPage() {
         {/* Mobile Logo */}
         <div className="lg:hidden mb-8">
           <LogoIcon
-            size={80}
+            showIcon
+            showWordmark
+            size={42}
             className="justify-center"
             wordmarkClassName="text-[var(--brand-primary)] text-5xl"
           />
@@ -245,7 +247,7 @@ function SignupPage() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl">
-              {isBusiness ? "Business Signup" : "Create Account"}
+              {isBusiness ? "Create Business Account" : "Create Account"}
             </CardTitle>
             <CardDescription>
               {searchParams.ref

@@ -26,7 +26,7 @@ export const getOnboardingStatus = query({
       // User is not authenticated, return null
       return null;
     }
-    
+
     if (!user) return null;
 
     const userId = user.userId || user._id;
@@ -50,13 +50,10 @@ export const getOnboardingStatus = query({
     const hasLinkedCard = profile.onboarding?.hasLinkedCard ?? false;
 
     // For consumers, onboarding is complete when they've linked a card
-    // For business owners, different onboarding flow (not implemented here)
-    const isComplete =
-      profile.role === "consumer"
-        ? hasLinkedCard
-        : profile.role === "business_owner"
-          ? false // TODO: Implement business onboarding
-          : true; // Admin has no onboarding
+    // For business owners and admins, consumer onboarding is optional
+    // They can access business features without linking a card
+    // But if they visit consumer routes, they'll be prompted to link a card
+    const isComplete = profile.role === "consumer" ? hasLinkedCard : true; // Business owners and admins don't need consumer onboarding by default
 
     return {
       isComplete,
@@ -66,4 +63,3 @@ export const getOnboardingStatus = query({
     };
   },
 });
-

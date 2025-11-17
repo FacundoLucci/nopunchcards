@@ -22,7 +22,6 @@ export const Route = createFileRoute("/_authenticated/business/register")({
 function BusinessRegister() {
   const navigate = useNavigate();
   const createBusiness = useMutation(api.businesses.mutations.create);
-  const ensureProfile = useMutation(api.users.ensureProfile);
 
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
@@ -31,37 +30,13 @@ function BusinessRegister() {
   const [statementDescriptor, setStatementDescriptor] = useState("");
   const [profileReady, setProfileReady] = useState(false);
 
-  // Ensure user has business_owner profile when page loads
-  // This is a fallback - profile should already exist from signup
+  // Profile should already exist from signup
+  // We don't call ensureProfile here because it could accidentally change roles
   useEffect(() => {
-    let mounted = true;
-
-    const setupProfile = async () => {
-      try {
-        console.log("[Business Register] Ensuring business_owner profile...");
-        const profileId = await ensureProfile({ role: "business_owner" });
-        console.log("[Business Register] Profile ensured:", profileId);
-        if (mounted && profileId) {
-          setProfileReady(true);
-        } else if (mounted && !profileId) {
-          toast.error(
-            "Failed to create profile - please refresh and try again"
-          );
-        }
-      } catch (error: any) {
-        console.error("[Business Register] Failed to ensure profile:", error);
-        if (mounted) {
-          toast.error(error.message || "Failed to set up business account");
-        }
-      }
-    };
-
-    setupProfile();
-
-    return () => {
-      mounted = false;
-    };
-  }, []); // Empty dependency array - only run once on mount
+    console.log("[Business Register] Profile should already exist from signup");
+    // Mark as ready immediately - profile was created during signup
+    setProfileReady(true);
+  }, [])
 
   const categories = [
     "Coffee",

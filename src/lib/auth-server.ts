@@ -1,4 +1,4 @@
-import { createAuth } from "convex/auth";
+import { createAuth } from "../../convex/auth";
 import { setupFetchClient } from "@convex-dev/better-auth/react-start";
 import { getCookie } from "@tanstack/react-start/server";
 

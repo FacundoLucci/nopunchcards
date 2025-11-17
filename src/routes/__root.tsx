@@ -5,8 +5,8 @@ import {
   createRootRouteWithContext,
   useRouteContext,
 } from "@tanstack/react-router";
-import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import { TanStackDevtools } from "@tanstack/react-devtools";
+// import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+// import { TanStackDevtools } from "@tanstack/react-devtools";
 import { useRef } from "react";
 
 import { ThemeProvider } from "@/components/theme-provider";
@@ -185,6 +185,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           {children}
           <Toaster />
         </ThemeProvider>
+        {/*
         <TanStackDevtools
           config={{
             position: "bottom-right",
@@ -196,6 +197,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             },
           ]}
         />
+        */}
         <Scripts />
       </body>
     </html>

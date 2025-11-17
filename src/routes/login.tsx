@@ -68,11 +68,10 @@ function LoginPage() {
       <div className="hidden lg:flex lg:flex-1 bg-linear-to-br from-orange-500 to-orange-600 dark:from-orange-600 dark:to-orange-700 items-center justify-center p-12">
         <div className="max-w-md text-white space-y-6">
           <LogoIcon
-            withWordmark
-            size={112}
+            size={42}
             className="justify-center"
             wordmarkClassName="text-white text-6xl"
-            imageClassName="ring-4 ring-white/30"
+            iconClassName="ring-4 ring-white/30"
           />
           <h2 className="text-4xl font-bold text-center">Welcome Back</h2>
           <p className="text-xl text-center text-orange-50">
@@ -115,8 +114,7 @@ function LoginPage() {
         {/* Mobile Logo */}
         <div className="lg:hidden mb-8">
           <LogoIcon
-            withWordmark
-            size={80}
+            size={42}
             className="justify-center"
             wordmarkClassName="text-[var(--brand-primary)] text-5xl"
           />

@@ -3,11 +3,13 @@ import { convexQuery } from "@convex-dev/react-query";
 import { api } from "../../convex/_generated/api";
 import { useNavigate, useLocation } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { useQuery } from "convex/react";
 
 /**
- * Client-side onboarding guard
- * Redirects to onboarding if incomplete
- * 
+ * Client-side onboarding guard for consumer routes
+ * Only redirects consumers who haven't completed onboarding
+ * Business owners can access consumer routes without being forced through onboarding
+ *
  * Benefits over server-side check:
  * - No blocking HTTP requests (0ms latency)
  * - Automatic caching (instant on repeated checks)
@@ -16,10 +18,13 @@ import { useEffect } from "react";
 export function OnboardingGuard({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const { data: onboardingStatus } = useSuspenseQuery(
     convexQuery(api.onboarding.queries.getOnboardingStatus, {})
   );
+
+  // Get user profile to check role
+  const profile = useQuery(api.users.getMyProfile, {});
 
   useEffect(() => {
     // Skip if already on onboarding page
@@ -27,14 +32,18 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Redirect if onboarding needed
-    if (onboardingStatus && onboardingStatus.needsOnboarding) {
+    // Only redirect consumers who need onboarding
+    // Business owners can access consumer routes without onboarding
+    if (
+      onboardingStatus &&
+      onboardingStatus.needsOnboarding &&
+      profile?.role === "consumer"
+    ) {
       navigate({ to: "/consumer/onboarding" });
     }
-  }, [onboardingStatus, location.pathname, navigate]);
+  }, [onboardingStatus, profile?.role, location.pathname, navigate]);
 
   // Always render children - the useEffect handles redirect
   // This prevents layout shift during navigation
   return <>{children}</>;
 }
-

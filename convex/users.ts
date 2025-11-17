@@ -84,11 +84,8 @@ export const ensureProfile = mutation({
         "current role:",
         existing.role
       );
-      // If role is specified and different, update it
-      if (args.role && existing.role !== args.role) {
-        console.log("Updating role from", existing.role, "to", args.role);
-        await ctx.db.patch(existing._id, { role: args.role });
-      }
+      // IMPORTANT: Never modify existing roles - this prevents accidental role changes
+      // Roles should only be changed through explicit admin functions
       return existing._id;
     }
 
