@@ -2,6 +2,7 @@ import {
   createFileRoute,
   useNavigate,
   useSearch,
+  useRouteContext,
 } from "@tanstack/react-router";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-clients";
@@ -20,6 +21,7 @@ import {
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LogoIcon } from "@/components/LogoIcon";
+import { getCookieName } from "@convex-dev/better-auth/react-start";
 
 export const Route = createFileRoute("/signup")({
   // SSR disabled for auth flows
@@ -29,6 +31,7 @@ export const Route = createFileRoute("/signup")({
 
 function SignupPage() {
   const navigate = useNavigate();
+  const context = useRouteContext({ from: "__root__" });
   const searchParams = useSearch({ from: "/signup" }) as {
     ref?: string;
     mode?: "business" | "consumer";
@@ -64,8 +67,38 @@ function SignupPage() {
         return;
       }
 
-      // Step 2: Create/verify profile with role
-      // Profile creation now happens with automatic fallback
+      // Step 2: Refresh Convex auth token
+      // After signup, Better Auth sets a session cookie, but Convex client doesn't know about it yet
+      // We need to manually update the Convex client's auth token
+      console.log("[Signup] Refreshing Convex auth token...");
+
+      try {
+        // Get the session cookie name
+        const { createAuth } = await import("../../convex/auth");
+        const cookieName = getCookieName(createAuth);
+
+        // Get the token from the cookie
+        const token = document.cookie
+          .split("; ")
+          .find((row) => row.startsWith(`${cookieName}=`))
+          ?.split("=")[1];
+
+        if (token) {
+          // Update Convex client with new auth token
+          await context.convexClient.setAuth(async () => token);
+          console.log("[Signup] Auth token refreshed successfully");
+
+          // Wait a moment for Convex to apply the new auth
+          await new Promise((resolve) => setTimeout(resolve, 200));
+        } else {
+          console.warn("[Signup] No session token found in cookies");
+        }
+      } catch (authError) {
+        console.error("[Signup] Failed to refresh auth token:", authError);
+      }
+
+      // Step 3: Create/verify profile with role
+      // Now that Convex has the auth token, this should work
       console.log("[Signup] Creating profile with role:", role);
 
       try {
@@ -77,7 +110,7 @@ function SignupPage() {
           result.wasCreated
         );
       } catch (err: any) {
-        // If profile creation fails, it will be auto-created on first app load
+        // If profile creation still fails, it will be auto-created on first app load
         // This is a fallback safety mechanism
         console.warn(
           "[Signup] Profile creation failed, will auto-create on first load:",

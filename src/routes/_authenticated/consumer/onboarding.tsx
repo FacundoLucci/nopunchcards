@@ -1,4 +1,8 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  useNavigate,
+  useRouteContext,
+} from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useAction, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
@@ -14,6 +18,7 @@ import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { authClient } from "@/lib/auth-clients";
 import { LogOut } from "lucide-react";
+import { getCookieName } from "@convex-dev/better-auth/react-start";
 
 export const Route = createFileRoute("/_authenticated/consumer/onboarding")({
   component: ConsumerOnboarding,
@@ -21,9 +26,11 @@ export const Route = createFileRoute("/_authenticated/consumer/onboarding")({
 
 function ConsumerOnboarding() {
   const navigate = useNavigate();
+  const context = useRouteContext({ from: "__root__" });
   const createLinkToken = useAction(api.plaid.linkToken.createLinkToken);
   const exchangeToken = useAction(api.plaid.exchangeToken.exchangePublicToken);
   // TypeScript has trouble with deeply nested Convex API types
+  // @ts-expect-error - TS2589: Type instantiation is excessively deep
   const ensureProfileMutation = useMutation(api.users.ensureProfile);
   const [loading, setLoading] = useState(false);
   const [profileReady, setProfileReady] = useState(false);
@@ -32,25 +39,52 @@ function ConsumerOnboarding() {
   // This is the fallback if profile creation during signup failed
   // We're on /consumer/onboarding so we know the intent is consumer
   useEffect(() => {
-    console.log("[Consumer Onboarding] Ensuring consumer profile exists");
+    const ensureAuthAndProfile = async () => {
+      console.log("[Consumer Onboarding] Ensuring consumer profile exists");
 
-    ensureProfileMutation({ role: "consumer" })
-      .then((result) => {
-        console.log(
-          "[Consumer Onboarding] Profile ready:",
-          result.profileId,
-          "role:",
-          result.role,
-          "wasCreated:",
-          result.wasCreated
-        );
-        setProfileReady(true);
-      })
-      .catch((error) => {
-        console.error("[Consumer Onboarding] Failed to ensure profile:", error);
-        toast.error("Failed to set up consumer profile");
-      });
-  }, [ensureProfileMutation]);
+      // First, ensure Convex client has the auth token
+      try {
+        const { createAuth } = await import("../../../../convex/auth");
+        const cookieName = getCookieName(createAuth);
+        const token = document.cookie
+          .split("; ")
+          .find((row) => row.startsWith(`${cookieName}=`))
+          ?.split("=")[1];
+
+        if (token && context.convexClient) {
+          await context.convexClient.setAuth(async () => token);
+          console.log("[Consumer Onboarding] Auth token refreshed");
+          // Small delay for auth to apply
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+      } catch (error) {
+        console.warn("[Consumer Onboarding] Could not refresh auth:", error);
+      }
+
+      // Now try to create/verify profile
+      ensureProfileMutation({ role: "consumer" })
+        .then((result) => {
+          console.log(
+            "[Consumer Onboarding] Profile ready:",
+            result.profileId,
+            "role:",
+            result.role,
+            "wasCreated:",
+            result.wasCreated
+          );
+          setProfileReady(true);
+        })
+        .catch((error) => {
+          console.error(
+            "[Consumer Onboarding] Failed to ensure profile:",
+            error
+          );
+          toast.error("Failed to set up consumer profile");
+        });
+    };
+
+    ensureAuthAndProfile();
+  }, [ensureProfileMutation, context.convexClient]);
 
   const startPlaidLink = async () => {
     if (!profileReady) {

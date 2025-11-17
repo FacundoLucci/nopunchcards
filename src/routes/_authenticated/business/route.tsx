@@ -36,6 +36,9 @@ function BusinessLayout() {
 
   const showHeader = isDashboard || isPrograms || isAnalytics || isSettings;
   const showNav = !isProgramsCreate && !isRegister && !isRedemptions; // Hide nav on programs/create, register, and redemptions
+  
+  // Don't apply RoleGuard on register page - that's where we CREATE the business profile
+  const shouldCheckRole = !isRegister;
 
   // Get title based on route
   const getTitle = () => {
@@ -50,14 +53,11 @@ function BusinessLayout() {
     router.preloadRoute({ to: "/business/programs/create" } as any);
   };
 
-  return (
-    <RoleGuard
-      allowedRoles={["business_owner", "admin"]}
-      redirectTo="/consumer/home"
-    >
-      <div className={showNav ? "pb-28" : ""}>
-        {/* Prefetch all business routes for instant navigation */}
-        <BusinessRoutePrefetcher />
+  // Conditionally wrap in RoleGuard (skip on register page)
+  const content = (
+    <div className={showNav ? "pb-28" : ""}>
+      {/* Prefetch all business routes for instant navigation */}
+      <BusinessRoutePrefetcher />
 
       {/* Conditional Header - shown only on main routes */}
       {showHeader && (
@@ -114,7 +114,21 @@ function BusinessLayout() {
 
       {/* Navigation - conditionally visible */}
       {showNav && <BusinessNav />}
-      </div>
-    </RoleGuard>
+    </div>
   );
+
+  // Only apply RoleGuard if not on register page
+  // Register page needs to be accessible to create the business profile
+  if (shouldCheckRole) {
+    return (
+      <RoleGuard
+        allowedRoles={["business_owner", "admin"]}
+        redirectTo="/consumer/home"
+      >
+        {content}
+      </RoleGuard>
+    );
+  }
+
+  return content;
 }

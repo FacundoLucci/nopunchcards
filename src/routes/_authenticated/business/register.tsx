@@ -1,4 +1,8 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  useNavigate,
+  useRouteContext,
+} from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
@@ -14,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { authClient } from "@/lib/auth-clients";
+import { getCookieName } from "@convex-dev/better-auth/react-start";
 
 export const Route = createFileRoute("/_authenticated/business/register")({
   component: BusinessRegister,
@@ -21,6 +26,7 @@ export const Route = createFileRoute("/_authenticated/business/register")({
 
 function BusinessRegister() {
   const navigate = useNavigate();
+  const context = useRouteContext({ from: "__root__" });
   const createBusiness = useMutation(api.businesses.mutations.create);
   // TypeScript has trouble with deeply nested Convex API types
   // @ts-expect-error - TS2589: Type instantiation is excessively deep
@@ -37,25 +43,49 @@ function BusinessRegister() {
   // This is the fallback if profile creation during signup failed
   // We're on /business/register so we know the intent is business_owner
   useEffect(() => {
-    console.log("[Business Register] Ensuring business_owner profile exists");
+    const ensureAuthAndProfile = async () => {
+      console.log("[Business Register] Ensuring business_owner profile exists");
 
-    ensureProfileMutation({ role: "business_owner" })
-      .then((result) => {
-        console.log(
-          "[Business Register] Profile ready:",
-          result.profileId,
-          "role:",
-          result.role,
-          "wasCreated:",
-          result.wasCreated
-        );
-        setProfileReady(true);
-      })
-      .catch((error) => {
-        console.error("[Business Register] Failed to ensure profile:", error);
-        toast.error("Failed to set up business profile");
-      });
-  }, [ensureProfileMutation]);
+      // First, ensure Convex client has the auth token
+      try {
+        const { createAuth } = await import("../../../../convex/auth");
+        const cookieName = getCookieName(createAuth);
+        const token = document.cookie
+          .split("; ")
+          .find((row) => row.startsWith(`${cookieName}=`))
+          ?.split("=")[1];
+
+        if (token && context.convexClient) {
+          await context.convexClient.setAuth(async () => token);
+          console.log("[Business Register] Auth token refreshed");
+          // Small delay for auth to apply
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+      } catch (error) {
+        console.warn("[Business Register] Could not refresh auth:", error);
+      }
+
+      // Now try to create/verify profile
+      ensureProfileMutation({ role: "business_owner" })
+        .then((result) => {
+          console.log(
+            "[Business Register] Profile ready:",
+            result.profileId,
+            "role:",
+            result.role,
+            "wasCreated:",
+            result.wasCreated
+          );
+          setProfileReady(true);
+        })
+        .catch((error) => {
+          console.error("[Business Register] Failed to ensure profile:", error);
+          toast.error("Failed to set up business profile");
+        });
+    };
+
+    ensureAuthAndProfile();
+  }, [ensureProfileMutation, context.convexClient]);
 
   const categories = [
     "Coffee",
