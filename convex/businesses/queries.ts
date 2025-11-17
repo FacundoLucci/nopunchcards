@@ -90,3 +90,61 @@ export const getDashboardStats = query({
   },
 });
 
+export const getRecentRedemptions = query({
+  args: { 
+    businessId: v.id("businesses"),
+    limit: v.optional(v.number()),
+  },
+  returns: v.array(
+    v.object({
+      _id: v.id("rewardClaims"),
+      _creationTime: v.number(),
+      programName: v.string(),
+      rewardDescription: v.string(),
+      rewardCode: v.string(),
+      status: v.union(
+        v.literal("pending"),
+        v.literal("redeemed"),
+        v.literal("cancelled")
+      ),
+      issuedAt: v.number(),
+      redeemedAt: v.optional(v.number()),
+    })
+  ),
+  handler: async (ctx, args) => {
+    const user = await tryRequireRole(ctx, ["business_owner", "admin"]);
+    
+    if (!user) {
+      throw new Error("Not authenticated or profile not found");
+    }
+
+    const business = await ctx.db.get(args.businessId);
+    if (!business) {
+      throw new Error("Business not found");
+    }
+
+    if (business.ownerId !== user.id && user.profile?.role !== "admin") {
+      throw new Error("Forbidden");
+    }
+
+    const claims = await ctx.db
+      .query("rewardClaims")
+      .withIndex("by_businessId_status", (q) => 
+        q.eq("businessId", args.businessId).eq("status", "redeemed")
+      )
+      .order("desc")
+      .take(args.limit ?? 5);
+
+    return claims.map((claim) => ({
+      _id: claim._id,
+      _creationTime: claim._creationTime,
+      programName: claim.programName,
+      rewardDescription: claim.rewardDescription,
+      rewardCode: claim.rewardCode,
+      status: claim.status,
+      issuedAt: claim.issuedAt,
+      redeemedAt: claim.redeemedAt,
+    }));
+  },
+});
+

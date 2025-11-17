@@ -64,7 +64,7 @@ function ProgramsList({ businessId }: { businessId: any }) {
   if (programs.length === 0) {
     return (
       <Card>
-        <CardContent className="pt-6 text-center text-muted-foreground">
+        <CardContent className="text-center text-muted-foreground">
           <p>No programs yet</p>
           <p className="text-sm mt-2">Create your first reward program</p>
         </CardContent>
@@ -75,17 +75,21 @@ function ProgramsList({ businessId }: { businessId: any }) {
   return programs.map((program) => {
     const isVisitBased = program.type === "visit";
     const rules = program.rules as any;
-    
+
     let programDetails = "";
     if (isVisitBased && "visits" in rules) {
       programDetails = `${rules.visits} visits → ${rules.reward}`;
       if (rules.minimumSpendCents) {
-        programDetails += ` (Min $${(rules.minimumSpendCents / 100).toFixed(2)}/visit)`;
+        programDetails += ` (Min $${(rules.minimumSpendCents / 100).toFixed(
+          2
+        )}/visit)`;
       }
     } else if ("spendAmountCents" in rules) {
-      programDetails = `Spend $${(rules.spendAmountCents / 100).toFixed(2)} → ${rules.reward}`;
+      programDetails = `Spend $${(rules.spendAmountCents / 100).toFixed(2)} → ${
+        rules.reward
+      }`;
     }
-    
+
     return (
       <Card key={program._id}>
         <CardHeader>
@@ -108,9 +112,7 @@ function ProgramsList({ businessId }: { businessId: any }) {
           </div>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground mb-2">
-            {programDetails}
-          </p>
+          <p className="text-sm text-muted-foreground mb-2">{programDetails}</p>
           {program.description && (
             <p className="text-sm">{program.description}</p>
           )}

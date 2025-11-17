@@ -32,13 +32,15 @@ function BusinessRegister() {
   const [profileReady, setProfileReady] = useState(false);
 
   // Ensure user has business_owner profile when page loads
+  // This is a fallback - profile should already exist from signup
   useEffect(() => {
     let mounted = true;
 
     const setupProfile = async () => {
       try {
+        console.log("[Business Register] Ensuring business_owner profile...");
         const profileId = await ensureProfile({ role: "business_owner" });
-        console.log("Profile ensured:", profileId);
+        console.log("[Business Register] Profile ensured:", profileId);
         if (mounted && profileId) {
           setProfileReady(true);
         } else if (mounted && !profileId) {
@@ -47,7 +49,7 @@ function BusinessRegister() {
           );
         }
       } catch (error: any) {
-        console.error("Failed to create business owner profile:", error);
+        console.error("[Business Register] Failed to ensure profile:", error);
         if (mounted) {
           toast.error(error.message || "Failed to set up business account");
         }

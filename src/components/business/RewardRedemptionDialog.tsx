@@ -31,18 +31,18 @@ interface RewardRedemptionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   businessId: Id<"businesses">;
+  initialMethod: "code" | "scan" | null;
 }
 
-type RedemptionMethod = "code" | "scan" | null;
 type ScannerComponentType = (props: IScannerProps) => React.JSX.Element;
 
 export function RewardRedemptionDialog({
   open,
   onOpenChange,
   businessId,
+  initialMethod,
 }: RewardRedemptionDialogProps) {
-  const [step, setStep] = useState<"method" | "input" | "confirm">("method");
-  const [method, setMethod] = useState<RedemptionMethod>(null);
+  const [step, setStep] = useState<"input" | "confirm">("input");
   const [code, setCode] = useState("");
   const [result, setResult] = useState<RewardActionResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -52,11 +52,17 @@ export function RewardRedemptionDialog({
   const previewReward = useMutation(api.businesses.mutations.previewRewardCode);
   const confirmReward = useMutation(api.businesses.mutations.confirmRewardRedemption);
 
+  // Handle initial method and open scanner if needed
+  useEffect(() => {
+    if (open && initialMethod === "scan") {
+      setIsScannerOpen(true);
+    }
+  }, [open, initialMethod]);
+
   // Reset state when dialog closes
   useEffect(() => {
     if (!open) {
-      setStep("method");
-      setMethod(null);
+      setStep("input");
       setCode("");
       setResult(null);
       setIsLoading(false);
@@ -64,15 +70,6 @@ export function RewardRedemptionDialog({
       setIsScannerOpen(false);
     }
   }, [open]);
-
-  const handleMethodSelect = (selectedMethod: RedemptionMethod) => {
-    setMethod(selectedMethod);
-    if (selectedMethod === "scan") {
-      setIsScannerOpen(true);
-    } else {
-      setStep("input");
-    }
-  };
 
   const handleVerifyCode = async () => {
     const trimmedCode = code.trim().toUpperCase();
@@ -183,11 +180,6 @@ export function RewardRedemptionDialog({
     if (step === "confirm") {
       setStep("input");
       setResult(null);
-    } else if (step === "input") {
-      setStep("method");
-      setCode("");
-      setMethod(null);
-      setResult(null);
     }
   };
 
@@ -199,7 +191,7 @@ export function RewardRedemptionDialog({
         <DialogContent className="sm:max-w-[425px]">
           <div className="flex flex-col min-h-[400px]">
             {/* Back button */}
-            {step !== "method" && (
+            {step === "confirm" && (
               <div className="pb-4">
                 <button
                   onClick={handleBack}
@@ -211,68 +203,8 @@ export function RewardRedemptionDialog({
               </div>
             )}
 
-            {/* Progress indicator */}
-            <div className="flex gap-1 pb-6 pt-2">
-              <div
-                className={cn(
-                  "h-1 flex-1 rounded-full transition-colors",
-                  step !== "method" ? "bg-primary" : "bg-muted"
-                )}
-              />
-              <div
-                className={cn(
-                  "h-1 flex-1 rounded-full transition-colors",
-                  step === "confirm" ? "bg-primary" : "bg-muted"
-                )}
-              />
-            </div>
-
             {/* Step content */}
             <div className="flex-1 flex flex-col justify-between">
-              {step === "method" && (
-                <div className="space-y-4 flex-1 flex flex-col justify-center">
-                  <div className="text-center mb-6">
-                    <h3 className="text-xl font-semibold mb-2">
-                      How would you like to redeem?
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      Choose your preferred method
-                    </p>
-                  </div>
-                  <div className="space-y-3">
-                    <Button
-                      variant="outline"
-                      className="w-full h-20 text-lg"
-                      onClick={() => handleMethodSelect("code")}
-                    >
-                      <div className="flex flex-col items-center gap-2">
-                        <span className="font-semibold">ENTER CODE</span>
-                      </div>
-                    </Button>
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
-                      </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background px-2 text-muted-foreground">
-                          or
-                        </span>
-                      </div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      className="w-full h-20 text-lg"
-                      onClick={() => handleMethodSelect("scan")}
-                    >
-                      <div className="flex flex-col items-center gap-2">
-                        <QrCode className="w-6 h-6" />
-                        <span className="font-semibold">SCAN QR</span>
-                      </div>
-                    </Button>
-                  </div>
-                </div>
-              )}
-
               {step === "input" && (
                 <div className="space-y-4 flex-1 flex flex-col">
                   <div>
@@ -295,12 +227,11 @@ export function RewardRedemptionDialog({
                         }
                       }}
                     />
-                    {method === "code" && (
+                    {initialMethod === "code" && (
                       <Button
                         variant="outline"
                         className="w-full"
                         onClick={() => {
-                          setMethod("scan");
                           setIsScannerOpen(true);
                         }}
                       >

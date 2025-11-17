@@ -28,11 +28,16 @@ function ConsumerOnboarding() {
   const [profileReady, setProfileReady] = useState(false);
 
   // Ensure user has consumer profile when page loads
+  // This is a fallback - profile should already exist from signup
   useEffect(() => {
+    console.log("[Consumer Onboarding] Ensuring consumer profile...");
     ensureProfile({ role: "consumer" })
-      .then(() => setProfileReady(true))
+      .then((profileId) => {
+        console.log("[Consumer Onboarding] Profile ensured:", profileId);
+        setProfileReady(true);
+      })
       .catch((error) => {
-        console.error("Failed to create consumer profile:", error);
+        console.error("[Consumer Onboarding] Failed to ensure profile:", error);
         setProfileReady(true); // Continue anyway, might already exist
       });
   }, [ensureProfile]);

@@ -40,6 +40,9 @@ import type * as plaid_webhookVerification from "../plaid/webhookVerification.js
 import type * as rewardPrograms_mutations from "../rewardPrograms/mutations.js";
 import type * as seedData from "../seedData.js";
 import type * as sendEmails from "../sendEmails.js";
+import type * as users_ensureFreePlan from "../users/ensureFreePlan.js";
+import type * as users_roleCheck from "../users/roleCheck.js";
+import type * as users_signup from "../users/signup.js";
 import type * as users from "../users.js";
 
 import type {
@@ -89,6 +92,9 @@ declare const fullApi: ApiFromModules<{
   "rewardPrograms/mutations": typeof rewardPrograms_mutations;
   seedData: typeof seedData;
   sendEmails: typeof sendEmails;
+  "users/ensureFreePlan": typeof users_ensureFreePlan;
+  "users/roleCheck": typeof users_roleCheck;
+  "users/signup": typeof users_signup;
   users: typeof users;
 }>;
 declare const fullApiWithMounts: typeof fullApi;

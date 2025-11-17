@@ -1,3 +1,4 @@
+// Last updated: 2025-11-17 - Added success/cancel handlers for checkout redirects
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Card,
@@ -10,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, Crown, Sparkles, Loader2, ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { CheckoutDialog } from "@/components/CheckoutDialog";
@@ -18,10 +19,17 @@ import { useCustomer, usePricingTable } from "autumn-js/react";
 
 export const Route = createFileRoute("/_authenticated/upgrade")({
   component: UpgradePage,
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      success: search.success as string | undefined,
+      canceled: search.canceled as string | undefined,
+    };
+  },
 });
 
 function UpgradePage() {
   const navigate = useNavigate();
+  const { success, canceled } = Route.useSearch();
 
   // Use Autumn's React hooks directly (per official docs)
   const { products, isLoading, error } = usePricingTable();
@@ -31,6 +39,32 @@ function UpgradePage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
   const [checkoutPreview, setCheckoutPreview] = useState<any>(null);
+
+  // Handle checkout success/cancel redirects
+  useEffect(() => {
+    if (success === "true") {
+      toast.success("Payment successful! Welcome to Pro! 🎉", {
+        description: "Your subscription is now active.",
+        duration: 5000,
+      });
+      // Clean up URL
+      navigate({ 
+        to: "/upgrade", 
+        search: {},
+        replace: true 
+      });
+    } else if (canceled === "true") {
+      toast.info("Checkout canceled", {
+        description: "You can upgrade anytime!",
+      });
+      // Clean up URL
+      navigate({ 
+        to: "/upgrade", 
+        search: {},
+        replace: true 
+      });
+    }
+  }, [success, canceled, navigate]);
 
   const handleUpgrade = async (productId: string) => {
     setIsProcessing(true);
@@ -81,7 +115,9 @@ function UpgradePage() {
       } else {
         toast.success("Subscription updated successfully!");
         setShowDialog(false);
-        navigate({ to: "/account", hash: "subscription" });
+        // Use back navigation instead of direct navigate to account
+        // This preserves the navigation history and avoids the weird routing issue
+        window.history.back();
       }
     } catch (error) {
       console.error("Confirmation error:", error);
@@ -163,22 +199,38 @@ function UpgradePage() {
   const hasPremium =
     currentPlan && !currentPlan.is_default && currentPlan.id !== "free";
 
-  // Sort products: Active plan first, then premium plans, then free plan last
+  // Sort products: Active plan first, then premium plans
+  // Filter out free plan unless user is downgrading from premium
   const sortedProducts = products
-    ? [...products].sort((a, b) => {
-        // Active plan always first
-        if (a.scenario === "active") return -1;
-        if (b.scenario === "active") return 1;
+    ? [...products]
+        .filter((product) => {
+          const isFree = product.properties.is_free;
+          const isActive = product.scenario === "active";
+          const isDowngrade = product.scenario === "downgrade";
+          
+          // Only show free plan if:
+          // 1. It's currently active (show as current plan)
+          // 2. User is downgrading from premium (allow downgrade)
+          if (isFree) {
+            return isActive || (isDowngrade && hasPremium);
+          }
+          
+          return true; // Show all non-free plans
+        })
+        .sort((a, b) => {
+          // Active plan always first
+          if (a.scenario === "active") return -1;
+          if (b.scenario === "active") return 1;
 
-        // Premium plans before free plans
-        const aIsFree = a.properties.is_free;
-        const bIsFree = b.properties.is_free;
+          // Premium plans before free plans
+          const aIsFree = a.properties.is_free;
+          const bIsFree = b.properties.is_free;
 
-        if (aIsFree && !bIsFree) return 1; // Free goes last
-        if (!aIsFree && bIsFree) return -1; // Premium comes first
+          if (aIsFree && !bIsFree) return 1; // Free goes last
+          if (!aIsFree && bIsFree) return -1; // Premium comes first
 
-        return 0;
-      })
+          return 0;
+        })
     : [];
 
   return (
@@ -318,7 +370,11 @@ function UpgradePage() {
                 <Button
                   className="w-full"
                   variant={isActive ? "outline" : "default"}
-                  disabled={isActive || isProcessing}
+                  disabled={
+                    isActive || 
+                    isProcessing || 
+                    (isFree && !hasPremium) // Disable free plan button if user doesn't have premium (they already have free)
+                  }
                   onClick={() => handleUpgrade(product.id)}
                 >
                   {isProcessingThis ? (

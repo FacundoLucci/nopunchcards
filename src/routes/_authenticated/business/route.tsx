@@ -1,6 +1,7 @@
 import {
   createFileRoute,
   Outlet,
+  redirect,
   useMatchRoute,
   useNavigate,
   useRouter,
@@ -12,8 +13,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { BottomFade } from "@/components/consumer/BottomFade";
 import { BusinessRoutePrefetcher } from "@/components/business/RoutePrefetcher";
 import { LogoIcon } from "@/components/LogoIcon";
+import { RoleGuard } from "@/components/RoleGuard";
 
 export const Route = createFileRoute("/_authenticated/business")({
+  // Client-side only - no server round-trips during navigation
   component: BusinessLayout,
 });
 
@@ -29,9 +32,10 @@ function BusinessLayout() {
   const isSettings = !!matchRoute({ to: "/business/settings" });
   const isProgramsCreate = !!matchRoute({ to: "/business/programs/create" });
   const isRegister = !!matchRoute({ to: "/business/register" });
+  const isRedemptions = !!matchRoute({ to: "/business/redemptions" });
 
   const showHeader = isDashboard || isPrograms || isAnalytics || isSettings;
-  const showNav = !isProgramsCreate && !isRegister; // Hide nav on programs/create and register
+  const showNav = !isProgramsCreate && !isRegister && !isRedemptions; // Hide nav on programs/create, register, and redemptions
 
   // Get title based on route
   const getTitle = () => {
@@ -47,9 +51,13 @@ function BusinessLayout() {
   };
 
   return (
-    <div className={showNav ? "pb-28" : ""}>
-      {/* Prefetch all business routes for instant navigation */}
-      <BusinessRoutePrefetcher />
+    <RoleGuard
+      allowedRoles={["business_owner", "admin"]}
+      redirectTo="/consumer/home"
+    >
+      <div className={showNav ? "pb-28" : ""}>
+        {/* Prefetch all business routes for instant navigation */}
+        <BusinessRoutePrefetcher />
 
       {/* Conditional Header - shown only on main routes */}
       {showHeader && (
@@ -106,6 +114,7 @@ function BusinessLayout() {
 
       {/* Navigation - conditionally visible */}
       {showNav && <BusinessNav />}
-    </div>
+      </div>
+    </RoleGuard>
   );
 }

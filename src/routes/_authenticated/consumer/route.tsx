@@ -1,6 +1,7 @@
 import {
   createFileRoute,
   Outlet,
+  redirect,
   useMatchRoute,
   Link,
   useRouter,
@@ -18,12 +19,21 @@ import { toast } from "sonner";
 import { LogoIcon } from "@/components/LogoIcon";
 
 export const Route = createFileRoute("/_authenticated/consumer")({
+  // Client-side only - no server round-trips during navigation
   component: ConsumerLayout,
 });
 
 function ConsumerLayout() {
   const matchRoute = useMatchRoute();
   const router = useRouter();
+  const { blocked } = Route.useSearch() as { blocked?: string };
+
+  // Show toast if user was blocked from accessing a route
+  if (blocked === "business") {
+    toast.error("You don't have permission to access business features");
+    // Clear the search param
+    router.navigate({ to: "/consumer/home", replace: true });
+  }
 
   // Detect if we're on a main route (show header) or detail route (hide header)
   const isHome = !!matchRoute({ to: "/consumer/home" });

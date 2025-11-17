@@ -50,11 +50,11 @@ export function ShareYourPageCard({ slug }: ShareYourPageCardProps) {
   };
 
   return (
-    <Card className="bg-linear-to-br from-secondary to-muted border-border">
+    <Card className="bg-linear-to-br from-primary to-black border-border pt-4 gap-3 ">
       <CardHeader>
         <div className="flex items-start justify-between">
           <div>
-            <h3 className="font-sans! text-lg font-semibold mb-1">
+            <h3 className="font-sans text-lg font-bold text-primary-foreground">
               Share Your Page
             </h3>
             <p className="text-sm text-muted-foreground">

@@ -1,8 +1,8 @@
 import { mutation, type MutationCtx } from "../_generated/server";
-import { internal } from "../_generated/api";
 import { v } from "convex/values";
 import { requireRole } from "../users";
 import type { Doc, Id } from "../_generated/dataModel";
+import { generateUniqueSlug } from "./generateSlug";
 
 async function ensureBusinessOwnership(
   ctx: MutationCtx,
@@ -74,11 +74,8 @@ export const create = mutation({
       createdAt: Date.now(),
     });
 
-    // Generate unique slug
-    const slug: string = await ctx.runMutation(internal.businesses.generateSlug.generateSlug, {
-      businessId,
-      name: args.name,
-    });
+    // Generate unique slug using helper function
+    const slug = await generateUniqueSlug(ctx, businessId, args.name);
 
     return { businessId, slug };
   },
@@ -301,6 +298,67 @@ export const confirmRewardRedemption = mutation({
         status: "redeemed",
         redeemedAt,
       } as Doc<"rewardClaims">),
+    };
+  },
+});
+
+export const undoRewardRedemption = mutation({
+  args: {
+    businessId: v.id("businesses"),
+    claimId: v.id("rewardClaims"),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    message: v.string(),
+  }),
+  handler: async (ctx, args) => {
+    const user = await requireRole(ctx, ["business_owner", "admin"]);
+    const isAdmin = user.profile?.role === "admin";
+    await ensureBusinessOwnership(ctx, args.businessId, user.id, isAdmin);
+
+    const claim = await ctx.db.get(args.claimId);
+    
+    if (!claim) {
+      return {
+        success: false,
+        message: "Reward claim not found",
+      };
+    }
+
+    if (claim.businessId !== args.businessId) {
+      return {
+        success: false,
+        message: "This claim belongs to another business",
+      };
+    }
+
+    if (claim.status !== "redeemed") {
+      return {
+        success: false,
+        message: "This claim has not been redeemed yet",
+      };
+    }
+
+    // Restore the claim to pending status
+    await ctx.db.patch(claim._id, {
+      status: "pending",
+      redeemedAt: undefined,
+      redeemedByUserId: undefined,
+    });
+
+    // Also restore the reward progress status
+    try {
+      await ctx.db.patch(claim.rewardProgressId, {
+        status: "completed",
+        redeemedAt: undefined,
+      });
+    } catch (error) {
+      console.warn("Failed to patch rewardProgress for claim", claim._id, error);
+    }
+
+    return {
+      success: true,
+      message: "Redemption undone successfully",
     };
   },
 });

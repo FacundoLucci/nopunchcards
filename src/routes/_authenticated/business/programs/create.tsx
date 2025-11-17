@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
-import { MultistepForm } from "@/components/MultistepForm";
+import { MultistepForm, MultistepFormRef } from "@/components/MultistepForm";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
@@ -10,7 +10,9 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/business/programs/create")({
+export const Route = createFileRoute(
+  "/_authenticated/business/programs/create"
+)({
   component: CreateProgram,
 });
 
@@ -20,6 +22,7 @@ function CreateProgram() {
   const navigate = useNavigate();
   const businesses = useQuery(api.businesses.queries.getMyBusinesses, {});
   const createProgram = useMutation(api.rewardPrograms.mutations.create);
+  const formRef = useRef<MultistepFormRef>(null);
 
   const [name, setName] = useState("");
   const [programType, setProgramType] = useState<ProgramType>("visit");
@@ -38,10 +41,18 @@ function CreateProgram() {
             onValueChange={(value) => setProgramType(value as ProgramType)}
           >
             <div className="space-y-3">
-              <div className="flex items-start space-x-3 p-4 border-2 rounded-lg cursor-pointer hover:border-primary transition-colors" 
-                   onClick={() => setProgramType("visit")}>
+              <div
+                className="flex items-start space-x-3 p-4 border-2 rounded-lg cursor-pointer hover:border-primary transition-colors"
+                onClick={() => {
+                  setProgramType("visit");
+                  formRef.current?.next();
+                }}
+              >
                 <RadioGroupItem value="visit" id="visit" />
-                <Label htmlFor="visit" className="cursor-pointer flex-1">
+                <Label
+                  htmlFor="visit"
+                  className="cursor-pointer flex-1 flex flex-col items-start"
+                >
                   <div className="font-semibold">Visit-Based</div>
                   <div className="text-sm text-muted-foreground mt-1">
                     Reward customers after a certain number of visits
@@ -51,11 +62,19 @@ function CreateProgram() {
                   </div>
                 </Label>
               </div>
-              
-              <div className="flex items-start space-x-3 p-4 border-2 rounded-lg cursor-pointer hover:border-primary transition-colors"
-                   onClick={() => setProgramType("spend")}>
+
+              <div
+                className="flex items-start space-x-3 p-4 border-2 rounded-lg cursor-pointer hover:border-primary transition-colors"
+                onClick={() => {
+                  setProgramType("spend");
+                  formRef.current?.next();
+                }}
+              >
                 <RadioGroupItem value="spend" id="spend" />
-                <Label htmlFor="spend" className="cursor-pointer flex-1">
+                <Label
+                  htmlFor="spend"
+                  className="cursor-pointer flex-1 flex flex-col items-start"
+                >
                   <div className="font-semibold">Spend-Based</div>
                   <div className="text-sm text-muted-foreground mt-1">
                     Reward customers when they reach a spending goal
@@ -80,7 +99,11 @@ function CreateProgram() {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder={programType === "visit" ? "5-Visit Punch Card" : "Spend $100 Reward"}
+            placeholder={
+              programType === "visit"
+                ? "5-Visit Punch Card"
+                : "Spend $100 Reward"
+            }
             className="text-lg"
           />
           <p className="text-sm text-muted-foreground">
@@ -148,7 +171,9 @@ function CreateProgram() {
                 <div className="bg-muted rounded-lg p-3">
                   <p className="text-sm">
                     {minimumSpend && parseFloat(minimumSpend) > 0
-                      ? `Each visit must have a minimum spend of $${parseFloat(minimumSpend).toFixed(2)}`
+                      ? `Each visit must have a minimum spend of $${parseFloat(
+                          minimumSpend
+                        ).toFixed(2)}`
                       : "No minimum spend required per visit"}
                   </p>
                 </div>
@@ -213,7 +238,11 @@ function CreateProgram() {
             type="text"
             value={reward}
             onChange={(e) => setReward(e.target.value)}
-            placeholder={programType === "visit" ? "Free medium coffee" : "$10 off next purchase"}
+            placeholder={
+              programType === "visit"
+                ? "Free medium coffee"
+                : "$10 off next purchase"
+            }
             className="text-lg"
           />
           <div className="mt-4 text-sm text-muted-foreground">
@@ -276,8 +305,9 @@ function CreateProgram() {
                 <>
                   <div className="text-center">
                     <div className="text-4xl font-bold">
-                      ${spendAmount && parseFloat(spendAmount) > 0 
-                        ? parseFloat(spendAmount).toFixed(2) 
+                      $
+                      {spendAmount && parseFloat(spendAmount) > 0
+                        ? parseFloat(spendAmount).toFixed(2)
                         : "0.00"}
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">
@@ -312,19 +342,23 @@ function CreateProgram() {
     }
 
     try {
-      const rules = programType === "visit" 
-        ? {
-            visits: visits[0],
-            reward,
-            ...(minimumSpend && parseFloat(minimumSpend) > 0 
-              ? { minimumSpendCents: Math.round(parseFloat(minimumSpend) * 100) }
-              : {}
-            ),
-          }
-        : {
-            spendAmountCents: Math.round(parseFloat(spendAmount) * 100),
-            reward,
-          };
+      const rules =
+        programType === "visit"
+          ? {
+              visits: visits[0],
+              reward,
+              ...(minimumSpend && parseFloat(minimumSpend) > 0
+                ? {
+                    minimumSpendCents: Math.round(
+                      parseFloat(minimumSpend) * 100
+                    ),
+                  }
+                : {}),
+            }
+          : {
+              spendAmountCents: Math.round(parseFloat(spendAmount) * 100),
+              reward,
+            };
 
       await createProgram({
         businessId: businesses[0]._id,
@@ -346,6 +380,7 @@ function CreateProgram() {
 
   return (
     <MultistepForm
+      ref={formRef}
       title="Create a program"
       steps={steps}
       onComplete={handleComplete}

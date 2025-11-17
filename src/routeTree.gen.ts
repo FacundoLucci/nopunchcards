@@ -28,6 +28,7 @@ import { Route as AuthenticatedConsumerFindRewardsRouteImport } from './routes/_
 import { Route as AuthenticatedConsumerCardsRouteImport } from './routes/_authenticated/consumer/cards'
 import { Route as AuthenticatedBusinessSettingsRouteImport } from './routes/_authenticated/business/settings'
 import { Route as AuthenticatedBusinessRegisterRouteImport } from './routes/_authenticated/business/register'
+import { Route as AuthenticatedBusinessRedemptionsRouteImport } from './routes/_authenticated/business/redemptions'
 import { Route as AuthenticatedBusinessDashboardRouteImport } from './routes/_authenticated/business/dashboard'
 import { Route as AuthenticatedBusinessAnalyticsRouteImport } from './routes/_authenticated/business/analytics'
 import { Route as AuthenticatedConsumerRewardsIndexRouteImport } from './routes/_authenticated/consumer/rewards/index'
@@ -139,6 +140,12 @@ const AuthenticatedBusinessRegisterRoute =
     path: '/register',
     getParentRoute: () => AuthenticatedBusinessRouteRoute,
   } as any)
+const AuthenticatedBusinessRedemptionsRoute =
+  AuthenticatedBusinessRedemptionsRouteImport.update({
+    id: '/redemptions',
+    path: '/redemptions',
+    getParentRoute: () => AuthenticatedBusinessRouteRoute,
+  } as any)
 const AuthenticatedBusinessDashboardRoute =
   AuthenticatedBusinessDashboardRouteImport.update({
     id: '/dashboard',
@@ -188,6 +195,7 @@ export interface FileRoutesByFullPath {
   '/join/$slug': typeof JoinSlugRoute
   '/business/analytics': typeof AuthenticatedBusinessAnalyticsRoute
   '/business/dashboard': typeof AuthenticatedBusinessDashboardRoute
+  '/business/redemptions': typeof AuthenticatedBusinessRedemptionsRoute
   '/business/register': typeof AuthenticatedBusinessRegisterRoute
   '/business/settings': typeof AuthenticatedBusinessSettingsRoute
   '/consumer/cards': typeof AuthenticatedConsumerCardsRoute
@@ -214,6 +222,7 @@ export interface FileRoutesByTo {
   '/join/$slug': typeof JoinSlugRoute
   '/business/analytics': typeof AuthenticatedBusinessAnalyticsRoute
   '/business/dashboard': typeof AuthenticatedBusinessDashboardRoute
+  '/business/redemptions': typeof AuthenticatedBusinessRedemptionsRoute
   '/business/register': typeof AuthenticatedBusinessRegisterRoute
   '/business/settings': typeof AuthenticatedBusinessSettingsRoute
   '/consumer/cards': typeof AuthenticatedConsumerCardsRoute
@@ -242,6 +251,7 @@ export interface FileRoutesById {
   '/join/$slug': typeof JoinSlugRoute
   '/_authenticated/business/analytics': typeof AuthenticatedBusinessAnalyticsRoute
   '/_authenticated/business/dashboard': typeof AuthenticatedBusinessDashboardRoute
+  '/_authenticated/business/redemptions': typeof AuthenticatedBusinessRedemptionsRoute
   '/_authenticated/business/register': typeof AuthenticatedBusinessRegisterRoute
   '/_authenticated/business/settings': typeof AuthenticatedBusinessSettingsRoute
   '/_authenticated/consumer/cards': typeof AuthenticatedConsumerCardsRoute
@@ -270,6 +280,7 @@ export interface FileRouteTypes {
     | '/join/$slug'
     | '/business/analytics'
     | '/business/dashboard'
+    | '/business/redemptions'
     | '/business/register'
     | '/business/settings'
     | '/consumer/cards'
@@ -296,6 +307,7 @@ export interface FileRouteTypes {
     | '/join/$slug'
     | '/business/analytics'
     | '/business/dashboard'
+    | '/business/redemptions'
     | '/business/register'
     | '/business/settings'
     | '/consumer/cards'
@@ -323,6 +335,7 @@ export interface FileRouteTypes {
     | '/join/$slug'
     | '/_authenticated/business/analytics'
     | '/_authenticated/business/dashboard'
+    | '/_authenticated/business/redemptions'
     | '/_authenticated/business/register'
     | '/_authenticated/business/settings'
     | '/_authenticated/consumer/cards'
@@ -483,6 +496,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBusinessRegisterRouteImport
       parentRoute: typeof AuthenticatedBusinessRouteRoute
     }
+    '/_authenticated/business/redemptions': {
+      id: '/_authenticated/business/redemptions'
+      path: '/redemptions'
+      fullPath: '/business/redemptions'
+      preLoaderRoute: typeof AuthenticatedBusinessRedemptionsRouteImport
+      parentRoute: typeof AuthenticatedBusinessRouteRoute
+    }
     '/_authenticated/business/dashboard': {
       id: '/_authenticated/business/dashboard'
       path: '/dashboard'
@@ -531,6 +551,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedBusinessRouteRouteChildren {
   AuthenticatedBusinessAnalyticsRoute: typeof AuthenticatedBusinessAnalyticsRoute
   AuthenticatedBusinessDashboardRoute: typeof AuthenticatedBusinessDashboardRoute
+  AuthenticatedBusinessRedemptionsRoute: typeof AuthenticatedBusinessRedemptionsRoute
   AuthenticatedBusinessRegisterRoute: typeof AuthenticatedBusinessRegisterRoute
   AuthenticatedBusinessSettingsRoute: typeof AuthenticatedBusinessSettingsRoute
   AuthenticatedBusinessProgramsCreateRoute: typeof AuthenticatedBusinessProgramsCreateRoute
@@ -541,6 +562,8 @@ const AuthenticatedBusinessRouteRouteChildren: AuthenticatedBusinessRouteRouteCh
   {
     AuthenticatedBusinessAnalyticsRoute: AuthenticatedBusinessAnalyticsRoute,
     AuthenticatedBusinessDashboardRoute: AuthenticatedBusinessDashboardRoute,
+    AuthenticatedBusinessRedemptionsRoute:
+      AuthenticatedBusinessRedemptionsRoute,
     AuthenticatedBusinessRegisterRoute: AuthenticatedBusinessRegisterRoute,
     AuthenticatedBusinessSettingsRoute: AuthenticatedBusinessSettingsRoute,
     AuthenticatedBusinessProgramsCreateRoute:

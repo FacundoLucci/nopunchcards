@@ -1,0 +1,379 @@
+# Role-Based Access Control (RBAC)
+
+**Last Updated:** 2025-11-17
+
+## Overview
+
+This application uses a role-based access control system to ensure users can only access features appropriate to their account type. The system is implemented at the route level with server-side checks to prevent unauthorized access before components render.
+
+## User Roles
+
+The system defines three roles in the `profiles` table:
+
+### 1. **Consumer** (`consumer`)
+- **Access Level**: Lowest
+- **Can Access**:
+  - All consumer routes (`/consumer/*`)
+  - Account settings (`/account`)
+  - Upgrade page (`/upgrade`)
+- **Cannot Access**:
+  - Business routes (`/business/*`)
+  
+### 2. **Business Owner** (`business_owner`)
+- **Access Level**: Medium
+- **Can Access**:
+  - All business routes (`/business/*`)
+  - All consumer routes (`/consumer/*`) - they are also consumers
+  - Account settings (`/account`)
+  - Upgrade page (`/upgrade`)
+- **Cannot Access**:
+  - N/A (has access to all routes)
+
+### 3. **Admin** (`admin`)
+- **Access Level**: Highest
+- **Can Access**:
+  - All business routes (`/business/*`)
+  - All consumer routes (`/consumer/*`)
+  - Account settings (`/account`)
+  - Upgrade page (`/upgrade`)
+- **Cannot Access**:
+  - N/A (has access to all routes)
+
+## Role Hierarchy
+
+The role hierarchy follows this principle:
+
+```
+Admin > Business Owner > Consumer
+
+Where:
+- Admin can do everything Business Owner can do
+- Business Owner can do everything Consumer can do
+- Consumer has the most restricted access
+```
+
+**Important**: Business owners and admins are also considered consumers. They can use all consumer features while also having access to business features.
+
+## Implementation
+
+### Backend: Role Check Query
+
+**File**: `convex/users/roleCheck.ts`
+
+The `checkUserRole` query provides a simple API for checking a user's role:
+
+```typescript
+// Returns user's role and userId, or null if not authenticated
+const roleInfo = await ctx.runQuery(api.users.roleCheck.checkUserRole, {});
+
+if (roleInfo) {
+  console.log(roleInfo.role); // "consumer" | "business_owner" | "admin"
+  console.log(roleInfo.userId); // Better Auth user ID
+}
+```
+
+### Frontend: Route Guards
+
+Route guards are implemented using TanStack Router's `beforeLoad` hook with server-side checks.
+
+#### Business Route Guard
+
+**File**: `src/routes/_authenticated/business/route.tsx`
+
+```typescript
+export const Route = createFileRoute("/_authenticated/business")({
+  ssr: true, // Enable SSR for server-side role checks
+  beforeLoad: async ({ location }) => {
+    const { hasAccess, role } = await checkBusinessAccess();
+
+    if (!hasAccess) {
+      // Redirect consumers to consumer home
+      throw redirect({
+        to: "/consumer/home",
+        search: { blocked: "business" },
+      });
+    }
+
+    return { role };
+  },
+  component: BusinessLayout,
+});
+```
+
+**Access Rules**:
+- ✅ Allowed: `business_owner`, `admin`
+- ❌ Blocked: `consumer` (redirected to `/consumer/home`)
+
+#### Consumer Route Guard
+
+**File**: `src/routes/_authenticated/consumer/route.tsx`
+
+```typescript
+export const Route = createFileRoute("/_authenticated/consumer")({
+  ssr: true, // Enable SSR for server-side role checks
+  beforeLoad: async ({ location }) => {
+    const { hasAccess, role } = await checkConsumerAccess();
+
+    if (!hasAccess) {
+      // No profile found - redirect to onboarding
+      throw redirect({
+        to: "/consumer/onboarding",
+      });
+    }
+
+    return { role };
+  },
+  component: ConsumerLayout,
+});
+```
+
+**Access Rules**:
+- ✅ Allowed: `consumer`, `business_owner`, `admin` (all authenticated users)
+- ❌ Blocked: Users without a profile (redirected to onboarding)
+
+## User Flow Examples
+
+### Consumer Trying to Access Business Routes
+
+1. Consumer navigates to `/business/dashboard`
+2. Business route guard runs in `beforeLoad`
+3. Server-side check: `role === "consumer"`
+4. Access denied → Redirect to `/consumer/home?blocked=business`
+5. Toast notification: "You don't have permission to access business features"
+
+### Business Owner Accessing Consumer Routes
+
+1. Business owner navigates to `/consumer/home`
+2. Consumer route guard runs in `beforeLoad`
+3. Server-side check: `role === "business_owner"`
+4. Access granted ✅
+5. Consumer layout renders normally
+
+### Admin Accessing Any Route
+
+1. Admin navigates to any route
+2. Route guard runs in `beforeLoad`
+3. Server-side check: `role === "admin"`
+4. Access granted ✅
+5. Layout renders normally
+
+## User Feedback
+
+When a user is blocked from accessing a route, the system provides immediate feedback:
+
+1. **Instant Redirect**: Server-side redirect happens before component rendering
+2. **Toast Notification**: Clear message about why access was denied
+3. **URL Cleanup**: Search params are removed after showing the toast
+
+Example implementation in `ConsumerLayout`:
+
+```typescript
+const { blocked } = Route.useSearch() as { blocked?: string };
+
+if (blocked === "business") {
+  toast.error("You don't have permission to access business features");
+  router.navigate({ to: "/consumer/home", replace: true });
+}
+```
+
+## Role Switching
+
+### Upgrading from Consumer to Business Owner
+
+When a consumer creates a business account:
+
+1. Call `api.users.ensureProfile` with `role: "business_owner"`
+2. This updates their profile role in the database
+3. On next navigation, route guards will grant business access
+4. User can now access both `/consumer/*` and `/business/*` routes
+
+Example:
+
+```typescript
+// In business registration mutation
+const profileId = await ctx.runMutation(api.users.ensureProfile, {
+  role: "business_owner",
+});
+```
+
+### Downgrading (Not Implemented)
+
+Role downgrades are not currently implemented. To add this feature:
+
+1. Create a mutation to update the profile role
+2. Add appropriate guards to prevent accidental downgrades
+3. Handle cleanup of business-specific data
+
+## Security Considerations
+
+### Server-Side Checks are Required
+
+**Never rely only on client-side role checks.** All sensitive operations must verify the user's role on the server:
+
+```typescript
+// ✅ CORRECT - Server-side role check
+export const createRewardProgram = mutation({
+  handler: async (ctx, args) => {
+    // This throws if user is not business_owner or admin
+    await requireRole(ctx, ["business_owner", "admin"]);
+    
+    // Proceed with mutation...
+  },
+});
+
+// ❌ WRONG - Client-side only check
+function CreateProgramButton() {
+  const profile = useQuery(api.users.getMyProfile, {});
+  
+  // This can be bypassed by the user
+  if (profile?.role !== "business_owner") return null;
+  
+  return <Button>Create Program</Button>;
+}
+```
+
+### Role Verification Helpers
+
+Use these helpers in Convex functions for role-based authorization:
+
+#### `requireRole` - Throws on Unauthorized
+
+```typescript
+import { requireRole } from "../users";
+
+export const deleteUser = mutation({
+  handler: async (ctx, args) => {
+    // Throws error if user is not admin
+    await requireRole(ctx, ["admin"]);
+    
+    // Only admins reach this code
+    await ctx.db.delete(args.userId);
+  },
+});
+```
+
+#### `tryRequireRole` - Returns null on Unauthorized
+
+```typescript
+import { tryRequireRole } from "../users";
+
+export const getBusinessData = query({
+  handler: async (ctx) => {
+    // Returns null if user is not business_owner or admin
+    const userWithProfile = await tryRequireRole(ctx, ["business_owner", "admin"]);
+    
+    if (!userWithProfile) {
+      // Return public data only
+      return { businesses: [] };
+    }
+    
+    // Return full data for authorized users
+    return { businesses: await ctx.db.query("businesses").collect() };
+  },
+});
+```
+
+## Navigation Best Practices
+
+### Smart Redirects Based on Role
+
+When redirecting users after login or actions, check their role first:
+
+**File**: `src/routes/app.tsx` - Smart redirect based on role
+
+```typescript
+const profile = await convexClient.query(api.users.getMyProfile, {});
+
+if (profile?.role === "business_owner") {
+  throw redirect({ to: "/business/dashboard" });
+} else {
+  throw redirect({ to: "/consumer/home" });
+}
+```
+
+### Back Navigation
+
+For pages like `/account` or `/upgrade`, determine the back link based on role:
+
+```typescript
+const backLink = accountInfo?.role === "business_owner" 
+  ? "/business/dashboard" 
+  : "/consumer/home";
+```
+
+## Testing Role Guards
+
+To test role-based access control:
+
+### 1. Test Consumer Access
+
+- Log in as consumer
+- Try accessing `/business/dashboard`
+- Should redirect to `/consumer/home` with error toast
+
+### 2. Test Business Owner Access
+
+- Log in as business owner
+- Access `/business/dashboard` ✅
+- Access `/consumer/home` ✅
+- Should have access to both
+
+### 3. Test Admin Access
+
+- Log in as admin
+- Access all routes
+- Should have unrestricted access
+
+### 4. Test No Profile
+
+- Create user without calling `ensureProfile`
+- Try accessing protected routes
+- Should redirect to onboarding
+
+## Troubleshooting
+
+### User Can Access Restricted Routes
+
+**Problem**: Consumer can access business routes
+
+**Solution**:
+1. Check if route has `ssr: true` enabled
+2. Verify `beforeLoad` includes role check
+3. Ensure server function is being called
+4. Check Convex profile role in database
+
+### Infinite Redirect Loop
+
+**Problem**: User gets stuck in redirect loop
+
+**Solution**:
+1. Check redirect target has proper access rules
+2. Ensure profile exists in database
+3. Verify role is valid enum value
+4. Check for conflicting redirects in parent routes
+
+### Role Not Updating After Change
+
+**Problem**: User's role changed but they still get blocked
+
+**Solution**:
+1. Reload the page to refresh auth state
+2. Check if profile was actually updated in database
+3. Verify no caching issues in route guards
+4. Clear browser cache and cookies
+
+## Future Enhancements
+
+Potential improvements to the RBAC system:
+
+- [ ] **Permission-Based Access**: Move to granular permissions instead of roles
+- [ ] **Multi-Role Support**: Allow users to have multiple roles simultaneously
+- [ ] **Dynamic Role Assignment**: UI for admins to change user roles
+- [ ] **Audit Logging**: Track role changes and access attempts
+- [ ] **Role-Specific Features**: Feature flags based on roles
+- [ ] **Organization Roles**: Team members with different permissions
+- [ ] **Temporary Access**: Time-limited role elevations
+
+---
+
+_This document should be updated whenever role-based access control logic changes._

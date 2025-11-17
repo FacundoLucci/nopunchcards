@@ -1,26 +1,21 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "../../../../convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShareYourPageCard } from "@/components/ShareYourPageCard";
-import { Plus, BarChart3, Gift } from "lucide-react";
+import { BarChart3, QrCode, Eye, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Suspense, useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-clients";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { RewardRedemptionDialog } from "@/components/business/RewardRedemptionDialog";
+import { formatDistanceToNow } from "date-fns";
+import { useMutation } from "convex/react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/business/dashboard")({
-  ssr: true,
-  beforeLoad: ({ context, location }) => {
-    if (!context.userId) {
-      throw redirect({
-        to: "/login",
-        search: { redirect: location.href },
-      });
-    }
-  },
+  // Client-side only - no server round-trips during navigation
   component: BusinessDashboard,
 });
 
@@ -91,17 +86,17 @@ function DashboardContent() {
       {/* Redemption */}
       <RedeemRewardCard businessId={business._id} />
 
-      {/* Share Page Card */}
-      <ShareYourPageCard slug={business.slug} />
-
-      {/* Active Programs */}
+      {/* Recent Redemptions */}
       <Suspense
         fallback={
-          <div className="text-muted-foreground">Loading programs...</div>
+          <div className="text-muted-foreground">Loading redemptions...</div>
         }
       >
-        <ProgramsSection businessId={business._id} />
+        <RecentRedemptionsSection businessId={business._id} />
       </Suspense>
+
+      {/* Share Page Card */}
+      <ShareYourPageCard slug={business.slug} />
     </div>
   );
 }
@@ -119,7 +114,7 @@ function StatsSection({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-around py-3 sm:py-4">
+      <div className="flex items-center justify-around px-4">
         <div className="text-center">
           <p className="text-2xl sm:text-3xl font-bold">
             {stats?.totalVisits || 0}
@@ -161,102 +156,163 @@ function StatsSection({
 
 function RedeemRewardCard({ businessId }: { businessId: Id<"businesses"> }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [redemptionMethod, setRedemptionMethod] = useState<
+    "code" | "scan" | null
+  >(null);
+
+  const handleMethodSelect = (method: "code" | "scan") => {
+    setRedemptionMethod(method);
+    setIsDialogOpen(true);
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    setIsDialogOpen(open);
+    if (!open) {
+      setRedemptionMethod(null);
+    }
+  };
 
   return (
     <>
-      <Card>
+      <Card className="pt-4 gap-3">
         <CardHeader>
           <CardTitle className="text-lg">Redeem a Reward</CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
-            Help customers redeem their earned rewards
-          </p>
+        <CardContent className="space-y-3">
           <Button
             className="w-full h-14"
-            onClick={() => setIsDialogOpen(true)}
             size="lg"
+            onClick={() => handleMethodSelect("code")}
           >
-            <Gift className="w-5 h-5 mr-2" />
-            Start Redemption
+            ENTER CODE
+          </Button>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                or
+              </span>
+            </div>
+          </div>
+          <Button
+            className="w-full h-14"
+            size="lg"
+            onClick={() => handleMethodSelect("scan")}
+          >
+            <QrCode className="w-5 h-5 mr-2" />
+            SCAN QR
           </Button>
         </CardContent>
       </Card>
 
       <RewardRedemptionDialog
         open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
+        onOpenChange={handleDialogClose}
         businessId={businessId}
+        initialMethod={redemptionMethod}
       />
     </>
   );
 }
 
-function ProgramsSection({ businessId }: { businessId: Id<"businesses"> }) {
+function RecentRedemptionsSection({
+  businessId,
+}: {
+  businessId: Id<"businesses">;
+}) {
   const navigate = useNavigate();
-  const { data: programs } = useSuspenseQuery(
-    convexQuery(api.rewardPrograms.mutations.listByBusiness, { businessId })
+  const { data: redemptions } = useSuspenseQuery(
+    convexQuery(api.businesses.queries.getRecentRedemptions, {
+      businessId,
+      limit: 5,
+    })
   );
+  const undoRedemption = useMutation(
+    api.businesses.mutations.undoRewardRedemption
+  );
+  const [undoingId, setUndoingId] = useState<Id<"rewardClaims"> | null>(null);
+
+  const handleUndo = async (claimId: Id<"rewardClaims">) => {
+    setUndoingId(claimId);
+    try {
+      const result = await undoRedemption({ businessId, claimId });
+      if (result.success) {
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to undo redemption");
+    } finally {
+      setUndoingId(null);
+    }
+  };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-base sm:text-lg font-semibold">Active Programs</h2>
-        <Button
-          size="sm"
-          onClick={() => navigate({ to: "/business/programs/create" })}
-        >
-          <Plus className="w-4 h-4 mr-1" />
-          <span className="hidden xs:inline">Create</span>
-          <span className="xs:hidden">New</span>
-        </Button>
-      </div>
-
-      {programs.length === 0 ? (
-        <Card>
-          <CardContent className="pt-6 text-center text-muted-foreground">
-            <p>No programs yet</p>
-            <p className="text-sm mt-2">Create your first reward program</p>
-          </CardContent>
-        </Card>
-      ) : (
-        programs.map((program) => (
-          <Card key={program._id}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">{program.name}</CardTitle>
-                <span
-                  className={`px-2 py-1 text-xs font-medium rounded-full ${
-                    program.status === "active"
-                      ? "bg-green-500/20 text-green-600"
-                      : "bg-muted text-muted-foreground"
-                  }`}
+    <Card className="pt-4 gap-3">
+      <CardHeader>
+        <div className="flex items-center justify-between gap-3">
+          <CardTitle className="text-lg">Recent Redemptions</CardTitle>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => navigate({ to: "/business/redemptions" })}
+          >
+            <Eye className="w-4 h-4 mr-1" />
+            <span className="hidden xs:inline">See All</span>
+            <span className="xs:inline sm:hidden">All</span>
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {redemptions.length === 0 ? (
+          <div className="text-center text-muted-foreground py-6">
+            <p>No redemptions yet</p>
+            <p className="text-sm mt-2">Redeemed rewards will appear here</p>
+          </div>
+        ) : (
+          redemptions.map((redemption) => (
+            <div
+              key={redemption._id}
+              className="border rounded-lg p-3 bg-muted/30"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium truncate">
+                    {redemption.rewardDescription}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {redemption.programName}
+                  </p>
+                  <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                    <span className="font-mono">{redemption.rewardCode}</span>
+                    <span>•</span>
+                    <span>
+                      {redemption.redeemedAt &&
+                        formatDistanceToNow(new Date(redemption.redeemedAt), {
+                          addSuffix: true,
+                        })}
+                    </span>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => handleUndo(redemption._id)}
+                  disabled={undoingId === redemption._id}
+                  className="shrink-0"
                 >
-                  {program.status}
-                </span>
+                  <Undo2 className="w-4 h-4 mr-1" />
+                  Undo
+                </Button>
               </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-2">
-                {(() => {
-                  const rules = program.rules as any;
-                  if (program.type === "visit" && "visits" in rules) {
-                    return `${rules.visits} visits → ${rules.reward}`;
-                  } else if ("spendAmountCents" in rules) {
-                    return `Spend $${(rules.spendAmountCents / 100).toFixed(
-                      2
-                    )} → ${rules.reward}`;
-                  }
-                  return "";
-                })()}
-              </p>
-              {program.description && (
-                <p className="text-sm">{program.description}</p>
-              )}
-            </CardContent>
-          </Card>
-        ))
-      )}
-    </div>
+            </div>
+          ))
+        )}
+      </CardContent>
+    </Card>
   );
 }

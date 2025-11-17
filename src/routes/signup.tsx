@@ -5,6 +5,8 @@ import {
 } from "@tanstack/react-router";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-clients";
+import { useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,6 +33,11 @@ function SignupPage() {
     ref?: string;
     mode?: "business" | "consumer";
   };
+
+  // TypeScript has trouble with deeply nested Convex API types
+  // @ts-ignore - TS2589: Type instantiation is excessively deep
+  const createProfile = useMutation(api.users.signup.createProfileAfterSignup);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -42,6 +49,7 @@ function SignupPage() {
     setLoading(true);
 
     try {
+      // Step 1: Create Better Auth account
       const { error } = await authClient.signUp.email({
         email,
         password,
@@ -54,12 +62,68 @@ function SignupPage() {
         return;
       }
 
+      // Step 2: Wait for session to sync, then create Convex profile
+      // There's a brief delay between Better Auth signup and Convex session sync
+      try {
+        const role = isBusiness ? "business_owner" : "consumer";
+        console.log("[Signup] Waiting for session sync...");
+
+        // Retry profile creation with exponential backoff
+        let attempts = 0;
+        const maxAttempts = 5;
+        let profileCreated = false;
+
+        while (attempts < maxAttempts && !profileCreated) {
+          try {
+            const delay = Math.min(100 * Math.pow(2, attempts), 2000); // 100ms, 200ms, 400ms, 800ms, 1600ms
+            if (attempts > 0) {
+              console.log(
+                `[Signup] Retry ${attempts}/${maxAttempts} after ${delay}ms...`
+              );
+              await new Promise((resolve) => setTimeout(resolve, delay));
+            }
+
+            console.log(
+              `[Signup] Attempting to create profile with role: ${role}`
+            );
+            const result = await createProfile({ role });
+
+            console.log(
+              "[Signup] Profile created:",
+              result.profileId,
+              "wasCreated:",
+              result.wasCreated
+            );
+            profileCreated = true;
+          } catch (err: any) {
+            attempts++;
+            if (
+              err.message?.includes("Unauthenticated") &&
+              attempts < maxAttempts
+            ) {
+              // Session not synced yet, will retry
+              console.log(`[Signup] Session not synced yet, retrying...`);
+            } else {
+              throw err; // Re-throw if it's not an auth error or we're out of attempts
+            }
+          }
+        }
+
+        if (!profileCreated) {
+          throw new Error("Failed to create profile after multiple attempts");
+        }
+      } catch (profileError) {
+        console.error("[Signup] Failed to create profile:", profileError);
+        // Don't block signup if profile creation fails - it will be created in onboarding
+        console.log(
+          "[Signup] Profile will be created during onboarding as fallback"
+        );
+      }
+
       toast.success("Account created! Welcome to Laso!");
 
-      // Note: Profile will be created automatically when user first accesses
-      // protected routes. This avoids race conditions with auth session sync.
-
-      // If there's a referral param, redirect to that business page
+      // Step 3: Redirect to appropriate onboarding/registration
+      // Profile now exists with correct role before redirect
       if (searchParams.ref) {
         navigate({ to: `/join/${searchParams.ref}` });
       } else if (isBusiness) {
@@ -70,6 +134,7 @@ function SignupPage() {
         navigate({ to: "/consumer/onboarding" });
       }
     } catch (error) {
+      console.error("[Signup] Unexpected error:", error);
       toast.error("Something went wrong");
       setLoading(false);
     }
@@ -86,11 +151,11 @@ function SignupPage() {
       <div className="hidden lg:flex lg:flex-1 bg-linear-to-br from-orange-500 to-orange-600 dark:from-orange-600 dark:to-orange-700 items-center justify-center p-12">
         <div className="max-w-md text-white space-y-6">
           <LogoIcon
-            withWordmark
-            size={112}
+            showIcon
+            showWordmark
+            size={82}
             className="justify-center"
             wordmarkClassName="text-white text-6xl"
-            imageClassName="ring-4 ring-white/30"
           />
           <h2 className="text-4xl font-bold text-center">
             {isBusiness ? "Grow Your Business" : "Join Laso"}
@@ -171,7 +236,6 @@ function SignupPage() {
         {/* Mobile Logo */}
         <div className="lg:hidden mb-8">
           <LogoIcon
-            withWordmark
             size={80}
             className="justify-center"
             wordmarkClassName="text-[var(--brand-primary)] text-5xl"
@@ -181,7 +245,7 @@ function SignupPage() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl">
-              {isBusiness ? "Business Owner Sign Up" : "Create Account"}
+              {isBusiness ? "Business Signup" : "Create Account"}
             </CardTitle>
             <CardDescription>
               {searchParams.ref

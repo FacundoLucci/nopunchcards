@@ -468,7 +468,12 @@ function AccountContent() {
               <div className="flex flex-col sm:flex-row gap-2 pt-2">
                 <Button
                   variant="outline"
-                  onClick={() => navigate({ to: "/upgrade" })}
+                  onClick={() =>
+                    navigate({
+                      to: "/upgrade",
+                      search: { success: undefined, canceled: undefined },
+                    })
+                  }
                   className="w-full sm:w-auto"
                 >
                   View All Plans
@@ -493,7 +498,12 @@ function AccountContent() {
               {/* Upgrade CTA */}
               <div className="flex flex-col sm:flex-row gap-2 pt-2">
                 <Button
-                  onClick={() => navigate({ to: "/upgrade" })}
+                  onClick={() =>
+                    navigate({
+                      to: "/upgrade",
+                      search: { success: undefined, canceled: undefined },
+                    })
+                  }
                   className="w-full sm:w-auto bg-linear-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
                 >
                   <Crown className="mr-2 h-4 w-4" />
@@ -501,7 +511,12 @@ function AccountContent() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => navigate({ to: "/upgrade" })}
+                  onClick={() =>
+                    navigate({
+                      to: "/upgrade",
+                      search: { success: undefined, canceled: undefined },
+                    })
+                  }
                   className="w-full sm:w-auto"
                 >
                   View Plans

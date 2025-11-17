@@ -27,6 +27,9 @@ export const autumn = new Autumn(components.autumn, {
       },
     };
   },
+  // Note: Checkout success/cancel URLs are configured in Stripe Dashboard
+  // under Settings > Checkout settings > Return URL
+  // Set to: {SITE_URL}/upgrade with success/canceled query params
 });
 
 export const {
@@ -46,4 +49,3 @@ export const {
   createEntity,
   getEntity,
 } = autumn.api();
-
