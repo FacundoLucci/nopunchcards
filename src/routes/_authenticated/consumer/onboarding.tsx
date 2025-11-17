@@ -24,7 +24,6 @@ function ConsumerOnboarding() {
   const createLinkToken = useAction(api.plaid.linkToken.createLinkToken);
   const exchangeToken = useAction(api.plaid.exchangeToken.exchangePublicToken);
   // TypeScript has trouble with deeply nested Convex API types
-  // @ts-expect-error - TS2589: Type instantiation is excessively deep
   const ensureProfileMutation = useMutation(api.users.ensureProfile);
   const [loading, setLoading] = useState(false);
   const [profileReady, setProfileReady] = useState(false);

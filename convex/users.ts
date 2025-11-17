@@ -2,6 +2,7 @@ import { mutation, query, QueryCtx, MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
 import { getCurrentUserWithProfile } from "./auth";
 import { authComponent } from "./auth";
+import { internal } from "./_generated/api";
 import type { Doc } from "./_generated/dataModel";
 import { profileValidator } from "./schema";
 
