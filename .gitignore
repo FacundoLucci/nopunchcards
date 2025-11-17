@@ -18,3 +18,4 @@ todos.json
 
 # Local Netlify folder
 .netlify
+dist/
