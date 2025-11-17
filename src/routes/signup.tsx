@@ -25,6 +25,7 @@ import { getCookieName } from "@convex-dev/better-auth/react-start";
 
 export const Route = createFileRoute("/signup")({
   // SSR disabled for auth flows
+  // Auth token sync enabled for production
   ssr: false,
   component: SignupPage,
 });
