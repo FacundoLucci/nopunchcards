@@ -70,16 +70,16 @@ function SignupPage() {
       // Step 2: Get session from Better Auth
       // Better Auth has already created the session, we need to get the token
       console.log("[Signup] Getting session from Better Auth...");
-      
+
       try {
         // Get the session from Better Auth
         const session = await authClient.getSession();
-        
+
         if (session?.session?.token) {
           // Update Convex client with the session token
           await context.convexClient.setAuth(async () => session.session.token);
           console.log("[Signup] Auth token set from Better Auth session");
-          
+
           // Wait a moment for Convex to apply the new auth
           await new Promise((resolve) => setTimeout(resolve, 300));
         } else {
