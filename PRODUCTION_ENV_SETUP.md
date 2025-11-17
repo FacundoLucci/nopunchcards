@@ -6,18 +6,17 @@
 
 All environment variables have been successfully configured in your production Convex deployment (`watchful-kangaroo-858.convex.cloud`):
 
-```bash
+````bash
 ✅ SITE_URL=https://www.lasoloyalty.com
 ✅ PLAID_CLIENT_ID=67528ce1c45170001aa885f9
-✅ PLAID_SECRET=5618db9c54a02af60976065ba33da4
+✅ PLAID_SECRET=
 ✅ PLAID_ENV=sandbox
-✅ RESEND_API_KEY=re_5D3zJsQ3_5CEVY6BSYpDFzX9kUQKZ75PG
-✅ AUTUMN_SECRET_KEY=am_sk_test_VdHgcqyFQ5AURAmdG01GpvX7I7NFH28o18CpqFqNmo
-✅ VAPID_PUBLIC_KEY=BKBF0GzXagaN3_Y0WD6q9eC_zDVlT-cE56LMD8TKN1Nj0Oj-bNbSgRbOgBdHVXCk5L2IhoPf3TMUxmiF1bhaBkM
-✅ VAPID_PRIVATE_KEY=9hKR3iyYiOSrUGrGMbKcNVnYH76uiWZqvxkwpTUUmYs
-✅ ENCRYPTION_SECRET=08942636038ef53cb529f1b20a4fbd8641db141166a7ec522bd3a3dc33be89e4
-✅ BETTER_AUTH_SECRET=mdqdaBpGQO0sIU2dFNm0GBrL3q+bUe8B8VwNqKb3DxI (auto-generated)
-```
+✅ RESEND_API_KEY=
+✅ AUTUMN_SECRET_KEY=
+✅ VAPID_PUBLIC_KEY=
+✅ VAPID_PRIVATE_KEY=
+✅ ENCRYPTION_SECRET=
+✅ BETTER_AUTH_SECRET=
 
 ## 🔄 Verify Environment Variables
 
@@ -25,7 +24,7 @@ You can verify the current environment variables at any time:
 
 ```bash
 npx convex env list
-```
+````
 
 ## ⚠️ Important Notes for Production
 
@@ -43,6 +42,7 @@ Your Plaid integration is currently set to **sandbox mode**. This is good for te
    ```
 
 **Sandbox Mode Limitations:**
+
 - Test accounts only (not real bank connections)
 - Limited to Plaid's test banks
 - No real transactions processed
@@ -60,6 +60,7 @@ Your Autumn secret key starts with `am_sk_test_` indicating **test mode**. For r
 ### 3. Resend Email Service
 
 Verify that your Resend API key is configured for production email sending:
+
 - Check your sending limits in the Resend dashboard
 - Verify your domain is configured for sending
 - Set up proper SPF/DKIM records for deliverability
@@ -84,6 +85,7 @@ npx convex env set VAPID_PRIVATE_KEY "your-new-private-key"
 Netlify needs to know your production Convex URL. Set this in the Netlify dashboard:
 
 ### Via Netlify Dashboard:
+
 1. Go to: https://app.netlify.com/sites/lasoloyalty/settings/deploys
 2. Navigate to: Environment Variables
 3. Add/Update:
@@ -93,6 +95,7 @@ Netlify needs to know your production Convex URL. Set this in the Netlify dashbo
    ```
 
 ### Via Netlify CLI:
+
 ```bash
 netlify env:set VITE_CONVEX_URL "https://watchful-kangaroo-858.convex.cloud"
 netlify env:set VITE_VAPID_PUBLIC_KEY "BKBF0GzXagaN3_Y0WD6q9eC_zDVlT-cE56LMD8TKN1Nj0Oj-bNbSgRbOgBdHVXCk5L2IhoPf3TMUxmiF1bhaBkM"
@@ -103,11 +106,13 @@ After setting these, trigger a new deployment to apply the changes.
 ## 🔒 Security Best Practices
 
 ### ✅ Safe to Share (Public)
+
 - `VITE_CONVEX_URL` - Your Convex deployment URL
 - `VITE_VAPID_PUBLIC_KEY` - VAPID public key for push notifications
 - `SITE_URL` - Your public website URL
 
 ### ❌ NEVER Share (Secrets)
+
 - `PLAID_SECRET` - Plaid API secret
 - `PLAID_CLIENT_ID` - Plaid client ID
 - `RESEND_API_KEY` - Email API key
@@ -121,16 +126,19 @@ After setting these, trigger a new deployment to apply the changes.
 ## 📝 Quick Reference Commands
 
 ### View All Environment Variables
+
 ```bash
 npx convex env list
 ```
 
 ### Set a Single Environment Variable
+
 ```bash
 npx convex env set KEY_NAME "value"
 ```
 
 ### Remove an Environment Variable
+
 ```bash
 npx convex env unset KEY_NAME
 ```
@@ -159,6 +167,7 @@ When making changes to environment variables:
 ---
 
 **Next Steps for Production:**
+
 1. ✅ Environment variables configured
 2. ⏳ Apply for Plaid production access (when ready for real banking)
 3. ⏳ Get Autumn production keys (when ready for real payments)
@@ -169,4 +178,3 @@ When making changes to environment variables:
 ---
 
 _Last updated: 2025-11-17_
-
