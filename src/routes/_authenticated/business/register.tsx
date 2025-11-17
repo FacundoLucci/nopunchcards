@@ -51,7 +51,7 @@ function BusinessRegister() {
           "wasCreated:",
           result.wasCreated
         );
-        setProfileReady(true);
+    setProfileReady(true);
       })
       .catch((error) => {
         console.error("[Business Register] Failed to ensure profile:", error);

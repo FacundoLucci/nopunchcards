@@ -50,7 +50,7 @@ export function RoleGuard({
         .catch((error) => {
           console.error("[RoleGuard] Failed to create profile:", error);
           // Fallback to onboarding
-          navigate({ to: "/consumer/onboarding", replace: true });
+      navigate({ to: "/consumer/onboarding", replace: true });
         });
       return;
     }

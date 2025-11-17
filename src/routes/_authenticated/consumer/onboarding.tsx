@@ -47,7 +47,7 @@ function ConsumerOnboarding() {
           "wasCreated:",
           result.wasCreated
         );
-        setProfileReady(true);
+    setProfileReady(true);
       })
       .catch((error) => {
         console.error("[Consumer Onboarding] Failed to ensure profile:", error);
