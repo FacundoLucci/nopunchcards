@@ -22,6 +22,11 @@ export const Route = createFileRoute("/_authenticated/business/register")({
 function BusinessRegister() {
   const navigate = useNavigate();
   const createBusiness = useMutation(api.businesses.mutations.create);
+  // TypeScript has trouble with deeply nested Convex API types
+  // We use a type assertion to work around this
+  const ensureProfile = useMutation(
+    api.users.ensureProfile.ensureProfileExists as any
+  ) as any;
 
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
@@ -30,13 +35,29 @@ function BusinessRegister() {
   const [statementDescriptor, setStatementDescriptor] = useState("");
   const [profileReady, setProfileReady] = useState(false);
 
-  // Profile should already exist from signup
-  // We don't call ensureProfile here because it could accidentally change roles
+  // Ensure profile exists with business_owner role
+  // This is the fallback if profile creation during signup failed
+  // We're on /business/register so we know the intent is business_owner
   useEffect(() => {
-    console.log("[Business Register] Profile should already exist from signup");
-    // Mark as ready immediately - profile was created during signup
-    setProfileReady(true);
-  }, [])
+    console.log("[Business Register] Ensuring business_owner profile exists");
+    
+    ensureProfile({ role: "business_owner" })
+      .then((result) => {
+        console.log(
+          "[Business Register] Profile ready:",
+          result.profileId,
+          "role:",
+          result.role,
+          "wasCreated:",
+          result.wasCreated
+        );
+        setProfileReady(true);
+      })
+      .catch((error) => {
+        console.error("[Business Register] Failed to ensure profile:", error);
+        toast.error("Failed to set up business profile");
+      });
+  }, [ensureProfile])
 
   const categories = [
     "Coffee",

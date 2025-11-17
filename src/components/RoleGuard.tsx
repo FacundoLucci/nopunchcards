@@ -1,7 +1,7 @@
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 type Role = "consumer" | "business_owner" | "admin";
 
@@ -24,11 +24,34 @@ export function RoleGuard({
 }: RoleGuardProps) {
   const navigate = useNavigate();
   const roleInfo = useQuery(api.users.roleCheck.checkUserRole, {});
+  // TypeScript has trouble with deeply nested Convex API types
+  // We use a type assertion to work around this
+  const ensureProfile = useMutation(
+    api.users.ensureProfile.ensureProfileExists as any
+  ) as any;
+  const [isCreatingProfile, setIsCreatingProfile] = useState(false);
 
   useEffect(() => {
-    // If no role info, user needs to complete onboarding
-    if (roleInfo === null) {
-      navigate({ to: "/consumer/onboarding", replace: true });
+    // If no role info and not creating, create a default profile
+    if (roleInfo === null && !isCreatingProfile) {
+      console.log("[RoleGuard] No profile found - creating default profile");
+      setIsCreatingProfile(true);
+      
+      ensureProfile({})
+        .then((result) => {
+          console.log("[RoleGuard] Profile created:", result.profileId, "role:", result.role);
+          setIsCreatingProfile(false);
+          
+          // Check if newly created profile has required role
+          if (!allowedRoles.includes(result.role)) {
+            navigate({ to: redirectTo, replace: true });
+          }
+        })
+        .catch((error) => {
+          console.error("[RoleGuard] Failed to create profile:", error);
+          // Fallback to onboarding
+          navigate({ to: "/consumer/onboarding", replace: true });
+        });
       return;
     }
 
@@ -36,15 +59,15 @@ export function RoleGuard({
     if (roleInfo && !allowedRoles.includes(roleInfo.role)) {
       navigate({ to: redirectTo, replace: true });
     }
-  }, [roleInfo, allowedRoles, redirectTo, navigate]);
+  }, [roleInfo, allowedRoles, redirectTo, navigate, ensureProfile, isCreatingProfile]);
 
   // Show loading state only on initial load
-  if (roleInfo === undefined) {
+  if (roleInfo === undefined || isCreatingProfile) {
     return null; // Or a loading spinner
   }
 
   // Don't render if redirecting
-  if (roleInfo === null || !allowedRoles.includes(roleInfo.role)) {
+  if (roleInfo && !allowedRoles.includes(roleInfo.role)) {
     return null;
   }
 

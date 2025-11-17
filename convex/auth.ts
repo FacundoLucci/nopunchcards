@@ -64,13 +64,17 @@ export const getCurrentUserWithProfile = async (ctx: any) => {
 
   const userId = user.userId || user._id;
   console.log("getCurrentUserWithProfile: userId =", userId);
-  
+
   const profile = await ctx.db
     .query("profiles")
     .withIndex("by_userId", (q: any) => q.eq("userId", userId))
     .unique();
 
-  console.log("getCurrentUserWithProfile: profile found =", !!profile, profile?._id);
+  console.log(
+    "getCurrentUserWithProfile: profile found =",
+    !!profile,
+    profile?._id
+  );
 
   return { ...user, id: userId, profile };
 };

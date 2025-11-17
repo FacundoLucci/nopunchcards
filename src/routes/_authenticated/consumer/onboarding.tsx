@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { useAction } from "convex/react";
+import { useAction, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,16 +23,37 @@ function ConsumerOnboarding() {
   const navigate = useNavigate();
   const createLinkToken = useAction(api.plaid.linkToken.createLinkToken);
   const exchangeToken = useAction(api.plaid.exchangeToken.exchangePublicToken);
+  // TypeScript has trouble with deeply nested Convex API types
+  // We use a type assertion to work around this
+  const ensureProfile = useMutation(
+    api.users.ensureProfile.ensureProfileExists as any
+  ) as any;
   const [loading, setLoading] = useState(false);
   const [profileReady, setProfileReady] = useState(false);
 
-  // Profile should already exist from signup
-  // We don't call ensureProfile here because it could accidentally change a business owner's role
+  // Ensure profile exists with consumer role
+  // This is the fallback if profile creation during signup failed
+  // We're on /consumer/onboarding so we know the intent is consumer
   useEffect(() => {
-    console.log("[Consumer Onboarding] Profile should already exist from signup");
-    // Mark as ready immediately - profile was created during signup
-    setProfileReady(true);
-  }, []);
+    console.log("[Consumer Onboarding] Ensuring consumer profile exists");
+    
+    ensureProfile({ role: "consumer" })
+      .then((result) => {
+        console.log(
+          "[Consumer Onboarding] Profile ready:",
+          result.profileId,
+          "role:",
+          result.role,
+          "wasCreated:",
+          result.wasCreated
+        );
+        setProfileReady(true);
+      })
+      .catch((error) => {
+        console.error("[Consumer Onboarding] Failed to ensure profile:", error);
+        toast.error("Failed to set up consumer profile");
+      });
+  }, [ensureProfile]);
 
   const startPlaidLink = async () => {
     if (!profileReady) {

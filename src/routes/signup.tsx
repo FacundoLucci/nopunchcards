@@ -49,6 +49,8 @@ function SignupPage() {
     setLoading(true);
 
     try {
+      const role = isBusiness ? "business_owner" : "consumer";
+
       // Step 1: Create Better Auth account
       const { error } = await authClient.signUp.email({
         email,
@@ -62,75 +64,40 @@ function SignupPage() {
         return;
       }
 
-      // Step 2: Wait for session to sync, then create Convex profile
-      // There's a brief delay between Better Auth signup and Convex session sync
+      // Step 2: Create/verify profile with role
+      // Profile creation now happens with automatic fallback
+      console.log("[Signup] Creating profile with role:", role);
+
       try {
-        const role = isBusiness ? "business_owner" : "consumer";
-        console.log("[Signup] Waiting for session sync...");
-
-        // Retry profile creation with exponential backoff
-        let attempts = 0;
-        const maxAttempts = 5;
-        let profileCreated = false;
-
-        while (attempts < maxAttempts && !profileCreated) {
-          try {
-            const delay = Math.min(100 * Math.pow(2, attempts), 2000); // 100ms, 200ms, 400ms, 800ms, 1600ms
-            if (attempts > 0) {
-              console.log(
-                `[Signup] Retry ${attempts}/${maxAttempts} after ${delay}ms...`
-              );
-              await new Promise((resolve) => setTimeout(resolve, delay));
-            }
-
-            console.log(
-              `[Signup] Attempting to create profile with role: ${role}`
-            );
-            const result = await createProfile({ role });
-
-            console.log(
-              "[Signup] Profile created:",
-              result.profileId,
-              "wasCreated:",
-              result.wasCreated
-            );
-            profileCreated = true;
-          } catch (err: any) {
-            attempts++;
-            if (
-              err.message?.includes("Unauthenticated") &&
-              attempts < maxAttempts
-            ) {
-              // Session not synced yet, will retry
-              console.log(`[Signup] Session not synced yet, retrying...`);
-            } else {
-              throw err; // Re-throw if it's not an auth error or we're out of attempts
-            }
-          }
-        }
-
-        if (!profileCreated) {
-          throw new Error("Failed to create profile after multiple attempts");
-        }
-      } catch (profileError) {
-        console.error("[Signup] Failed to create profile:", profileError);
-        // Don't block signup if profile creation fails - it will be created in onboarding
+        const result = await createProfile({ role });
         console.log(
-          "[Signup] Profile will be created during onboarding as fallback"
+          "[Signup] Profile created:",
+          result.profileId,
+          "wasCreated:",
+          result.wasCreated
+        );
+      } catch (err: any) {
+        // If profile creation fails, it will be auto-created on first app load
+        // This is a fallback safety mechanism
+        console.warn(
+          "[Signup] Profile creation failed, will auto-create on first load:",
+          err.message
         );
       }
 
       toast.success("Account created! Welcome to Laso!");
 
       // Step 3: Redirect to appropriate onboarding/registration
-      // Profile now exists with correct role before redirect
+      // The path itself indicates the intended role - no need for search params
       if (searchParams.ref) {
         navigate({ to: `/join/${searchParams.ref}` });
       } else if (isBusiness) {
         // Business signup: redirect to business registration
+        // Path contains "business" → infers business_owner role
         navigate({ to: "/business/register" });
       } else {
         // Consumer signup: redirect to consumer onboarding
+        // Path contains "consumer" → infers consumer role
         navigate({ to: "/consumer/onboarding" });
       }
     } catch (error) {
