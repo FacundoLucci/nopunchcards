@@ -53,6 +53,7 @@ export const getMyProfile = query({
 });
 
 // Ensure profile exists for current user with specified role
+// Auto-creates profile if missing (fallback safety mechanism)
 export const ensureProfile = mutation({
   args: {
     role: v.optional(
@@ -63,13 +64,21 @@ export const ensureProfile = mutation({
       )
     ),
   },
-  returns: v.id("profiles"),
+  returns: v.object({
+    profileId: v.id("profiles"),
+    wasCreated: v.boolean(),
+    role: v.union(
+      v.literal("consumer"),
+      v.literal("business_owner"),
+      v.literal("admin")
+    ),
+  }),
   handler: async (ctx, args) => {
     // authComponent.getAuthUser() throws if not authenticated
     const user = await authComponent.getAuthUser(ctx);
     const userId = user.userId || user._id;
 
-    console.log("ensureProfile called - userId:", userId, "role:", args.role);
+    console.log("[ensureProfile] Called - userId:", userId, "role:", args.role);
 
     // Check if profile already exists
     const existing = await ctx.db
@@ -79,25 +88,46 @@ export const ensureProfile = mutation({
 
     if (existing) {
       console.log(
-        "Profile exists:",
+        "[ensureProfile] Profile exists:",
         existing._id,
         "current role:",
         existing.role
       );
       // IMPORTANT: Never modify existing roles - this prevents accidental role changes
       // Roles should only be changed through explicit admin functions
-      return existing._id;
+      return {
+        profileId: existing._id,
+        wasCreated: false,
+        role: existing.role,
+      };
     }
 
     // Create new profile with specified role (default: consumer)
-    console.log("Creating new profile with role:", args.role || "consumer");
+    const role = args.role || "consumer";
+    console.log("[ensureProfile] Creating new profile with role:", role);
     const profileId = await ctx.db.insert("profiles", {
       userId,
-      role: args.role || "consumer",
+      role,
       createdAt: Date.now(),
     });
-    console.log("Created profile:", profileId);
-    return profileId;
+    console.log("[ensureProfile] Created profile:", profileId);
+
+    // Schedule free plan assignment for new profiles
+    try {
+      // @ts-ignore - TypeScript has difficulty with deeply nested generated types
+      const freePlanRef = internal["users/ensureFreePlan"].ensureUserHasFreePlan;
+      await ctx.scheduler.runAfter(0, freePlanRef, {});
+      console.log("[ensureProfile] Scheduled free plan assignment");
+    } catch (error) {
+      console.error("[ensureProfile] Error scheduling free plan:", error);
+      // Don't fail profile creation if plan assignment fails
+    }
+
+    return {
+      profileId,
+      wasCreated: true,
+      role,
+    };
   },
 });
 

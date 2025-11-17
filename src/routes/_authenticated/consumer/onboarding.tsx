@@ -24,10 +24,8 @@ function ConsumerOnboarding() {
   const createLinkToken = useAction(api.plaid.linkToken.createLinkToken);
   const exchangeToken = useAction(api.plaid.exchangeToken.exchangePublicToken);
   // TypeScript has trouble with deeply nested Convex API types
-  // We use a type assertion to work around this
-  const ensureProfile = useMutation(
-    api.users.ensureProfile.ensureProfileExists as any
-  ) as any;
+  // @ts-expect-error - TS2589: Type instantiation is excessively deep
+  const ensureProfileMutation = useMutation(api.users.ensureProfile);
   const [loading, setLoading] = useState(false);
   const [profileReady, setProfileReady] = useState(false);
 
@@ -36,8 +34,8 @@ function ConsumerOnboarding() {
   // We're on /consumer/onboarding so we know the intent is consumer
   useEffect(() => {
     console.log("[Consumer Onboarding] Ensuring consumer profile exists");
-    
-    ensureProfile({ role: "consumer" })
+
+    ensureProfileMutation({ role: "consumer" })
       .then((result) => {
         console.log(
           "[Consumer Onboarding] Profile ready:",
@@ -47,13 +45,13 @@ function ConsumerOnboarding() {
           "wasCreated:",
           result.wasCreated
         );
-    setProfileReady(true);
+        setProfileReady(true);
       })
       .catch((error) => {
         console.error("[Consumer Onboarding] Failed to ensure profile:", error);
         toast.error("Failed to set up consumer profile");
       });
-  }, [ensureProfile]);
+  }, [ensureProfileMutation]);
 
   const startPlaidLink = async () => {
     if (!profileReady) {

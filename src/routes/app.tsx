@@ -32,12 +32,9 @@ export const Route = createFileRoute("/app")({
 function AppRedirect() {
   const navigate = useNavigate();
   const profile = useQuery(api.users.getMyProfile, {});
-
   // TypeScript has trouble with deeply nested Convex API types
-  // We use a type assertion to work around this
-  const ensureProfile = useMutation(
-    api.users.ensureProfile.ensureProfileExists as any
-  ) as any;
+  // @ts-expect-error - TS2589: Type instantiation is excessively deep
+  const ensureProfileMutation = useMutation(api.users.ensureProfile);
   const [isCreatingProfile, setIsCreatingProfile] = useState(false);
 
   useEffect(() => {
@@ -52,7 +49,7 @@ function AppRedirect() {
       console.log("[/app] No profile found - creating consumer profile");
       setIsCreatingProfile(true);
 
-      ensureProfile({ role: "consumer" })
+      ensureProfileMutation({ role: "consumer" })
         .then((result) => {
           console.log(
             "[/app] Profile created:",
@@ -85,7 +82,7 @@ function AppRedirect() {
         navigate({ to: "/consumer/home", replace: true });
       }
     }
-  }, [profile, navigate, ensureProfile, isCreatingProfile]);
+  }, [profile, navigate, ensureProfileMutation, isCreatingProfile]);
 
   // Show loading state while determining where to redirect
   return (

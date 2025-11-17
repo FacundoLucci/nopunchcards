@@ -23,10 +23,8 @@ function BusinessRegister() {
   const navigate = useNavigate();
   const createBusiness = useMutation(api.businesses.mutations.create);
   // TypeScript has trouble with deeply nested Convex API types
-  // We use a type assertion to work around this
-  const ensureProfile = useMutation(
-    api.users.ensureProfile.ensureProfileExists as any
-  ) as any;
+  // @ts-expect-error - TS2589: Type instantiation is excessively deep
+  const ensureProfileMutation = useMutation(api.users.ensureProfile);
 
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
@@ -40,8 +38,8 @@ function BusinessRegister() {
   // We're on /business/register so we know the intent is business_owner
   useEffect(() => {
     console.log("[Business Register] Ensuring business_owner profile exists");
-    
-    ensureProfile({ role: "business_owner" })
+
+    ensureProfileMutation({ role: "business_owner" })
       .then((result) => {
         console.log(
           "[Business Register] Profile ready:",
@@ -51,13 +49,13 @@ function BusinessRegister() {
           "wasCreated:",
           result.wasCreated
         );
-    setProfileReady(true);
+        setProfileReady(true);
       })
       .catch((error) => {
         console.error("[Business Register] Failed to ensure profile:", error);
         toast.error("Failed to set up business profile");
       });
-  }, [ensureProfile])
+  }, [ensureProfileMutation]);
 
   const categories = [
     "Coffee",

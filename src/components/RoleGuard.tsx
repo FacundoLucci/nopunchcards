@@ -25,10 +25,8 @@ export function RoleGuard({
   const navigate = useNavigate();
   const roleInfo = useQuery(api.users.roleCheck.checkUserRole, {});
   // TypeScript has trouble with deeply nested Convex API types
-  // We use a type assertion to work around this
-  const ensureProfile = useMutation(
-    api.users.ensureProfile.ensureProfileExists as any
-  ) as any;
+  // @ts-expect-error - TS2589: Type instantiation is excessively deep
+  const ensureProfileMutation = useMutation(api.users.ensureProfile);
   const [isCreatingProfile, setIsCreatingProfile] = useState(false);
 
   useEffect(() => {
@@ -36,12 +34,17 @@ export function RoleGuard({
     if (roleInfo === null && !isCreatingProfile) {
       console.log("[RoleGuard] No profile found - creating default profile");
       setIsCreatingProfile(true);
-      
-      ensureProfile({})
+
+      ensureProfileMutation({})
         .then((result) => {
-          console.log("[RoleGuard] Profile created:", result.profileId, "role:", result.role);
+          console.log(
+            "[RoleGuard] Profile created:",
+            result.profileId,
+            "role:",
+            result.role
+          );
           setIsCreatingProfile(false);
-          
+
           // Check if newly created profile has required role
           if (!allowedRoles.includes(result.role)) {
             navigate({ to: redirectTo, replace: true });
@@ -50,7 +53,7 @@ export function RoleGuard({
         .catch((error) => {
           console.error("[RoleGuard] Failed to create profile:", error);
           // Fallback to onboarding
-      navigate({ to: "/consumer/onboarding", replace: true });
+          navigate({ to: "/consumer/onboarding", replace: true });
         });
       return;
     }
@@ -59,7 +62,14 @@ export function RoleGuard({
     if (roleInfo && !allowedRoles.includes(roleInfo.role)) {
       navigate({ to: redirectTo, replace: true });
     }
-  }, [roleInfo, allowedRoles, redirectTo, navigate, ensureProfile, isCreatingProfile]);
+  }, [
+    roleInfo,
+    allowedRoles,
+    redirectTo,
+    navigate,
+    ensureProfileMutation,
+    isCreatingProfile,
+  ]);
 
   // Show loading state only on initial load
   if (roleInfo === undefined || isCreatingProfile) {
@@ -73,4 +83,3 @@ export function RoleGuard({
 
   return <>{children}</>;
 }
-
