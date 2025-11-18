@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useEffect } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LogoIcon } from "@/components/LogoIcon";
+import { ShoppingBag, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
@@ -300,6 +301,30 @@ function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Floating Demo Shop Button */}
+      <Link to="/demo-shop">
+        <div className="fixed bottom-6 right-6 z-50 group">
+          {/* Pulsing background glow */}
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full opacity-75 blur-lg group-hover:opacity-100 animate-pulse" />
+          
+          {/* Main button */}
+          <Button
+            size="lg"
+            className="relative bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-6 py-6 rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 flex items-center gap-2"
+          >
+            <ShoppingBag className="w-5 h-5" />
+            <span className="hidden sm:inline">Check out the demo shop!</span>
+            <span className="sm:hidden">Demo Shop</span>
+            <Sparkles className="w-4 h-4 animate-pulse" />
+          </Button>
+          
+          {/* Floating badge */}
+          <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg animate-bounce">
+            NEW
+          </div>
+        </div>
+      </Link>
     </div>
   );
 }

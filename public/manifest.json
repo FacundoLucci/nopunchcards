@@ -1,11 +1,11 @@
 {
-  "name": "Favicon App",
-  "short_name": "Favicon",
-  "description": "Generated favicon application",
+  "name": "Laso - The Last Loyalty Program",
+  "short_name": "Laso",
+  "description": "Automatic loyalty rewards for local businesses. No apps, no cards, no hassle.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "theme_color": "#ff5c28",
   "icons": [
     {
       "src": "favicon-16x16.png",
