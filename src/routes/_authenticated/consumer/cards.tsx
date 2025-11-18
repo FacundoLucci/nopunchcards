@@ -3,12 +3,11 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "../../../../convex/_generated/api";
 import { Suspense, useState, useMemo } from "react";
-import { CreditCard, ArrowRight, Gift } from "lucide-react";
+import { CreditCard } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { formatDistanceToNow } from "date-fns";
 
 export const Route = createFileRoute("/_authenticated/consumer/cards")({
   // Client-side rendering for instant navigation
@@ -36,11 +35,6 @@ function CardsPage() {
 
         {/* Card Stack */}
         <CardsSection />
-
-        {/* Redeemable Rewards Section */}
-        <Suspense fallback={null}>
-          <RedeemableRewardsSection />
-        </Suspense>
       </div>
     </Suspense>
   );
@@ -481,67 +475,3 @@ function TransactionItem({ transaction }: TransactionItemProps) {
   );
 }
 
-function RedeemableRewardsSection() {
-  const { data: pendingClaims } = useSuspenseQuery(
-    convexQuery(api.consumer.queries.getPendingRewardClaims, {})
-  );
-
-  if (pendingClaims.length === 0) {
-    return null;
-  }
-
-  // Show top 3 rewards
-  const displayRewards = pendingClaims.slice(0, 3);
-
-  return (
-    <div className="space-y-4">
-      {/* Header with View All button */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Gift className="w-5 h-5 text-primary" />
-          <h3 className="text-lg font-semibold">Redeemable Rewards</h3>
-        </div>
-        <Link to="/consumer/rewards">
-          <Button variant="ghost" size="sm" className="gap-2">
-            View All
-            <ArrowRight className="w-4 h-4" />
-          </Button>
-        </Link>
-      </div>
-
-      {/* Rewards List */}
-      <div className="space-y-3">
-        {displayRewards.map((claim) => (
-          <Link
-            key={claim._id}
-            to="/consumer/rewards/$claimId/claim"
-            params={{ claimId: claim._id }}
-          >
-            <Card className="border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer">
-              <CardContent className="py-4 px-4 flex items-center gap-4">
-                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                  <Gift className="w-6 h-6 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold truncate">{claim.businessName}</p>
-                  <p className="text-sm text-muted-foreground truncate">
-                    {claim.rewardDescription}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Earned{" "}
-                    {formatDistanceToNow(new Date(claim.issuedAt), {
-                      addSuffix: true,
-                    })}
-                  </p>
-                </div>
-                <Button size="sm" variant="default" className="shrink-0">
-                  Redeem
-                </Button>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-}

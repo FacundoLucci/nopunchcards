@@ -4,11 +4,13 @@ import { convexQuery } from "@convex-dev/react-query";
 import { api } from "../../../../convex/_generated/api";
 import { ProgressCard } from "@/components/ProgressCard";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { authClient } from "@/lib/auth-clients";
 import { OnboardingProgress } from "@/components/OnboardingProgress";
 import { OnboardingGuard } from "@/components/OnboardingGuard";
 import { Suspense } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Gift } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 
 export const Route = createFileRoute("/_authenticated/consumer/home")({
   // Client-side rendering for instant navigation
@@ -47,6 +49,11 @@ function ConsumerHome() {
           {/* Onboarding Progress - loads independently */}
           <Suspense fallback={null}>
             <OnboardingBanner />
+          </Suspense>
+
+          {/* Redeemable Rewards Section - loads independently */}
+          <Suspense fallback={null}>
+            <RedeemableRewardsSection />
           </Suspense>
 
           {/* Active Rewards - loads independently */}
@@ -112,6 +119,76 @@ function OnboardingBanner() {
   }
 
   return null;
+}
+
+function RedeemableRewardsSection() {
+  const { data: pendingClaims } = useSuspenseQuery(
+    convexQuery(api.consumer.queries.getPendingRewardClaims, {})
+  );
+
+  if (pendingClaims.length === 0) {
+    return null;
+  }
+
+  // Show top 3 rewards
+  const displayRewards = pendingClaims.slice(0, 3);
+
+  return (
+    <div className="space-y-4">
+      {/* Header with View All button */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Gift className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+          <h3 className="text-lg font-semibold">Redeemable Rewards</h3>
+        </div>
+        <Link to="/consumer/rewards">
+          <Button variant="ghost" size="sm" className="gap-2">
+            View All
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+        </Link>
+      </div>
+
+      {/* Rewards List */}
+      <div className="space-y-3">
+        {displayRewards.map((claim) => (
+          <Link
+            key={claim._id}
+            to="/consumer/rewards/$claimId/claim"
+            params={{ claimId: claim._id }}
+          >
+            <Card className="border-2 border-amber-500/50 dark:border-amber-400/50 bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-950/30 hover:from-amber-100 hover:to-yellow-100 dark:hover:from-amber-950/50 dark:hover:to-yellow-950/50 transition-all cursor-pointer shadow-md hover:shadow-lg py-3">
+              <CardContent className="px-4 py-0 flex items-center gap-4">
+                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 dark:from-amber-500 dark:to-yellow-600 flex items-center justify-center shadow-md">
+                  <Gift className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold truncate text-amber-950 dark:text-amber-100">
+                    {claim.businessName}
+                  </p>
+                  <p className="text-sm text-amber-800 dark:text-amber-200 truncate">
+                    {claim.rewardDescription}
+                  </p>
+                  <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                    Earned{" "}
+                    {formatDistanceToNow(new Date(claim.issuedAt), {
+                      addSuffix: true,
+                    })}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  className="shrink-0 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white border-0 shadow-md"
+                >
+                  Redeem
+                </Button>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function ActiveRewardsSection() {

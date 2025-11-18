@@ -88,11 +88,12 @@ function LandingPage() {
               Customers link their credit cards via Plaid.
             </p>
             <div className="order-1 md:order-2">
-              <div className="bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-4/3 flex items-center justify-center border border-border">
-                <div className="text-center p-8">
-                  <div className="text-4xl mb-2">💳</div>
-                  <p className="text-sm text-muted-foreground">Linked cards</p>
-                </div>
+              <div className="bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-4/3 overflow-hidden border border-border">
+                <img
+                  src="/landing-linked-cards.png"
+                  alt="Credit cards being connected via Plaid integration"
+                  className="w-full h-full object-cover"
+                />
               </div>
             </div>
           </div>
@@ -100,13 +101,12 @@ function LandingPage() {
           {/* We track transactions */}
           <div className="mb-12 grid md:grid-cols-2 gap-8 items-center">
             <div>
-              <div className="bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-4/3 flex items-center justify-center border border-border">
-                <div className="text-center p-8">
-                  <div className="text-4xl mb-2">📊</div>
-                  <p className="text-sm text-muted-foreground">
-                    Transaction tracking
-                  </p>
-                </div>
+              <div className="bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-4/3 overflow-hidden border border-border">
+                <img
+                  src="/landing-analytics.png"
+                  alt="Analytics dashboard showing transaction tracking"
+                  className="w-full h-full object-cover"
+                />
               </div>
             </div>
             <p className="text-xl md:text-2xl">
@@ -120,11 +120,12 @@ function LandingPage() {
               Businesses create rewards based on visits or total spend.
             </p>
             <div className="order-1 md:order-2">
-              <div className="bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-4/3 flex items-center justify-center border border-border">
-                <div className="text-center p-8">
-                  <div className="text-4xl mb-2">🎯</div>
-                  <p className="text-sm text-muted-foreground">Program setup</p>
-                </div>
+              <div className="bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-4/3 overflow-hidden border border-border">
+                <img
+                  src="/landing-program-setup.png"
+                  alt="Business reward program configuration interface"
+                  className="w-full h-full object-cover"
+                />
               </div>
             </div>
           </div>
@@ -132,11 +133,12 @@ function LandingPage() {
           {/* Notifications */}
           <div className="mb-12 grid md:grid-cols-2 gap-8 items-center">
             <div>
-              <div className="bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-4/3 flex items-center justify-center border border-border">
-                <div className="text-center p-8">
-                  <div className="text-4xl mb-2">🔔</div>
-                  <p className="text-sm text-muted-foreground">Notifications</p>
-                </div>
+              <div className="bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-4/3 overflow-hidden border border-border">
+                <img
+                  src="/landing-notifications.png"
+                  alt="Smartphone displaying loyalty reward push notification"
+                  className="w-full h-full object-cover"
+                />
               </div>
             </div>
             <p className="text-xl md:text-2xl">
@@ -152,11 +154,12 @@ function LandingPage() {
               code.
             </p>
             <div className="order-1 md:order-2">
-              <div className="bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-4/3 flex items-center justify-center border border-border">
-                <div className="text-center p-8">
-                  <div className="text-4xl mb-2">📱</div>
-                  <p className="text-sm text-muted-foreground">QR redemption</p>
-                </div>
+              <div className="bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-4/3 overflow-hidden border border-border">
+                <img
+                  src="/landing-qr-scan.png"
+                  alt="QR code being scanned on smartphone for reward redemption"
+                  className="w-full h-full object-cover"
+                />
               </div>
             </div>
           </div>
@@ -164,13 +167,12 @@ function LandingPage() {
           {/* Network effect */}
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div>
-              <div className="bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-4/3 flex items-center justify-center border border-border">
-                <div className="text-center p-8">
-                  <div className="text-4xl mb-2">🌐</div>
-                  <p className="text-sm text-muted-foreground">
-                    Network growth
-                  </p>
-                </div>
+              <div className="bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-4/3 overflow-hidden border border-border">
+                <img
+                  src="/landing-network.png"
+                  alt="Network visualization showing interconnected businesses and customers"
+                  className="w-full h-full object-cover"
+                />
               </div>
             </div>
             <p className="text-xl md:text-2xl">
@@ -224,7 +226,7 @@ function LandingPage() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-20 px-6 bg-white">
+      <section className="py-20 px-6 bg-background">
         <div className="max-w-4xl mx-auto text-center">
           <h3 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">
             Ready to grow your business?
