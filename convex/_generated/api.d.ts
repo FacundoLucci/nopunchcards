@@ -19,6 +19,8 @@ import type * as consumer_accounts from "../consumer/accounts.js";
 import type * as consumer_mockTransaction from "../consumer/mockTransaction.js";
 import type * as consumer_queries from "../consumer/queries.js";
 import type * as crons from "../crons.js";
+import type * as debug_checkFacundoTransaction from "../debug/checkFacundoTransaction.js";
+import type * as debug_rematchTransaction from "../debug/rematchTransaction.js";
 import type * as geospatial from "../geospatial.js";
 import type * as http from "../http.js";
 import type * as matching_calculateRewards from "../matching/calculateRewards.js";
@@ -72,6 +74,8 @@ declare const fullApi: ApiFromModules<{
   "consumer/mockTransaction": typeof consumer_mockTransaction;
   "consumer/queries": typeof consumer_queries;
   crons: typeof crons;
+  "debug/checkFacundoTransaction": typeof debug_checkFacundoTransaction;
+  "debug/rematchTransaction": typeof debug_rematchTransaction;
   geospatial: typeof geospatial;
   http: typeof http;
   "matching/calculateRewards": typeof matching_calculateRewards;

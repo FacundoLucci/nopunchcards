@@ -95,10 +95,10 @@ export const Route = createRootRouteWithContext<{
         name: "apple-mobile-web-app-capable",
         content: "yes",
       },
-      // iOS PWA: Status bar style (translucent allows background color to show)
+      // iOS PWA: Status bar style (default = white bar for light mode)
       {
         name: "apple-mobile-web-app-status-bar-style",
-        content: "black-translucent",
+        content: "default",
       },
       // iOS PWA: App title
       {

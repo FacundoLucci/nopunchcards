@@ -26,9 +26,12 @@ export const Route = createFileRoute("/demo-shop")({
 
 function DemoShop() {
   const [selectedImage, setSelectedImage] = useState("/product-main.png");
-  const [isCreatingMockTransaction, setIsCreatingMockTransaction] = useState(false);
-  
-  const createMockTransaction = useMutation(api.consumer.mockTransaction.createMockTransaction);
+  const [isCreatingMockTransaction, setIsCreatingMockTransaction] =
+    useState(false);
+
+  const createMockTransaction = useMutation(
+    api.consumer.mockTransaction.createMockTransaction
+  );
 
   // Handle mock transaction creation
   const handleMockPurchase = async () => {
@@ -41,7 +44,8 @@ function DemoShop() {
 
       if (result.success) {
         toast.success("Purchase successful! 🎉", {
-          description: "Your transaction has been recorded and will be processed shortly.",
+          description:
+            "Your transaction has been recorded and will be processed shortly.",
         });
       } else {
         toast.error("Purchase failed", {
@@ -251,7 +255,7 @@ function DemoShop() {
                   <Button
                     onClick={handleMockPurchase}
                     disabled={isCreatingMockTransaction}
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-6 text-lg shadow-lg hover:shadow-xl transition-all"
+                    className="w-full bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-6 text-lg shadow-lg hover:shadow-xl transition-all"
                     size="lg"
                   >
                     {isCreatingMockTransaction ? (
@@ -271,24 +275,22 @@ function DemoShop() {
                   </p>
                 </div>
 
-                {/* Stripe Buy Button - Hidden but keeping code */}
-                <div className="hidden">
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t border-slate-200 dark:border-slate-700" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-white dark:bg-slate-800 px-2 text-slate-500">
-                        Or pay with card
-                      </span>
-                    </div>
+                {/* Stripe Buy Button */}
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-slate-200 dark:border-slate-700" />
                   </div>
-                  
-                  <stripe-buy-button
-                    buy-button-id="buy_btn_1SUVCkBtlj0HI9KvjYQYPBuM"
-                    publishable-key="pk_live_51LZzM3Btlj0HI9KvACZJYWuSUK84ZIzzm0sHP89469p7vHU9ubODJ2NL4Nh5yVe0JdVAQQWkpX9tcepfKvTO9rbg00cU376tDX"
-                  ></stripe-buy-button>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white dark:bg-slate-800 px-2 text-slate-500">
+                      Or pay with card
+                    </span>
+                  </div>
                 </div>
+
+                <stripe-buy-button
+                  buy-button-id="buy_btn_1SUVCkBtlj0HI9KvjYQYPBuM"
+                  publishable-key="pk_live_51LZzM3Btlj0HI9KvACZJYWuSUK84ZIzzm0sHP89469p7vHU9ubODJ2NL4Nh5yVe0JdVAQQWkpX9tcepfKvTO9rbg00cU376tDX"
+                ></stripe-buy-button>
               </div>
 
               {/* Trust Badges */}
