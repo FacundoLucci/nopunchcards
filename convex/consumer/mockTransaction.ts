@@ -4,12 +4,13 @@ import { mutation } from "../_generated/server";
 /**
  * Create a mock transaction for testing/demo purposes
  * Bypasses Plaid integration and creates a transaction directly
- * Works without authentication - uses the last created consumer user
+ * Works without authentication - uses a specific demo user (flucci@gmail.com)
  */
 export const createMockTransaction = mutation({
   args: {
     merchantName: v.string(),
     amount: v.optional(v.number()), // Amount in cents, defaults to random
+    userId: v.optional(v.string()), // Optional: override the default demo user
   },
   returns: v.object({
     success: v.boolean(),
@@ -17,36 +18,20 @@ export const createMockTransaction = mutation({
     error: v.optional(v.string()),
   }),
   handler: async (ctx, args) => {
-    // Find the most recently created consumer user
-    const consumerProfiles = await ctx.db
-      .query("profiles")
-      .withIndex("by_role", (q) => q.eq("role", "consumer"))
-      .order("desc")
-      .collect();
-
-    if (consumerProfiles.length === 0) {
-      return {
-        success: false,
-        error: "No consumer users found. Please create a consumer account first.",
-      };
-    }
-
-    // Get the most recent consumer (sorted by createdAt descending)
-    const lastConsumer = consumerProfiles.sort(
-      (a, b) => b.createdAt - a.createdAt
-    )[0];
+    // Use specified userId or default to the demo user (flucci@gmail.com)
+    const targetUserId = args.userId || "jd70yd3082ktbdg5wr3576d9817vk51r";
 
     // Get the user's most recent plaidAccount (last added payment method)
     const plaidAccounts = await ctx.db
       .query("plaidAccounts")
-      .withIndex("by_userId", (q) => q.eq("userId", lastConsumer.userId))
+      .withIndex("by_userId", (q) => q.eq("userId", targetUserId))
       .filter((q) => q.eq(q.field("status"), "active"))
       .collect();
 
     if (plaidAccounts.length === 0) {
       return {
         success: false,
-        error: "Consumer has no payment method linked. Please link a card first.",
+        error: "User has no payment method linked. Please link a card first.",
       };
     }
 
@@ -58,7 +43,7 @@ export const createMockTransaction = mutation({
     // Generate mock transaction data
     const now = new Date();
     const dateString = now.toISOString().split("T")[0]; // YYYY-MM-DD format
-    const mockTransactionId = `mock_${lastConsumer.userId}_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    const mockTransactionId = `mock_${targetUserId}_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     
     // Use provided amount or generate random amount between $10-$100
     const transactionAmount = args.amount || Math.floor(Math.random() * 9000) + 1000;
@@ -66,7 +51,7 @@ export const createMockTransaction = mutation({
     // Create the transaction
     const transactionId = await ctx.db.insert("transactions", {
       plaidTransactionId: mockTransactionId,
-      userId: lastConsumer.userId,
+      userId: targetUserId,
       plaidAccountId: lastPlaidAccount._id,
       amount: transactionAmount,
       currency: "USD",
