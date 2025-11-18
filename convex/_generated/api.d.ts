@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as admin_fixInstitutionName from "../admin/fixInstitutionName.js";
 import type * as admin_migrations from "../admin/migrations.js";
 import type * as auth from "../auth.js";
 import type * as autumn from "../autumn.js";
@@ -65,6 +66,7 @@ import type {
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  "admin/fixInstitutionName": typeof admin_fixInstitutionName;
   "admin/migrations": typeof admin_migrations;
   auth: typeof auth;
   autumn: typeof autumn;
