@@ -1,6 +1,6 @@
 /* eslint-disable */
 /**
- * Generated `api` utility.
+ * Generated `ComponentApi` utility.
  *
  * THIS CODE IS AUTOMATICALLY GENERATED.
  *
@@ -8,128 +8,21 @@
  * @module
  */
 
-import type * as admin_fixInstitutionName from "../admin/fixInstitutionName.js";
-import type * as admin_migrations from "../admin/migrations.js";
-import type * as auth from "../auth.js";
-import type * as autumn from "../autumn.js";
-import type * as businesses_admin from "../businesses/admin.js";
-import type * as businesses_generateSlug from "../businesses/generateSlug.js";
-import type * as businesses_mutations from "../businesses/mutations.js";
-import type * as businesses_public from "../businesses/public.js";
-import type * as businesses_queries from "../businesses/queries.js";
-import type * as consumer_accounts from "../consumer/accounts.js";
-import type * as consumer_mockTransaction from "../consumer/mockTransaction.js";
-import type * as consumer_queries from "../consumer/queries.js";
-import type * as crons from "../crons.js";
-import type * as debug_checkFacundoTransaction from "../debug/checkFacundoTransaction.js";
-import type * as debug_rematchTransaction from "../debug/rematchTransaction.js";
-import type * as geospatial from "../geospatial.js";
-import type * as http from "../http.js";
-import type * as matching_calculateRewards from "../matching/calculateRewards.js";
-import type * as matching_matchTransaction from "../matching/matchTransaction.js";
-import type * as matching_processNewTransactions from "../matching/processNewTransactions.js";
-import type * as notifications_helpers from "../notifications/helpers.js";
-import type * as notifications_markRead from "../notifications/markRead.js";
-import type * as notifications_sendPushToUser from "../notifications/sendPushToUser.js";
-import type * as notifications_sendRewardEarned from "../notifications/sendRewardEarned.js";
-import type * as notifications_subscribe from "../notifications/subscribe.js";
-import type * as onboarding_mutations from "../onboarding/mutations.js";
-import type * as onboarding_queries from "../onboarding/queries.js";
-import type * as plaid_encryption from "../plaid/encryption.js";
-import type * as plaid_exchangeToken from "../plaid/exchangeToken.js";
-import type * as plaid_helpers from "../plaid/helpers.js";
-import type * as plaid_linkToken from "../plaid/linkToken.js";
-import type * as plaid_migrateAccounts from "../plaid/migrateAccounts.js";
-import type * as plaid_syncTransactions from "../plaid/syncTransactions.js";
-import type * as plaid_testWebhook from "../plaid/testWebhook.js";
-import type * as plaid_webhookVerification from "../plaid/webhookVerification.js";
-import type * as rewardPrograms_mutations from "../rewardPrograms/mutations.js";
-import type * as seedData from "../seedData.js";
-import type * as sendEmails from "../sendEmails.js";
-import type * as users from "../users.js";
-import type * as users_ensureFreePlan from "../users/ensureFreePlan.js";
-import type * as users_roleCheck from "../users/roleCheck.js";
-import type * as users_signup from "../users/signup.js";
-
-import type {
-  ApiFromModules,
-  FilterApi,
-  FunctionReference,
-} from "convex/server";
-
-declare const fullApi: ApiFromModules<{
-  "admin/fixInstitutionName": typeof admin_fixInstitutionName;
-  "admin/migrations": typeof admin_migrations;
-  auth: typeof auth;
-  autumn: typeof autumn;
-  "businesses/admin": typeof businesses_admin;
-  "businesses/generateSlug": typeof businesses_generateSlug;
-  "businesses/mutations": typeof businesses_mutations;
-  "businesses/public": typeof businesses_public;
-  "businesses/queries": typeof businesses_queries;
-  "consumer/accounts": typeof consumer_accounts;
-  "consumer/mockTransaction": typeof consumer_mockTransaction;
-  "consumer/queries": typeof consumer_queries;
-  crons: typeof crons;
-  "debug/checkFacundoTransaction": typeof debug_checkFacundoTransaction;
-  "debug/rematchTransaction": typeof debug_rematchTransaction;
-  geospatial: typeof geospatial;
-  http: typeof http;
-  "matching/calculateRewards": typeof matching_calculateRewards;
-  "matching/matchTransaction": typeof matching_matchTransaction;
-  "matching/processNewTransactions": typeof matching_processNewTransactions;
-  "notifications/helpers": typeof notifications_helpers;
-  "notifications/markRead": typeof notifications_markRead;
-  "notifications/sendPushToUser": typeof notifications_sendPushToUser;
-  "notifications/sendRewardEarned": typeof notifications_sendRewardEarned;
-  "notifications/subscribe": typeof notifications_subscribe;
-  "onboarding/mutations": typeof onboarding_mutations;
-  "onboarding/queries": typeof onboarding_queries;
-  "plaid/encryption": typeof plaid_encryption;
-  "plaid/exchangeToken": typeof plaid_exchangeToken;
-  "plaid/helpers": typeof plaid_helpers;
-  "plaid/linkToken": typeof plaid_linkToken;
-  "plaid/migrateAccounts": typeof plaid_migrateAccounts;
-  "plaid/syncTransactions": typeof plaid_syncTransactions;
-  "plaid/testWebhook": typeof plaid_testWebhook;
-  "plaid/webhookVerification": typeof plaid_webhookVerification;
-  "rewardPrograms/mutations": typeof rewardPrograms_mutations;
-  seedData: typeof seedData;
-  sendEmails: typeof sendEmails;
-  users: typeof users;
-  "users/ensureFreePlan": typeof users_ensureFreePlan;
-  "users/roleCheck": typeof users_roleCheck;
-  "users/signup": typeof users_signup;
-}>;
+import type { FunctionReference } from "convex/server";
 
 /**
- * A utility for referencing Convex functions in your app's public API.
+ * A utility for referencing a Convex component's exposed API.
  *
+ * Useful when expecting a parameter like `components.myComponent`.
  * Usage:
- * ```js
- * const myFunctionReference = api.myModule.myFunction;
+ * ```ts
+ * async function myFunction(ctx: QueryCtx, component: ComponentApi) {
+ *   return ctx.runQuery(component.someFile.someQuery, { ...args });
+ * }
  * ```
  */
-export declare const api: FilterApi<
-  typeof fullApi,
-  FunctionReference<any, "public">
->;
-
-/**
- * A utility for referencing Convex functions in your app's internal API.
- *
- * Usage:
- * ```js
- * const myFunctionReference = internal.myModule.myFunction;
- * ```
- */
-export declare const internal: FilterApi<
-  typeof fullApi,
-  FunctionReference<any, "internal">
->;
-
-export declare const components: {
-  betterAuth: {
+export type ComponentApi<Name extends string | undefined = string | undefined> =
+  {
     adapter: {
       create: FunctionReference<
         "mutation",
@@ -198,7 +91,8 @@ export declare const components: {
           onCreateHandle?: string;
           select?: Array<string>;
         },
-        any
+        any,
+        Name
       >;
       deleteMany: FunctionReference<
         "mutation",
@@ -380,7 +274,8 @@ export declare const components: {
             numItems: number;
           };
         },
-        any
+        any,
+        Name
       >;
       deleteOne: FunctionReference<
         "mutation",
@@ -554,7 +449,8 @@ export declare const components: {
               };
           onDeleteHandle?: string;
         },
-        any
+        any,
+        Name
       >;
       findMany: FunctionReference<
         "query",
@@ -596,7 +492,8 @@ export declare const components: {
               | null;
           }>;
         },
-        any
+        any,
+        Name
       >;
       findOne: FunctionReference<
         "query",
@@ -628,7 +525,8 @@ export declare const components: {
               | null;
           }>;
         },
-        any
+        any,
+        Name
       >;
       updateMany: FunctionReference<
         "mutation",
@@ -854,7 +752,8 @@ export declare const components: {
             numItems: number;
           };
         },
-        any
+        any,
+        Name
       >;
       updateOne: FunctionReference<
         "mutation",
@@ -1072,275 +971,8 @@ export declare const components: {
               };
           onUpdateHandle?: string;
         },
-        any
+        any,
+        Name
       >;
     };
   };
-  resend: {
-    lib: {
-      cancelEmail: FunctionReference<
-        "mutation",
-        "internal",
-        { emailId: string },
-        null
-      >;
-      cleanupAbandonedEmails: FunctionReference<
-        "mutation",
-        "internal",
-        { olderThan?: number },
-        null
-      >;
-      cleanupOldEmails: FunctionReference<
-        "mutation",
-        "internal",
-        { olderThan?: number },
-        null
-      >;
-      createManualEmail: FunctionReference<
-        "mutation",
-        "internal",
-        {
-          from: string;
-          headers?: Array<{ name: string; value: string }>;
-          replyTo?: Array<string>;
-          subject: string;
-          to: string;
-        },
-        string
-      >;
-      get: FunctionReference<
-        "query",
-        "internal",
-        { emailId: string },
-        {
-          complained: boolean;
-          createdAt: number;
-          errorMessage?: string;
-          finalizedAt: number;
-          from: string;
-          headers?: Array<{ name: string; value: string }>;
-          html?: string;
-          opened: boolean;
-          replyTo: Array<string>;
-          resendId?: string;
-          segment: number;
-          status:
-            | "waiting"
-            | "queued"
-            | "cancelled"
-            | "sent"
-            | "delivered"
-            | "delivery_delayed"
-            | "bounced"
-            | "failed";
-          subject: string;
-          text?: string;
-          to: string;
-        } | null
-      >;
-      getStatus: FunctionReference<
-        "query",
-        "internal",
-        { emailId: string },
-        {
-          complained: boolean;
-          errorMessage: string | null;
-          opened: boolean;
-          status:
-            | "waiting"
-            | "queued"
-            | "cancelled"
-            | "sent"
-            | "delivered"
-            | "delivery_delayed"
-            | "bounced"
-            | "failed";
-        } | null
-      >;
-      handleEmailEvent: FunctionReference<
-        "mutation",
-        "internal",
-        { event: any },
-        null
-      >;
-      sendEmail: FunctionReference<
-        "mutation",
-        "internal",
-        {
-          from: string;
-          headers?: Array<{ name: string; value: string }>;
-          html?: string;
-          options: {
-            apiKey: string;
-            initialBackoffMs: number;
-            onEmailEvent?: { fnHandle: string };
-            retryAttempts: number;
-            testMode: boolean;
-          };
-          replyTo?: Array<string>;
-          subject: string;
-          text?: string;
-          to: string;
-        },
-        string
-      >;
-      updateManualEmail: FunctionReference<
-        "mutation",
-        "internal",
-        {
-          emailId: string;
-          errorMessage?: string;
-          resendId?: string;
-          status:
-            | "waiting"
-            | "queued"
-            | "cancelled"
-            | "sent"
-            | "delivered"
-            | "delivery_delayed"
-            | "bounced"
-            | "failed";
-        },
-        null
-      >;
-    };
-  };
-  geospatial: {
-    document: {
-      get: FunctionReference<
-        "query",
-        "internal",
-        { key: string },
-        {
-          coordinates: { latitude: number; longitude: number };
-          filterKeys: Record<
-            string,
-            | string
-            | number
-            | boolean
-            | null
-            | bigint
-            | Array<string | number | boolean | null | bigint>
-          >;
-          key: string;
-          sortKey: number;
-        } | null
-      >;
-      insert: FunctionReference<
-        "mutation",
-        "internal",
-        {
-          document: {
-            coordinates: { latitude: number; longitude: number };
-            filterKeys: Record<
-              string,
-              | string
-              | number
-              | boolean
-              | null
-              | bigint
-              | Array<string | number | boolean | null | bigint>
-            >;
-            key: string;
-            sortKey: number;
-          };
-          levelMod: number;
-          maxCells: number;
-          maxLevel: number;
-          minLevel: number;
-        },
-        null
-      >;
-      remove: FunctionReference<
-        "mutation",
-        "internal",
-        {
-          key: string;
-          levelMod: number;
-          maxCells: number;
-          maxLevel: number;
-          minLevel: number;
-        },
-        boolean
-      >;
-    };
-    query: {
-      debugCells: FunctionReference<
-        "query",
-        "internal",
-        {
-          levelMod: number;
-          maxCells: number;
-          maxLevel: number;
-          minLevel: number;
-          rectangle: {
-            east: number;
-            north: number;
-            south: number;
-            west: number;
-          };
-        },
-        Array<{
-          token: string;
-          vertices: Array<{ latitude: number; longitude: number }>;
-        }>
-      >;
-      execute: FunctionReference<
-        "query",
-        "internal",
-        {
-          cursor?: string;
-          levelMod: number;
-          logLevel: "DEBUG" | "INFO" | "WARN" | "ERROR";
-          maxCells: number;
-          maxLevel: number;
-          minLevel: number;
-          query: {
-            filtering: Array<{
-              filterKey: string;
-              filterValue: string | number | boolean | null | bigint;
-              occur: "should" | "must";
-            }>;
-            maxResults: number;
-            rectangle: {
-              east: number;
-              north: number;
-              south: number;
-              west: number;
-            };
-            sorting: {
-              interval: { endExclusive?: number; startInclusive?: number };
-            };
-          };
-        },
-        {
-          nextCursor?: string;
-          results: Array<{
-            coordinates: { latitude: number; longitude: number };
-            key: string;
-          }>;
-        }
-      >;
-      nearestPoints: FunctionReference<
-        "query",
-        "internal",
-        {
-          levelMod: number;
-          logLevel: "DEBUG" | "INFO" | "WARN" | "ERROR";
-          maxDistance?: number;
-          maxLevel: number;
-          maxResults: number;
-          minLevel: number;
-          nextCursor?: string;
-          point: { latitude: number; longitude: number };
-        },
-        Array<{
-          coordinates: { latitude: number; longitude: number };
-          distance: number;
-          key: string;
-        }>
-      >;
-    };
-  };
-  autumn: {};
-};
