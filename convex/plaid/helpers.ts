@@ -20,13 +20,14 @@ export const getAccountByItemId = internalQuery({
       userId: v.string(),
       plaidItemId: v.string(),
       plaidAccessTokenCiphertext: v.string(),
-      accounts: v.array(accountValidator),
+      accounts: v.optional(v.array(accountValidator)),
+      accountIds: v.optional(v.array(v.string())),
       status: v.union(
         v.literal("active"),
         v.literal("disconnected"),
         v.literal("error")
       ),
-      institutionId: v.string(),
+      institutionId: v.optional(v.string()),
       institutionName: v.string(),
       lastSyncedAt: v.optional(v.number()),
       syncCursor: v.optional(v.string()),
@@ -51,13 +52,14 @@ export const getAccountById = internalQuery({
       userId: v.string(),
       plaidItemId: v.string(),
       plaidAccessTokenCiphertext: v.string(),
-      accounts: v.array(accountValidator),
+      accounts: v.optional(v.array(accountValidator)),
+      accountIds: v.optional(v.array(v.string())),
       status: v.union(
         v.literal("active"),
         v.literal("disconnected"),
         v.literal("error")
       ),
-      institutionId: v.string(),
+      institutionId: v.optional(v.string()),
       institutionName: v.string(),
       lastSyncedAt: v.optional(v.number()),
       syncCursor: v.optional(v.string()),
@@ -78,13 +80,14 @@ export const getAllAccounts = internalQuery({
       userId: v.string(),
       plaidItemId: v.string(),
       plaidAccessTokenCiphertext: v.string(),
-      accounts: v.array(accountValidator),
+      accounts: v.optional(v.array(accountValidator)),
+      accountIds: v.optional(v.array(v.string())),
       status: v.union(
         v.literal("active"),
         v.literal("disconnected"),
         v.literal("error")
       ),
-      institutionId: v.string(),
+      institutionId: v.optional(v.string()),
       institutionName: v.string(),
       lastSyncedAt: v.optional(v.number()),
       syncCursor: v.optional(v.string()),
@@ -213,6 +216,25 @@ export const updateSyncMetadata = internalMutation({
     await ctx.db.patch(args.accountId, {
       lastSyncedAt: args.lastSyncedAt,
       syncCursor: args.syncCursor,
+    });
+    return null;
+  },
+});
+
+export const updateAccountWithMigration = internalMutation({
+  args: {
+    accountId: v.id("plaidAccounts"),
+    accounts: v.array(accountValidator),
+    institutionId: v.string(),
+    institutionName: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.accountId, {
+      accounts: args.accounts,
+      institutionId: args.institutionId,
+      institutionName: args.institutionName,
+      accountIds: undefined, // Remove old field
     });
     return null;
   },

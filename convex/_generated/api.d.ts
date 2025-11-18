@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as admin_migrations from "../admin/migrations.js";
 import type * as auth from "../auth.js";
 import type * as autumn from "../autumn.js";
 import type * as businesses_admin from "../businesses/admin.js";
@@ -37,6 +38,7 @@ import type * as plaid_encryption from "../plaid/encryption.js";
 import type * as plaid_exchangeToken from "../plaid/exchangeToken.js";
 import type * as plaid_helpers from "../plaid/helpers.js";
 import type * as plaid_linkToken from "../plaid/linkToken.js";
+import type * as plaid_migrateAccounts from "../plaid/migrateAccounts.js";
 import type * as plaid_syncTransactions from "../plaid/syncTransactions.js";
 import type * as plaid_testWebhook from "../plaid/testWebhook.js";
 import type * as plaid_webhookVerification from "../plaid/webhookVerification.js";
@@ -63,6 +65,7 @@ import type {
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  "admin/migrations": typeof admin_migrations;
   auth: typeof auth;
   autumn: typeof autumn;
   "businesses/admin": typeof businesses_admin;
@@ -92,6 +95,7 @@ declare const fullApi: ApiFromModules<{
   "plaid/exchangeToken": typeof plaid_exchangeToken;
   "plaid/helpers": typeof plaid_helpers;
   "plaid/linkToken": typeof plaid_linkToken;
+  "plaid/migrateAccounts": typeof plaid_migrateAccounts;
   "plaid/syncTransactions": typeof plaid_syncTransactions;
   "plaid/testWebhook": typeof plaid_testWebhook;
   "plaid/webhookVerification": typeof plaid_webhookVerification;

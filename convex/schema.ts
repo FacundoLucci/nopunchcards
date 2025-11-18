@@ -50,7 +50,8 @@ export default defineSchema({
     userId: v.string(), // Better Auth user.id
     plaidItemId: v.string(),
     plaidAccessTokenCiphertext: v.string(), // AES-256-GCM encrypted
-    accounts: v.array(
+    // New schema (detailed account information)
+    accounts: v.optional(v.array(
       v.object({
         accountId: v.string(), // Plaid account_id
         mask: v.optional(v.string()), // Last 4 digits (e.g., "1234")
@@ -59,14 +60,16 @@ export default defineSchema({
         type: v.string(), // Account type: depository, credit, loan, investment
         subtype: v.optional(v.string()), // Subtype: checking, savings, credit card, etc.
       })
-    ),
+    )),
+    // Legacy schema (for backward compatibility during migration)
+    accountIds: v.optional(v.array(v.string())),
     status: v.union(
       v.literal("active"),
       v.literal("disconnected"),
       v.literal("error")
     ),
-    institutionId: v.string(), // Plaid institution_id (e.g., "ins_10")
-    institutionName: v.string(), // Human-readable name (e.g., "American Express")
+    institutionId: v.optional(v.string()), // Plaid institution_id (e.g., "ins_10")
+    institutionName: v.string(), // Human-readable name (e.g., "American Express") - was optional before
     lastSyncedAt: v.optional(v.number()),
     syncCursor: v.optional(v.string()), // For /transactions/sync pagination
     createdAt: v.number(),
