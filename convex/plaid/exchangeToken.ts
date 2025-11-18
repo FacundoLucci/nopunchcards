@@ -2,7 +2,7 @@
 import { action } from "../_generated/server";
 import { internal } from "../_generated/api";
 import { v } from "convex/values";
-import { Configuration, PlaidApi, PlaidEnvironments } from "plaid";
+import { Configuration, PlaidApi, PlaidEnvironments, CountryCode } from "plaid";
 import { encrypt } from "./encryption";
 import { authComponent } from "../auth";
 
@@ -51,7 +51,7 @@ export const exchangePublicToken = action({
       try {
         const institutionResponse = await plaidClient.institutionsGetById({
           institution_id: institutionId,
-          country_codes: ["US"], // Adjust based on your needs
+          country_codes: [CountryCode.Us], // Adjust based on your needs
         });
         institutionName = institutionResponse.data.institution.name;
       } catch (error) {
