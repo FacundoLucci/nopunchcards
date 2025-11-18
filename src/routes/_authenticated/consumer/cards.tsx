@@ -107,8 +107,16 @@ function CardsSection() {
 interface CreditCardProps {
   account: {
     _id: string;
-    institutionName?: string;
-    accountIds: string[];
+    institutionName: string;
+    institutionId: string;
+    accounts: Array<{
+      accountId: string;
+      mask?: string;
+      name: string;
+      officialName?: string;
+      type: string;
+      subtype?: string;
+    }>;
     status: "active" | "disconnected" | "error";
     lastSyncedAt?: number;
     createdAt: number;
@@ -231,7 +239,7 @@ function CreditCardComponent({
           <div className="flex items-start justify-between">
             <div className="min-w-0 flex-1">
               <p className="text-xs sm:text-sm font-medium opacity-90 mb-0.5 sm:mb-1 truncate">
-                {account.institutionName || "Bank Account"}
+                {account.institutionName}
               </p>
               <div className="flex items-center gap-1.5">
                 <div
@@ -260,13 +268,13 @@ function CreditCardComponent({
               <span>••••</span>
               <span>••••</span>
               <span className="font-semibold">
-                {account.accountIds[0]?.slice(-4) || "0000"}
+                {account.accounts[0]?.mask || "0000"}
               </span>
             </div>
-            {account.accountIds.length > 1 && (
+            {account.accounts.length > 1 && (
               <p className="text-[10px] sm:text-xs opacity-75">
-                +{account.accountIds.length - 1} more account
-                {account.accountIds.length > 2 ? "s" : ""}
+                +{account.accounts.length - 1} more account
+                {account.accounts.length > 2 ? "s" : ""}
               </p>
             )}
           </div>

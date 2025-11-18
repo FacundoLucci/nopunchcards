@@ -1,6 +1,15 @@
 import { internalMutation, internalQuery } from "../_generated/server";
 import { v } from "convex/values";
 
+const accountValidator = v.object({
+  accountId: v.string(),
+  mask: v.optional(v.string()),
+  name: v.string(),
+  officialName: v.optional(v.string()),
+  type: v.string(),
+  subtype: v.optional(v.string()),
+});
+
 export const getAccountByItemId = internalQuery({
   args: { plaidItemId: v.string() },
   returns: v.union(
@@ -11,13 +20,14 @@ export const getAccountByItemId = internalQuery({
       userId: v.string(),
       plaidItemId: v.string(),
       plaidAccessTokenCiphertext: v.string(),
-      accountIds: v.array(v.string()),
+      accounts: v.array(accountValidator),
       status: v.union(
         v.literal("active"),
         v.literal("disconnected"),
         v.literal("error")
       ),
-      institutionName: v.optional(v.string()),
+      institutionId: v.string(),
+      institutionName: v.string(),
       lastSyncedAt: v.optional(v.number()),
       syncCursor: v.optional(v.string()),
       createdAt: v.number(),
@@ -41,13 +51,14 @@ export const getAccountById = internalQuery({
       userId: v.string(),
       plaidItemId: v.string(),
       plaidAccessTokenCiphertext: v.string(),
-      accountIds: v.array(v.string()),
+      accounts: v.array(accountValidator),
       status: v.union(
         v.literal("active"),
         v.literal("disconnected"),
         v.literal("error")
       ),
-      institutionName: v.optional(v.string()),
+      institutionId: v.string(),
+      institutionName: v.string(),
       lastSyncedAt: v.optional(v.number()),
       syncCursor: v.optional(v.string()),
       createdAt: v.number(),
@@ -67,13 +78,14 @@ export const getAllAccounts = internalQuery({
       userId: v.string(),
       plaidItemId: v.string(),
       plaidAccessTokenCiphertext: v.string(),
-      accountIds: v.array(v.string()),
+      accounts: v.array(accountValidator),
       status: v.union(
         v.literal("active"),
         v.literal("disconnected"),
         v.literal("error")
       ),
-      institutionName: v.optional(v.string()),
+      institutionId: v.string(),
+      institutionName: v.string(),
       lastSyncedAt: v.optional(v.number()),
       syncCursor: v.optional(v.string()),
       createdAt: v.number(),
@@ -109,11 +121,33 @@ export const savePlaidAccount = internalMutation({
     userId: v.string(),
     plaidItemId: v.string(),
     plaidAccessTokenCiphertext: v.string(),
-    accountIds: v.array(v.string()),
+    accounts: v.array(accountValidator),
+    institutionId: v.string(),
     institutionName: v.string(),
   },
   returns: v.id("plaidAccounts"),
   handler: async (ctx, args) => {
+    // Check if this plaidItemId already exists for this user
+    const existing = await ctx.db
+      .query("plaidAccounts")
+      .withIndex("by_plaidItemId", (q) => q.eq("plaidItemId", args.plaidItemId))
+      .unique();
+
+    if (existing) {
+      // Update existing record with new data (user re-linked the same account)
+      await ctx.db.patch(existing._id, {
+        plaidAccessTokenCiphertext: args.plaidAccessTokenCiphertext,
+        accounts: args.accounts,
+        institutionId: args.institutionId,
+        institutionName: args.institutionName,
+        status: "active", // Reactivate if it was disconnected
+        lastSyncedAt: Date.now(), // Reset sync time
+        syncCursor: undefined, // Reset cursor to sync from beginning
+      });
+      return existing._id;
+    }
+
+    // Create new record if this is a first-time link
     return await ctx.db.insert("plaidAccounts", {
       ...args,
       status: "active",

@@ -50,13 +50,23 @@ export default defineSchema({
     userId: v.string(), // Better Auth user.id
     plaidItemId: v.string(),
     plaidAccessTokenCiphertext: v.string(), // AES-256-GCM encrypted
-    accountIds: v.array(v.string()),
+    accounts: v.array(
+      v.object({
+        accountId: v.string(), // Plaid account_id
+        mask: v.optional(v.string()), // Last 4 digits (e.g., "1234")
+        name: v.string(), // Account name (e.g., "Amex Gold Card")
+        officialName: v.optional(v.string()), // Official name from institution
+        type: v.string(), // Account type: depository, credit, loan, investment
+        subtype: v.optional(v.string()), // Subtype: checking, savings, credit card, etc.
+      })
+    ),
     status: v.union(
       v.literal("active"),
       v.literal("disconnected"),
       v.literal("error")
     ),
-    institutionName: v.optional(v.string()),
+    institutionId: v.string(), // Plaid institution_id (e.g., "ins_10")
+    institutionName: v.string(), // Human-readable name (e.g., "American Express")
     lastSyncedAt: v.optional(v.number()),
     syncCursor: v.optional(v.string()), // For /transactions/sync pagination
     createdAt: v.number(),

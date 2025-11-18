@@ -9,8 +9,18 @@ export const listLinkedAccounts = query({
     v.object({
       _id: v.id("plaidAccounts"),
       _creationTime: v.number(),
-      institutionName: v.optional(v.string()),
-      accountIds: v.array(v.string()),
+      institutionName: v.string(),
+      institutionId: v.string(),
+      accounts: v.array(
+        v.object({
+          accountId: v.string(),
+          mask: v.optional(v.string()),
+          name: v.string(),
+          officialName: v.optional(v.string()),
+          type: v.string(),
+          subtype: v.optional(v.string()),
+        })
+      ),
       status: v.union(
         v.literal("active"),
         v.literal("disconnected"),
@@ -37,7 +47,8 @@ export const listLinkedAccounts = query({
       _id: account._id,
       _creationTime: account._creationTime,
       institutionName: account.institutionName,
-      accountIds: account.accountIds,
+      institutionId: account.institutionId,
+      accounts: account.accounts,
       status: account.status,
       lastSyncedAt: account.lastSyncedAt,
       createdAt: account.createdAt,
