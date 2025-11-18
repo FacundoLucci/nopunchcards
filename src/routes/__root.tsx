@@ -74,7 +74,7 @@ export const Route = createRootRouteWithContext<{
       },
       {
         name: "viewport",
-        content: "width=device-width, initial-scale=1",
+        content: "width=device-width, initial-scale=1, viewport-fit=cover",
       },
       {
         title: "Laso - The last loyalty program humanity will ever need",

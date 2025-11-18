@@ -61,7 +61,7 @@ function BusinessLayout() {
 
       {/* Conditional Header - shown only on main routes */}
       {showHeader && (
-        <header className="sticky top-0 bg-background/80 backdrop-blur-sm py-4 px-4 flex items-center justify-between z-10">
+        <header className="sticky top-0 bg-background/80 backdrop-blur-sm pt-[calc(env(safe-area-inset-top)+1rem)] pb-4 px-4 flex items-center justify-between z-10">
           <div className="flex flex-col gap-0.5">
             <LogoIcon
               showIcon={false}

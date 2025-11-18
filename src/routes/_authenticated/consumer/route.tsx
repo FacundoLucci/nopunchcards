@@ -95,7 +95,7 @@ function ConsumerLayout() {
 
       {/* Conditional Header - shown only on main routes */}
       {showHeader && showNav && (
-        <header className="sticky top-0 bg-background/80 backdrop-blur-sm py-4 px-4 flex items-center justify-between z-10">
+        <header className="sticky top-0 bg-background/80 backdrop-blur-sm pt-[calc(env(safe-area-inset-top)+1rem)] pb-4 px-4 flex items-center justify-between z-10">
           <LogoIcon
             showIcon={false}
             showWordmark
