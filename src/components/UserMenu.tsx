@@ -86,30 +86,34 @@ export function UserMenu() {
 
   return (
     <div className="flex items-center gap-2">
-      {/* Plan Indicator Badge */}
-      {hasPremium ? (
-        <Link to="/account" hash="subscription">
-          <Badge
-            variant="default"
-            className="bg-linear-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0 cursor-pointer"
-          >
-            <Crown className="w-3 h-3 mr-1" />
-            Pro
-          </Badge>
-        </Link>
-      ) : (
-        <Link
-          to="/upgrade"
-          search={{ success: undefined, canceled: undefined }}
-        >
-          <Badge
-            variant="outline"
-            className="border-primary text-primary hover:bg-primary hover:text-primary-foreground cursor-pointer transition-colors"
-          >
-            <Sparkles className="w-3 h-3 mr-1" />
-            Upgrade
-          </Badge>
-        </Link>
+      {/* Plan Indicator Badge - Only show for business users */}
+      {profile?.role === "business_owner" && (
+        <>
+          {hasPremium ? (
+            <Link to="/account" hash="subscription">
+              <Badge
+                variant="default"
+                className="bg-linear-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0 cursor-pointer"
+              >
+                <Crown className="w-3 h-3 mr-1" />
+                Pro
+              </Badge>
+            </Link>
+          ) : (
+            <Link
+              to="/upgrade"
+              search={{ success: undefined, canceled: undefined }}
+            >
+              <Badge
+                variant="outline"
+                className="border-primary text-primary hover:bg-primary hover:text-primary-foreground cursor-pointer transition-colors"
+              >
+                <Sparkles className="w-3 h-3 mr-1" />
+                Upgrade
+              </Badge>
+            </Link>
+          )}
+        </>
       )}
 
       <DropdownMenu modal={false}>

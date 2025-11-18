@@ -1,5 +1,5 @@
-// Last updated: 2025-11-17 - Added success/cancel handlers for checkout redirects
-import { createFileRoute } from "@tanstack/react-router";
+// Last updated: 2025-11-18 - Restricted to business users only (consumers are always free)
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import {
   Card,
   CardContent,
@@ -16,6 +16,8 @@ import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { CheckoutDialog } from "@/components/CheckoutDialog";
 import { useCustomer, usePricingTable } from "autumn-js/react";
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 
 export const Route = createFileRoute("/_authenticated/upgrade")({
   component: UpgradePage,
@@ -30,6 +32,19 @@ export const Route = createFileRoute("/_authenticated/upgrade")({
 function UpgradePage() {
   const navigate = useNavigate();
   const { success, canceled } = Route.useSearch();
+  
+  // Check user role - only business users can access upgrades
+  const profile = useQuery(api.users.getMyProfile, {});
+  
+  // Redirect consumers to their home page
+  useEffect(() => {
+    if (profile && profile.role === "consumer") {
+      toast.info("Consumer accounts are always free!", {
+        description: "Subscriptions are only available for business accounts.",
+      });
+      navigate({ to: "/consumer/home", replace: true });
+    }
+  }, [profile, navigate]);
 
   // Use Autumn's React hooks directly (per official docs)
   const { products, isLoading, error } = usePricingTable();

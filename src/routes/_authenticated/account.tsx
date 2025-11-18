@@ -403,129 +403,131 @@ function AccountContent() {
         </CardContent>
       </Card>
 
-      {/* Subscription Management */}
-      <Card id="subscription">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Crown className="h-5 w-5 text-amber-500" />
-            Subscription
-          </CardTitle>
-          <CardDescription>
-            Manage your subscription and billing
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {hasPremium && currentPlan ? (
-            <>
-              {/* Active Premium Subscription */}
-              <div className="flex items-start justify-between p-4 bg-linear-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Badge className="bg-linear-to-r from-amber-500 to-orange-500 text-white">
-                      {currentPlan.name}
-                    </Badge>
-                    <Badge
-                      variant="outline"
-                      className="border-green-500 text-green-600 dark:text-green-400"
-                    >
-                      Active
-                    </Badge>
+      {/* Subscription Management - Only show for business users */}
+      {accountInfo?.role === "business_owner" && (
+        <Card id="subscription">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Crown className="h-5 w-5 text-amber-500" />
+              Subscription
+            </CardTitle>
+            <CardDescription>
+              Manage your subscription and billing
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {hasPremium && currentPlan ? (
+              <>
+                {/* Active Premium Subscription */}
+                <div className="flex items-start justify-between p-4 bg-linear-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-linear-to-r from-amber-500 to-orange-500 text-white">
+                        {currentPlan.name}
+                      </Badge>
+                      <Badge
+                        variant="outline"
+                        className="border-green-500 text-green-600 dark:text-green-400"
+                      >
+                        Active
+                      </Badge>
+                    </div>
+                    {currentPlan.current_period_end && (
+                      <p className="text-sm text-muted-foreground">
+                        Renews on{" "}
+                        {new Date(
+                          currentPlan.current_period_end
+                        ).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}
+                      </p>
+                    )}
                   </div>
-                  {currentPlan.current_period_end && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleManageBilling}
+                    disabled={openingBillingPortal}
+                  >
+                    {openingBillingPortal ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Opening...
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="mr-2 h-4 w-4" />
+                        Manage Billing
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {/* Additional Options */}
+                <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      navigate({
+                        to: "/upgrade",
+                        search: { success: undefined, canceled: undefined },
+                      })
+                    }
+                    className="w-full sm:w-auto"
+                  >
+                    View All Plans
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Free Plan / No Subscription */}
+                <div className="p-4 bg-muted rounded-lg">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">Free Plan</Badge>
+                    </div>
                     <p className="text-sm text-muted-foreground">
-                      Renews on{" "}
-                      {new Date(
-                        currentPlan.current_period_end
-                      ).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
+                      You're currently on the free plan. Upgrade to unlock
+                      premium features.
                     </p>
-                  )}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleManageBilling}
-                  disabled={openingBillingPortal}
-                >
-                  {openingBillingPortal ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Opening...
-                    </>
-                  ) : (
-                    <>
-                      <CreditCard className="mr-2 h-4 w-4" />
-                      Manage Billing
-                    </>
-                  )}
-                </Button>
-              </div>
-
-              {/* Additional Options */}
-              <div className="flex flex-col sm:flex-row gap-2 pt-2">
-                <Button
-                  variant="outline"
-                  onClick={() =>
-                    navigate({
-                      to: "/upgrade",
-                      search: { success: undefined, canceled: undefined },
-                    })
-                  }
-                  className="w-full sm:w-auto"
-                >
-                  View All Plans
-                </Button>
-              </div>
-            </>
-          ) : (
-            <>
-              {/* Free Plan / No Subscription */}
-              <div className="p-4 bg-muted rounded-lg">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">Free Plan</Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    You're currently on the free plan. Upgrade to unlock premium
-                    features.
-                  </p>
                 </div>
-              </div>
 
-              {/* Upgrade CTA */}
-              <div className="flex flex-col sm:flex-row gap-2 pt-2">
-                <Button
-                  onClick={() =>
-                    navigate({
-                      to: "/upgrade",
-                      search: { success: undefined, canceled: undefined },
-                    })
-                  }
-                  className="w-full sm:w-auto bg-linear-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
-                >
-                  <Crown className="mr-2 h-4 w-4" />
-                  Upgrade to Pro
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() =>
-                    navigate({
-                      to: "/upgrade",
-                      search: { success: undefined, canceled: undefined },
-                    })
-                  }
-                  className="w-full sm:w-auto"
-                >
-                  View Plans
-                </Button>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+                {/* Upgrade CTA */}
+                <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                  <Button
+                    onClick={() =>
+                      navigate({
+                        to: "/upgrade",
+                        search: { success: undefined, canceled: undefined },
+                      })
+                    }
+                    className="w-full sm:w-auto bg-linear-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+                  >
+                    <Crown className="mr-2 h-4 w-4" />
+                    Upgrade to Pro
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      navigate({
+                        to: "/upgrade",
+                        search: { success: undefined, canceled: undefined },
+                      })
+                    }
+                    className="w-full sm:w-auto"
+                  >
+                    View Plans
+                  </Button>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
