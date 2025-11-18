@@ -26,7 +26,6 @@ export const migratePlaidAccounts = action({
     console.log("Starting Plaid accounts migration...");
 
     const result: MigrationResult = await ctx.runAction(
-      // @ts-expect-error - Type instantiation depth issue, but types are correct at runtime
       internal.plaid.migrateAccounts.migrateOldAccounts,
       {}
     );
