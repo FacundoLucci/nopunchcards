@@ -1,8 +1,14 @@
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useMutation } from "convex/react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
+import { toast } from "sonner";
+import { Loader2, Building2, Mail, Calendar } from "lucide-react";
+import type { Id } from "../../../../convex/_generated/dataModel";
 import { api } from "../../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -10,14 +16,75 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Loader2, Building2, Mail, Calendar } from "lucide-react";
-import { Suspense } from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/business/settings")({
   ssr: false,
   component: BusinessSettings,
 });
+
+type BusinessProfile = {
+  _id: Id<"businesses">;
+  _creationTime: number;
+  name: string;
+  slug: string;
+  category: string;
+  address?: string;
+  description?: string;
+  statementDescriptors?: string[];
+};
+
+type BusinessFormState = {
+  name: string;
+  category: string;
+  address: string;
+  description: string;
+  statementDescriptors: string;
+};
+
+const CATEGORY_OPTIONS = [
+  "Coffee",
+  "Restaurant",
+  "Retail",
+  "Grocery",
+  "Fitness",
+  "Salon",
+  "Other",
+] as const;
+
+const EMPTY_FORM_STATE: BusinessFormState = {
+  name: "",
+  category: "",
+  address: "",
+  description: "",
+  statementDescriptors: "",
+};
+
+const createFormState = (business?: BusinessProfile | null): BusinessFormState =>
+  !business
+    ? { ...EMPTY_FORM_STATE }
+    : {
+        name: business.name ?? "",
+        category: business.category ?? "",
+        address: business.address ?? "",
+        description: business.description ?? "",
+        statementDescriptors: business.statementDescriptors?.join(", ") ?? "",
+      };
+
+const parseStatementDescriptors = (input: string) =>
+  input
+    .split(/[\n,]/)
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
 
 function BusinessSettings() {
   return (
@@ -34,18 +101,105 @@ function BusinessSettings() {
 }
 
 function SettingsContent() {
-  const { data: businesses } = useSuspenseQuery(
-    convexQuery(api.businesses.queries.getMyBusinesses, {})
+  const {
+    data: businesses,
+    refetch: refetchBusinesses,
+  } = useSuspenseQuery(convexQuery(api.businesses.queries.getMyBusinesses, {}));
+  const business = businesses?.[0] as BusinessProfile | undefined;
+
+  const updateBusiness = useMutation(api.businesses.mutations.update);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [formState, setFormState] = useState<BusinessFormState>(() =>
+    createFormState(business)
   );
 
-  const business = businesses?.[0]; // Use the first business for now
+  useEffect(() => {
+    setFormState(createFormState(business));
+    if (!business) {
+      setIsEditing(false);
+    }
+  }, [business]);
 
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString("en-US", {
+  const formatDate = (timestamp: number) =>
+    new Date(timestamp).toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
       day: "numeric",
     });
+
+  const businessUrl = useMemo(() => {
+    if (!business?.slug) return null;
+    if (typeof window === "undefined") return `/join/${business.slug}`;
+    return `${window.location.origin}/join/${business.slug}`;
+  }, [business?.slug]);
+
+  const handleToggleEditing = () => {
+    if (!business) return;
+    if (isEditing) {
+      setFormState(createFormState(business));
+    }
+    setIsEditing((prev) => !prev);
+  };
+
+  const handleChange =
+    (field: keyof BusinessFormState) =>
+    (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const value = event.target.value;
+      setFormState((prev) => ({ ...prev, [field]: value }));
+    };
+
+  const handleCategoryChange = (value: string) => {
+    setFormState((prev) => ({ ...prev, category: value }));
+  };
+
+  const handleCancelEdit = () => {
+    if (!business) return;
+    setFormState(createFormState(business));
+    setIsEditing(false);
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!business) return;
+
+    const trimmedName = formState.name.trim();
+    const trimmedCategory = formState.category.trim();
+
+    if (!trimmedName) {
+      toast.error("Business name is required");
+      return;
+    }
+
+    if (!trimmedCategory) {
+      toast.error("Please select a category");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const descriptors = parseStatementDescriptors(
+        formState.statementDescriptors
+      );
+
+      await updateBusiness({
+        businessId: business._id,
+        name: trimmedName,
+        category: trimmedCategory,
+        address: formState.address.trim() || undefined,
+        description: formState.description.trim() || undefined,
+        statementDescriptors: descriptors.length ? descriptors : undefined,
+      });
+
+      toast.success("Business profile updated");
+      setIsEditing(false);
+      await refetchBusinesses();
+    } catch (error: any) {
+      toast.error(error?.message ?? "Failed to update business");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -57,50 +211,212 @@ function SettingsContent() {
         </p>
       </div>
 
-      {business ? (
+        {business ? (
         <>
           <Card>
             <CardHeader>
-              <CardTitle>Business Profile</CardTitle>
-              <CardDescription>
-                Your business information and details
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-start gap-3 sm:gap-4">
-                <div className="rounded-lg bg-primary/10 p-3 shrink-0">
-                  <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0 space-y-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">
-                      Business Name
-                    </label>
-                    <p className="text-base sm:text-lg font-semibold wrap-break-word">
-                      {business.name}
-                    </p>
+                    <CardTitle>Business Profile</CardTitle>
+                    <CardDescription>
+                      Your business information and details
+                    </CardDescription>
                   </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={isEditing ? "outline" : "default"}
+                    className="w-full sm:w-auto"
+                    onClick={handleToggleEditing}
+                    disabled={isSaving}
+                  >
+                    {isEditing ? "Stop editing" : "Edit profile"}
+                  </Button>
+                </div>
+            </CardHeader>
+              <CardContent className="space-y-5">
+                {isEditing ? (
+                  <form className="space-y-4" onSubmit={handleSubmit}>
+                    <div className="space-y-2">
+                      <Label htmlFor="businessName">Business Name</Label>
+                      <Input
+                        id="businessName"
+                        value={formState.name}
+                        onChange={handleChange("name")}
+                        placeholder="Joe's Coffee Shop"
+                      />
+                    </div>
 
-                  {business.slug && (
-                    <div className="min-w-0">
-                      <label className="text-sm font-medium text-muted-foreground block mb-1">
-                        Business URL
-                      </label>
-                      <p className="text-xs sm:text-sm font-mono bg-muted px-2 py-1.5 rounded break-all">
-                        {window.location.origin}/join/{business.slug}
+                    <div className="space-y-2">
+                      <Label htmlFor="businessCategory">Category</Label>
+                      <Select
+                        value={formState.category}
+                        onValueChange={handleCategoryChange}
+                      >
+                        <SelectTrigger id="businessCategory">
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CATEGORY_OPTIONS.map((option) => (
+                            <SelectItem key={option} value={option}>
+                              {option}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="businessAddress">Address</Label>
+                      <Input
+                        id="businessAddress"
+                        value={formState.address}
+                        onChange={handleChange("address")}
+                        placeholder="123 Main St, City, State"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="businessDescription">Description</Label>
+                      <Textarea
+                        id="businessDescription"
+                        value={formState.description}
+                        onChange={handleChange("description")}
+                        placeholder="Tell customers about your business"
+                        rows={3}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="statementDescriptors">
+                        Statement Descriptors
+                      </Label>
+                      <Textarea
+                        id="statementDescriptors"
+                        value={formState.statementDescriptors}
+                        onChange={handleChange("statementDescriptors")}
+                        placeholder="SQ*JOES COFFEE, STRIPE*JOES COFFEE"
+                        rows={3}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Separate multiple descriptors with commas or line breaks.
                       </p>
                     </div>
-                  )}
 
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span className="text-xs sm:text-sm text-muted-foreground">
-                      Member since {formatDate(business._creationTime)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleCancelEdit}
+                        disabled={isSaving}
+                      >
+                        Cancel
+                      </Button>
+                      <Button type="submit" disabled={isSaving}>
+                        {isSaving && (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        Save changes
+                      </Button>
+                    </div>
+                  </form>
+                ) : (
+                  <>
+                    <div className="flex items-start gap-3 sm:gap-4">
+                      <div className="rounded-lg bg-primary/10 p-3 shrink-0">
+                        <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0 space-y-3">
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">
+                            Business Name
+                          </p>
+                          <p className="text-base sm:text-lg font-semibold break-words">
+                            {business.name}
+                          </p>
+                        </div>
+
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-muted-foreground">
+                            Category
+                          </p>
+                          <Badge variant="secondary" className="capitalize">
+                            {business.category}
+                          </Badge>
+                        </div>
+
+                        {businessUrl && (
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-muted-foreground mb-1">
+                              Business URL
+                            </p>
+                            <p className="text-xs sm:text-sm font-mono bg-muted px-2 py-1.5 rounded break-all">
+                              {businessUrl}
+                            </p>
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span className="text-xs sm:text-sm text-muted-foreground">
+                            Member since {formatDate(business._creationTime)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Address
+                        </p>
+                        <p className="text-sm">
+                          {business.address ? (
+                            business.address
+                          ) : (
+                            <span className="text-muted-foreground">
+                              Not provided
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Description
+                        </p>
+                        <p className="text-sm">
+                          {business.description ? (
+                            business.description
+                          ) : (
+                            <span className="text-muted-foreground">
+                              Not provided
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground mb-2">
+                        Statement Descriptors
+                      </p>
+                      {business.statementDescriptors?.length ? (
+                        <div className="flex flex-wrap gap-2">
+                          {business.statementDescriptors.map((descriptor) => (
+                            <Badge key={descriptor} variant="outline">
+                              {descriptor}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          Not configured
+                        </p>
+                      )}
+                    </div>
+                  </>
+                )}
+              </CardContent>
           </Card>
 
           <Card>
