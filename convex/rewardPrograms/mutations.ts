@@ -101,6 +101,55 @@ export const update = mutation({
   },
 });
 
+export const remove = mutation({
+  args: {
+    programId: v.id("rewardPrograms"),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const user = await requireRole(ctx, ["business_owner", "admin"]);
+
+    const program = await ctx.db.get(args.programId);
+    if (!program) {
+      throw new Error("Program not found");
+    }
+
+    const business = await ctx.db.get(program.businessId);
+    if (!business) {
+      throw new Error("Business not found");
+    }
+
+    if (business.ownerId !== user.id && user.profile?.role !== "admin") {
+      throw new Error("Forbidden: You don't own this business");
+    }
+
+    const progressRecords = await ctx.db
+      .query("rewardProgress")
+      .withIndex("by_rewardProgramId", (q) =>
+        q.eq("rewardProgramId", args.programId)
+      )
+      .collect();
+
+    for (const progress of progressRecords) {
+      const claims = await ctx.db
+        .query("rewardClaims")
+        .withIndex("by_rewardProgressId", (q) =>
+          q.eq("rewardProgressId", progress._id)
+        )
+        .collect();
+
+      for (const claim of claims) {
+        await ctx.db.delete(claim._id);
+      }
+
+      await ctx.db.delete(progress._id);
+    }
+
+    await ctx.db.delete(args.programId);
+    return null;
+  },
+});
+
 export const listByBusiness = query({
   args: { businessId: v.id("businesses") },
   returns: v.array(
