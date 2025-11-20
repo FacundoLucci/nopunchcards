@@ -1,6 +1,7 @@
 import {
   createFileRoute,
   Outlet,
+  redirect,
   useMatchRoute,
   Link,
   useRouter,
@@ -15,14 +16,24 @@ import { useAction } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { useState } from "react";
 import { toast } from "sonner";
+import { LogoIcon } from "@/components/LogoIcon";
 
 export const Route = createFileRoute("/_authenticated/consumer")({
+  // Client-side only - no server round-trips during navigation
   component: ConsumerLayout,
 });
 
 function ConsumerLayout() {
   const matchRoute = useMatchRoute();
   const router = useRouter();
+  const { blocked } = Route.useSearch() as { blocked?: string };
+
+  // Show toast if user was blocked from accessing a route
+  if (blocked === "business") {
+    toast.error("You don't have permission to access business features");
+    // Clear the search param
+    router.navigate({ to: "/consumer/home", replace: true });
+  }
 
   // Detect if we're on a main route (show header) or detail route (hide header)
   const isHome = !!matchRoute({ to: "/consumer/home" });
@@ -84,8 +95,14 @@ function ConsumerLayout() {
 
       {/* Conditional Header - shown only on main routes */}
       {showHeader && showNav && (
-        <header className="sticky top-0 bg-background/80 backdrop-blur-sm py-4 px-4 flex items-center justify-between z-10">
-          <h1 className="text-xl font-black text-[#F03D0C]">Laso</h1>
+        <header className="sticky top-0 bg-background/80 backdrop-blur-sm pt-[calc(env(safe-area-inset-top)+1rem)] pb-4 px-4 flex items-center justify-between z-10">
+          <LogoIcon
+            showIcon={false}
+            showWordmark
+            size={20}
+            wordmarkClassName="text-xl"
+            iconClassName="shadow-sm"
+          />
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" asChild>
               <Link

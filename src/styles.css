@@ -10,20 +10,19 @@ html {
 
 body {
   @apply m-0;
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+    "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Fraunces for headings */
-h1, h2, h3, h4, h5, h6 {
-  font-family: "Fraunces", serif;
-}
-
 /* Inter for buttons and UI elements */
-button, .btn, input, select, textarea {
+button,
+.btn,
+input,
+select,
+textarea {
   font-family: "Inter", sans-serif;
 }
 
@@ -68,6 +67,9 @@ code {
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-brand-primary: #ff5c28;
+  --color-brand-primary-dark: #e0481a;
 }
 
 :root {
@@ -103,6 +105,8 @@ code {
   --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
   --sidebar-border: oklch(0.92 0.004 286.32);
   --sidebar-ring: oklch(0.705 0.015 286.067);
+  --brand-primary: #ff5c28;
+  --brand-primary-dark: #e0481a;
 }
 
 .dark {
@@ -137,6 +141,8 @@ code {
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.552 0.016 285.938);
+  --brand-primary: #ff5c28;
+  --brand-primary-dark: #e0481a;
 }
 
 @layer base {
@@ -181,15 +187,15 @@ code {
     oklch(0.2 0.02 240) 0%,
     oklch(0.15 0.02 260) 100%
   );
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   padding: 1rem 1.5rem;
-  box-shadow: 0 4px 12px oklch(0 0 0 / 0.2);
+  box-shadow: 0 8px 30px oklch(0 0 0 / 0.15);
   transition: all 300ms ease;
 }
 
 .gradient-cta-card:hover {
-  box-shadow: 0 8px 24px oklch(0 0 0 / 0.3);
-  transform: translateY(-2px);
+  box-shadow: 0 12px 40px oklch(0 0 0 / 0.25);
+  transform: translateY(-4px);
 }
 
 .dark .gradient-cta-card {
@@ -198,9 +204,28 @@ code {
     oklch(0.25 0.02 240) 0%,
     oklch(0.2 0.02 260) 100%
   );
-  box-shadow: 0 4px 12px oklch(0 0 0 / 0.4);
+  box-shadow: 0 8px 30px oklch(0 0 0 / 0.3);
 }
 
 .dark .gradient-cta-card:hover {
-  box-shadow: 0 8px 24px oklch(0 0 0 / 0.6);
+  box-shadow: 0 12px 40px oklch(0 0 0 / 0.5);
+}
+
+/* Elevated Card Styles */
+.card-elevated {
+  box-shadow: 0 8px 30px rgb(0 0 0 / 0.12);
+  transition: all 300ms ease;
+}
+
+.card-elevated:hover {
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.15);
+  transform: translateY(-2px);
+}
+
+.dark .card-elevated {
+  box-shadow: 0 8px 30px rgb(0 0 0 / 0.4);
+}
+
+.dark .card-elevated:hover {
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.5);
 }

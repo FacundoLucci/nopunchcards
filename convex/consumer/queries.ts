@@ -322,3 +322,106 @@ export const getRecentTransactions = query({
     return result;
   },
 });
+
+export const getPendingRewardClaims = query({
+  args: {},
+  returns: v.array(
+    v.object({
+      _id: v.id("rewardClaims"),
+      businessId: v.id("businesses"),
+      businessName: v.string(),
+      programName: v.string(),
+      rewardDescription: v.string(),
+      issuedAt: v.number(),
+    })
+  ),
+  handler: async (ctx) => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) return [];
+    const userId = user.userId || user._id;
+
+    const claims = await ctx.db
+      .query("rewardClaims")
+      .withIndex("by_userId_status", (q) =>
+        q.eq("userId", userId).eq("status", "pending")
+      )
+      .collect();
+
+    const results = [];
+    for (const claim of claims) {
+      const business = await ctx.db.get(claim.businessId);
+      if (!business) continue;
+
+      results.push({
+        _id: claim._id,
+        businessId: claim.businessId,
+        businessName: business.name,
+        programName: claim.programName,
+        rewardDescription: claim.rewardDescription,
+        issuedAt: claim.issuedAt,
+      });
+    }
+
+    return results.sort((a, b) => b.issuedAt - a.issuedAt);
+  },
+});
+
+export const getRewardClaim = query({
+  args: {
+    claimId: v.id("rewardClaims"),
+  },
+  returns: v.union(
+    v.object({
+      _id: v.id("rewardClaims"),
+      businessId: v.id("businesses"),
+      businessName: v.string(),
+      programName: v.string(),
+      rewardDescription: v.string(),
+      rewardCode: v.string(),
+      status: v.union(
+        v.literal("pending"),
+        v.literal("redeemed"),
+        v.literal("cancelled")
+      ),
+      issuedAt: v.number(),
+      redeemedAt: v.optional(v.number()),
+      qrPayload: v.string(),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) return null;
+    const userId = user.userId || user._id;
+
+    const claim = await ctx.db.get(args.claimId);
+    if (!claim || claim.userId !== userId) {
+      return null;
+    }
+
+    const business = await ctx.db.get(claim.businessId);
+    if (!business) {
+      return null;
+    }
+
+    const qrPayload = JSON.stringify({
+      type: "reward_claim",
+      claimId: claim._id,
+      rewardCode: claim.rewardCode,
+      businessId: claim.businessId,
+    });
+
+    return {
+      _id: claim._id,
+      businessId: claim.businessId,
+      businessName: business.name,
+      programName: claim.programName,
+      rewardDescription: claim.rewardDescription,
+      rewardCode: claim.rewardCode,
+      status: claim.status,
+      issuedAt: claim.issuedAt,
+      redeemedAt: claim.redeemedAt,
+      qrPayload,
+    };
+  },
+});

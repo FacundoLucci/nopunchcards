@@ -58,9 +58,18 @@ export const fireTestWebhook = internalAction({
         userId: string;
         plaidItemId: string;
         plaidAccessTokenCiphertext: string;
-        accountIds: string[];
+        accounts?: Array<{
+          accountId: string;
+          mask?: string;
+          name: string;
+          officialName?: string;
+          type: string;
+          subtype?: string;
+        }>;
+        accountIds?: string[];
         status: "active" | "disconnected" | "error";
-        institutionName?: string;
+        institutionId?: string;
+        institutionName: string;
         lastSyncedAt?: number;
         syncCursor?: string;
         createdAt: number;
@@ -140,9 +149,18 @@ export const fireTestWebhookAuto = internalAction({
         userId: string;
         plaidItemId: string;
         plaidAccessTokenCiphertext: string;
-        accountIds: string[];
+        accounts?: Array<{
+          accountId: string;
+          mask?: string;
+          name: string;
+          officialName?: string;
+          type: string;
+          subtype?: string;
+        }>;
+        accountIds?: string[];
         status: "active" | "disconnected" | "error";
-        institutionName?: string;
+        institutionId?: string;
+        institutionName: string;
         lastSyncedAt?: number;
         syncCursor?: string;
         createdAt: number;

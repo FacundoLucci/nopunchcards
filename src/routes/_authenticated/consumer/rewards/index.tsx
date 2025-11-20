@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { ProgressCard } from "@/components/ProgressCard";
+import { formatDistanceToNow } from "date-fns";
 
 export const Route = createFileRoute("/_authenticated/consumer/rewards/")({
   ssr: false,
@@ -31,10 +32,55 @@ function RewardsContent() {
   const { data: activeProgress } = useSuspenseQuery(
     convexQuery(api.consumer.queries.getActiveProgress, {})
   );
+  const { data: pendingClaims } = useSuspenseQuery(
+    convexQuery(api.consumer.queries.getPendingRewardClaims, {})
+  );
 
   return (
     <div className="p-6 space-y-4">
-      <h2 className="text-xl font-semibold mb-4">All Rewards</h2>
+      <h2 className="text-xl font-semibold mb-4">Your Rewards</h2>
+
+      {pendingClaims.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-base sm:text-lg font-semibold">Ready to redeem</h3>
+            <span className="text-xs text-muted-foreground">
+              {pendingClaims.length}{" "}
+              {pendingClaims.length === 1 ? "reward" : "rewards"}
+            </span>
+          </div>
+          {pendingClaims.map((claim) => (
+            <Card
+              key={claim._id}
+              className="border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors"
+            >
+              <CardContent className="py-4 px-4 flex items-center gap-4">
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold truncate">{claim.businessName}</p>
+                  <p className="text-sm text-muted-foreground truncate">
+                    {claim.rewardDescription}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Earned{" "}
+                    {formatDistanceToNow(new Date(claim.issuedAt), {
+                      addSuffix: true,
+                    })}
+                  </p>
+                </div>
+                <Link
+                  to="/consumer/rewards/$claimId/claim"
+                  params={{ claimId: claim._id }}
+                >
+                  <Button size="sm" variant="default">
+                    Open
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
       {activeProgress.length === 0 ? (
         <div className="space-y-3">
           <div className="relative">

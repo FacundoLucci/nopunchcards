@@ -1,4 +1,8 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  useNavigate,
+  useRouteContext,
+} from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useAction, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
@@ -21,21 +25,60 @@ export const Route = createFileRoute("/_authenticated/consumer/onboarding")({
 
 function ConsumerOnboarding() {
   const navigate = useNavigate();
+  const context = useRouteContext({ from: "__root__" });
   const createLinkToken = useAction(api.plaid.linkToken.createLinkToken);
   const exchangeToken = useAction(api.plaid.exchangeToken.exchangePublicToken);
-  const ensureProfile = useMutation(api.users.ensureProfile);
+  // TypeScript has trouble with deeply nested Convex API types
+  // @ts-expect-error - TS2589: Type instantiation is excessively deep
+  const ensureProfileMutation = useMutation(api.users.ensureProfile);
   const [loading, setLoading] = useState(false);
   const [profileReady, setProfileReady] = useState(false);
 
-  // Ensure user has consumer profile when page loads
+  // Ensure profile exists with consumer role
+  // This is the fallback if profile creation during signup failed
+  // We're on /consumer/onboarding so we know the intent is consumer
   useEffect(() => {
-    ensureProfile({ role: "consumer" })
-      .then(() => setProfileReady(true))
-      .catch((error) => {
-        console.error("Failed to create consumer profile:", error);
-        setProfileReady(true); // Continue anyway, might already exist
-      });
-  }, [ensureProfile]);
+    const ensureAuthAndProfile = async () => {
+      console.log("[Consumer Onboarding] Ensuring consumer profile exists");
+
+      // First, ensure Convex client has the auth token
+      try {
+        const session = await authClient.getSession();
+        
+        if (session?.session?.token && context.convexClient) {
+          await context.convexClient.setAuth(async () => session.session.token);
+          console.log("[Consumer Onboarding] Auth token set from Better Auth session");
+          // Small delay for auth to apply
+          await new Promise((resolve) => setTimeout(resolve, 300));
+        }
+      } catch (error) {
+        console.warn("[Consumer Onboarding] Could not get session:", error);
+      }
+
+      // Now try to create/verify profile
+      ensureProfileMutation({ role: "consumer" })
+        .then((result) => {
+          console.log(
+            "[Consumer Onboarding] Profile ready:",
+            result.profileId,
+            "role:",
+            result.role,
+            "wasCreated:",
+            result.wasCreated
+          );
+          setProfileReady(true);
+        })
+        .catch((error) => {
+          console.error(
+            "[Consumer Onboarding] Failed to ensure profile:",
+            error
+          );
+          toast.error("Failed to set up consumer profile");
+        });
+    };
+
+    ensureAuthAndProfile();
+  }, [ensureProfileMutation, context.convexClient]);
 
   const startPlaidLink = async () => {
     if (!profileReady) {

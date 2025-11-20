@@ -1,11 +1,11 @@
 {
-  "name": "Laso",
+  "name": "Laso - The Last Loyalty Program",
   "short_name": "Laso",
-  "description": "The last loyalty program humanity will ever need",
+  "description": "Automatic loyalty rewards for local businesses. No apps, no cards, no hassle.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#F03D0C",
+  "theme_color": "#ff5c28",
   "icons": [
     {
       "src": "favicon-16x16.png",
@@ -36,21 +36,6 @@
       "src": "favicon-256x256.png",
       "sizes": "256x256",
       "type": "image/png"
-    },
-    {
-      "src": "logo192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "logo512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
     }
-  ],
-  "orientation": "portrait",
-  "scope": "/",
-  "categories": ["shopping", "business", "lifestyle"]
+  ]
 }

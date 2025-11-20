@@ -2,6 +2,7 @@ import { mutation, query, QueryCtx, MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
 import { getCurrentUserWithProfile } from "./auth";
 import { authComponent } from "./auth";
+import { internal } from "./_generated/api";
 import type { Doc } from "./_generated/dataModel";
 import { profileValidator } from "./schema";
 
@@ -31,8 +32,15 @@ export const getMyProfile = query({
     v.null()
   ),
   handler: async (ctx): Promise<Doc<"profiles"> | null> => {
-    const user = await authComponent.getAuthUser(ctx);
-    if (!user) return null;
+    // IMPORTANT: authComponent.getAuthUser() throws if not authenticated
+    // Wrap in try-catch to handle session expiration gracefully
+    let user;
+    try {
+      user = await authComponent.getAuthUser(ctx);
+    } catch (error) {
+      // User is not authenticated (session expired or not logged in)
+      return null;
+    }
 
     const userId = user.userId || user._id;
 
@@ -46,6 +54,7 @@ export const getMyProfile = query({
 });
 
 // Ensure profile exists for current user with specified role
+// Auto-creates profile if missing (fallback safety mechanism)
 export const ensureProfile = mutation({
   args: {
     role: v.optional(
@@ -56,13 +65,21 @@ export const ensureProfile = mutation({
       )
     ),
   },
-  returns: v.id("profiles"),
+  returns: v.object({
+    profileId: v.id("profiles"),
+    wasCreated: v.boolean(),
+    role: v.union(
+      v.literal("consumer"),
+      v.literal("business_owner"),
+      v.literal("admin")
+    ),
+  }),
   handler: async (ctx, args) => {
     // authComponent.getAuthUser() throws if not authenticated
     const user = await authComponent.getAuthUser(ctx);
     const userId = user.userId || user._id;
 
-    console.log("ensureProfile called - userId:", userId, "role:", args.role);
+    console.log("[ensureProfile] Called - userId:", userId, "role:", args.role);
 
     // Check if profile already exists
     const existing = await ctx.db
@@ -72,28 +89,46 @@ export const ensureProfile = mutation({
 
     if (existing) {
       console.log(
-        "Profile exists:",
+        "[ensureProfile] Profile exists:",
         existing._id,
         "current role:",
         existing.role
       );
-      // If role is specified and different, update it
-      if (args.role && existing.role !== args.role) {
-        console.log("Updating role from", existing.role, "to", args.role);
-        await ctx.db.patch(existing._id, { role: args.role });
-      }
-      return existing._id;
+      // IMPORTANT: Never modify existing roles - this prevents accidental role changes
+      // Roles should only be changed through explicit admin functions
+      return {
+        profileId: existing._id,
+        wasCreated: false,
+        role: existing.role,
+      };
     }
 
     // Create new profile with specified role (default: consumer)
-    console.log("Creating new profile with role:", args.role || "consumer");
+    const role = args.role || "consumer";
+    console.log("[ensureProfile] Creating new profile with role:", role);
     const profileId = await ctx.db.insert("profiles", {
       userId,
-      role: args.role || "consumer",
+      role,
       createdAt: Date.now(),
     });
-    console.log("Created profile:", profileId);
-    return profileId;
+    console.log("[ensureProfile] Created profile:", profileId);
+
+    // Schedule free plan assignment for new profiles
+    try {
+      // @ts-ignore - TypeScript has difficulty with deeply nested generated types
+      const freePlanRef = internal["users/ensureFreePlan"].ensureUserHasFreePlan;
+      await ctx.scheduler.runAfter(0, freePlanRef, {});
+      console.log("[ensureProfile] Scheduled free plan assignment");
+    } catch (error) {
+      console.error("[ensureProfile] Error scheduling free plan:", error);
+      // Don't fail profile creation if plan assignment fails
+    }
+
+    return {
+      profileId,
+      wasCreated: true,
+      role,
+    };
   },
 });
 
@@ -200,8 +235,15 @@ export const getAccountInfo = query({
     v.null()
   ),
   handler: async (ctx) => {
-    const user = await authComponent.getAuthUser(ctx);
-    if (!user) return null;
+    // IMPORTANT: authComponent.getAuthUser() throws if not authenticated
+    // Wrap in try-catch to handle session expiration gracefully
+    let user;
+    try {
+      user = await authComponent.getAuthUser(ctx);
+    } catch (error) {
+      // User is not authenticated (session expired or not logged in)
+      return null;
+    }
 
     const userId = user.userId || user._id;
     const profile = await ctx.db

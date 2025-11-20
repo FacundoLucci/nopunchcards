@@ -1,6 +1,7 @@
 import {
   createFileRoute,
   Outlet,
+  redirect,
   useMatchRoute,
   useNavigate,
   useRouter,
@@ -11,8 +12,11 @@ import { Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BottomFade } from "@/components/consumer/BottomFade";
 import { BusinessRoutePrefetcher } from "@/components/business/RoutePrefetcher";
+import { LogoIcon } from "@/components/LogoIcon";
+import { RoleGuard } from "@/components/RoleGuard";
 
 export const Route = createFileRoute("/_authenticated/business")({
+  // Client-side only - no server round-trips during navigation
   component: BusinessLayout,
 });
 
@@ -28,9 +32,13 @@ function BusinessLayout() {
   const isSettings = !!matchRoute({ to: "/business/settings" });
   const isProgramsCreate = !!matchRoute({ to: "/business/programs/create" });
   const isRegister = !!matchRoute({ to: "/business/register" });
+  const isRedemptions = !!matchRoute({ to: "/business/redemptions" });
 
   const showHeader = isDashboard || isPrograms || isAnalytics || isSettings;
-  const showNav = !isProgramsCreate && !isRegister; // Hide nav on programs/create and register
+  const showNav = !isProgramsCreate && !isRegister && !isRedemptions; // Hide nav on programs/create, register, and redemptions
+  
+  // Don't apply RoleGuard on register page - that's where we CREATE the business profile
+  const shouldCheckRole = !isRegister;
 
   // Get title based on route
   const getTitle = () => {
@@ -45,16 +53,22 @@ function BusinessLayout() {
     router.preloadRoute({ to: "/business/programs/create" } as any);
   };
 
-  return (
+  // Conditionally wrap in RoleGuard (skip on register page)
+  const content = (
     <div className={showNav ? "pb-28" : ""}>
       {/* Prefetch all business routes for instant navigation */}
       <BusinessRoutePrefetcher />
 
       {/* Conditional Header - shown only on main routes */}
       {showHeader && (
-        <header className="sticky top-0 bg-background/80 backdrop-blur-sm py-4 px-4 flex items-center justify-between z-10">
+        <header className="sticky top-0 bg-background/80 backdrop-blur-sm pt-[calc(env(safe-area-inset-top)+1rem)] pb-4 px-4 flex items-center justify-between z-10">
           <div className="flex flex-col gap-0.5">
-            <h1 className="text-xl font-black text-[#F03D0C]">Laso</h1>
+            <LogoIcon
+              showIcon={false}
+              showWordmark
+              size={20}
+              wordmarkClassName="text-xl"
+            />
             <div className="relative h-4">
               <AnimatePresence>
                 <motion.p
@@ -102,4 +116,19 @@ function BusinessLayout() {
       {showNav && <BusinessNav />}
     </div>
   );
+
+  // Only apply RoleGuard if not on register page
+  // Register page needs to be accessible to create the business profile
+  if (shouldCheckRole) {
+    return (
+      <RoleGuard
+        allowedRoles={["business_owner", "admin"]}
+        redirectTo="/consumer/home"
+      >
+        {content}
+      </RoleGuard>
+    );
+  }
+
+  return content;
 }

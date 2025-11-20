@@ -1,6 +1,57 @@
-import { internalMutation } from "../_generated/server";
+import { internalMutation, type MutationCtx } from "../_generated/server";
 import { internal } from "../_generated/api";
 import { v } from "convex/values";
+import type { Id } from "../_generated/dataModel";
+
+const REWARD_CODE_CHARSET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const REWARD_CODE_LENGTH = 8;
+
+function generateRewardCodeCandidate() {
+  let code = "";
+  for (let i = 0; i < REWARD_CODE_LENGTH; i++) {
+    const index = Math.floor(Math.random() * REWARD_CODE_CHARSET.length);
+    code += REWARD_CODE_CHARSET[index];
+  }
+  return code;
+}
+
+async function createRewardClaimRecord(
+  ctx: MutationCtx,
+  data: {
+    userId: string;
+    businessId: Id<"businesses">;
+    rewardProgramId: Id<"rewardPrograms">;
+    rewardProgressId: Id<"rewardProgress">;
+    rewardDescription: string;
+    programName: string;
+  }
+) {
+  for (let attempts = 0; attempts < 5; attempts++) {
+    const rewardCode = generateRewardCodeCandidate();
+    const existing = await ctx.db
+      .query("rewardClaims")
+      .withIndex("by_rewardCode", (q) => q.eq("rewardCode", rewardCode))
+      .unique();
+
+    if (!existing) {
+      const claimId = await ctx.db.insert("rewardClaims", {
+        userId: data.userId,
+        businessId: data.businessId,
+        rewardProgramId: data.rewardProgramId,
+        rewardProgressId: data.rewardProgressId,
+        rewardDescription: data.rewardDescription,
+        programName: data.programName,
+        rewardCode,
+        status: "pending",
+        issuedAt: Date.now(),
+      });
+
+      return { claimId, rewardCode };
+    }
+  }
+
+  throw new Error("Unable to generate unique reward code");
+}
 
 export const calculateRewards = internalMutation({
   args: {
@@ -83,7 +134,7 @@ export const calculateRewards = internalMutation({
         const updatedTxIds = [...progress.transactionIds, args.transactionId];
 
         // 2d. Check if user reached reward threshold from program.rules.visits
-        const thresholdReached = newVisitCount >= rules.visits;
+          const thresholdReached = newVisitCount >= rules.visits;
 
         if (thresholdReached) {
           // 2e. User earned a reward!
@@ -101,6 +152,15 @@ export const calculateRewards = internalMutation({
           const business = await ctx.db.get(args.businessId);
           if (!business) throw new Error("Business not found");
 
+            const { claimId } = await createRewardClaimRecord(ctx, {
+              userId: args.userId,
+              businessId: args.businessId,
+              rewardProgramId: program._id,
+              rewardProgressId: progress._id,
+              rewardDescription: rules.reward,
+              programName: program.name,
+            });
+
           // Schedule notification action: reward earned
           await ctx.scheduler.runAfter(0, internal.notifications.sendRewardEarned.sendRewardEarned, {
             userId: args.userId,
@@ -108,6 +168,7 @@ export const calculateRewards = internalMutation({
             businessName: business.name,
             rewardDescription: rules.reward,
             programName: program.name,
+              rewardClaimId: claimId,
           });
 
           // Create new active rewardProgress for next reward cycle (auto-renew)
@@ -150,7 +211,7 @@ export const calculateRewards = internalMutation({
 
         // Check if user reached spend threshold
         const threshold = rules.spendAmountCents;
-        const thresholdReached = currentSpendCents >= threshold;
+          const thresholdReached = currentSpendCents >= threshold;
 
         if (thresholdReached) {
           // User earned a reward!
@@ -168,6 +229,15 @@ export const calculateRewards = internalMutation({
           const business = await ctx.db.get(args.businessId);
           if (!business) throw new Error("Business not found");
 
+            const { claimId } = await createRewardClaimRecord(ctx, {
+              userId: args.userId,
+              businessId: args.businessId,
+              rewardProgramId: program._id,
+              rewardProgressId: progress._id,
+              rewardDescription: rules.reward,
+              programName: program.name,
+            });
+
           // Schedule notification action: reward earned
           await ctx.scheduler.runAfter(0, internal.notifications.sendRewardEarned.sendRewardEarned, {
             userId: args.userId,
@@ -175,6 +245,7 @@ export const calculateRewards = internalMutation({
             businessName: business.name,
             rewardDescription: rules.reward,
             programName: program.name,
+              rewardClaimId: claimId,
           });
 
           // Create new active rewardProgress for next reward cycle (auto-renew)

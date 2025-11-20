@@ -9,8 +9,18 @@ export const listLinkedAccounts = query({
     v.object({
       _id: v.id("plaidAccounts"),
       _creationTime: v.number(),
-      institutionName: v.optional(v.string()),
-      accountIds: v.array(v.string()),
+      institutionName: v.string(),
+      institutionId: v.string(),
+      accounts: v.array(
+        v.object({
+          accountId: v.string(),
+          mask: v.optional(v.string()),
+          name: v.string(),
+          officialName: v.optional(v.string()),
+          type: v.string(),
+          subtype: v.optional(v.string()),
+        })
+      ),
       status: v.union(
         v.literal("active"),
         v.literal("disconnected"),
@@ -33,15 +43,31 @@ export const listLinkedAccounts = query({
       .collect();
 
     // Return accounts without sensitive data (no access token)
-    return accounts.map((account) => ({
-      _id: account._id,
-      _creationTime: account._creationTime,
-      institutionName: account.institutionName,
-      accountIds: account.accountIds,
-      status: account.status,
-      lastSyncedAt: account.lastSyncedAt,
-      createdAt: account.createdAt,
-    }));
+    return accounts.map((account) => {
+      // Handle legacy data: if no `accounts` field, create placeholder from accountIds
+      let accountsArray = account.accounts || [];
+      if (accountsArray.length === 0) {
+        // Legacy format: use accountIds to create placeholder accounts
+        const legacyAccountIds = (account as any).accountIds || [];
+        accountsArray = legacyAccountIds.map((id: string, index: number) => ({
+          accountId: id,
+          mask: id.slice(-4), // Use last 4 of account ID as placeholder
+          name: `Account ${index + 1}`,
+          type: "unknown",
+        }));
+      }
+
+      return {
+        _id: account._id,
+        _creationTime: account._creationTime,
+        institutionName: account.institutionName,
+        institutionId: account.institutionId || "unknown",
+        accounts: accountsArray, // Now guaranteed to be an array
+        status: account.status,
+        lastSyncedAt: account.lastSyncedAt,
+        createdAt: account.createdAt,
+      };
+    });
   },
 });
 

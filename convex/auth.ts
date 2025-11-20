@@ -33,6 +33,8 @@ export const createAuth = (
     trustedOrigins: [
       "http://localhost:3000",
       "https://laso.netlify.app",
+      "https://lasoloyalty.com",
+      "https://www.lasoloyalty.com",
     ],
     // Configure simple, non-verified email/password to get started
     emailAndPassword: {
@@ -49,21 +51,30 @@ export const createAuth = (
 // Helper to get current user with profile
 // This joins Better Auth user (component) with our profiles table (app)
 export const getCurrentUserWithProfile = async (ctx: any) => {
-  const user = await authComponent.getAuthUser(ctx);
-  if (!user) {
-    console.log("getCurrentUserWithProfile: No user from authComponent");
+  // IMPORTANT: authComponent.getAuthUser() throws if not authenticated
+  // We need to wrap in try-catch for optional authentication
+  let user;
+  try {
+    user = await authComponent.getAuthUser(ctx);
+  } catch (error) {
+    // User is not authenticated
+    console.log("getCurrentUserWithProfile: User not authenticated");
     return null;
   }
 
   const userId = user.userId || user._id;
   console.log("getCurrentUserWithProfile: userId =", userId);
-  
+
   const profile = await ctx.db
     .query("profiles")
     .withIndex("by_userId", (q: any) => q.eq("userId", userId))
     .unique();
 
-  console.log("getCurrentUserWithProfile: profile found =", !!profile, profile?._id);
+  console.log(
+    "getCurrentUserWithProfile: profile found =",
+    !!profile,
+    profile?._id
+  );
 
   return { ...user, id: userId, profile };
 };

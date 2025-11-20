@@ -11,10 +11,12 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as DemoShopRouteImport } from './routes/demo-shop'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as JoinSlugRouteImport } from './routes/join/$slug'
+import { Route as AuthenticatedUpgradeRouteImport } from './routes/_authenticated/upgrade'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedConsumerRouteRouteImport } from './routes/_authenticated/consumer/route'
 import { Route as AuthenticatedBusinessRouteRouteImport } from './routes/_authenticated/business/route'
@@ -27,11 +29,13 @@ import { Route as AuthenticatedConsumerFindRewardsRouteImport } from './routes/_
 import { Route as AuthenticatedConsumerCardsRouteImport } from './routes/_authenticated/consumer/cards'
 import { Route as AuthenticatedBusinessSettingsRouteImport } from './routes/_authenticated/business/settings'
 import { Route as AuthenticatedBusinessRegisterRouteImport } from './routes/_authenticated/business/register'
+import { Route as AuthenticatedBusinessRedemptionsRouteImport } from './routes/_authenticated/business/redemptions'
 import { Route as AuthenticatedBusinessDashboardRouteImport } from './routes/_authenticated/business/dashboard'
 import { Route as AuthenticatedBusinessAnalyticsRouteImport } from './routes/_authenticated/business/analytics'
 import { Route as AuthenticatedConsumerRewardsIndexRouteImport } from './routes/_authenticated/consumer/rewards/index'
 import { Route as AuthenticatedBusinessProgramsIndexRouteImport } from './routes/_authenticated/business/programs/index'
 import { Route as AuthenticatedBusinessProgramsCreateRouteImport } from './routes/_authenticated/business/programs/create'
+import { Route as AuthenticatedConsumerRewardsClaimIdClaimRouteImport } from './routes/_authenticated/consumer/rewards/$claimId/claim'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -41,6 +45,11 @@ const SignupRoute = SignupRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoShopRoute = DemoShopRouteImport.update({
+  id: '/demo-shop',
+  path: '/demo-shop',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -61,6 +70,11 @@ const JoinSlugRoute = JoinSlugRouteImport.update({
   id: '/join/$slug',
   path: '/join/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedUpgradeRoute = AuthenticatedUpgradeRouteImport.update({
+  id: '/upgrade',
+  path: '/upgrade',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
   id: '/account',
@@ -132,6 +146,12 @@ const AuthenticatedBusinessRegisterRoute =
     path: '/register',
     getParentRoute: () => AuthenticatedBusinessRouteRoute,
   } as any)
+const AuthenticatedBusinessRedemptionsRoute =
+  AuthenticatedBusinessRedemptionsRouteImport.update({
+    id: '/redemptions',
+    path: '/redemptions',
+    getParentRoute: () => AuthenticatedBusinessRouteRoute,
+  } as any)
 const AuthenticatedBusinessDashboardRoute =
   AuthenticatedBusinessDashboardRouteImport.update({
     id: '/dashboard',
@@ -162,18 +182,27 @@ const AuthenticatedBusinessProgramsCreateRoute =
     path: '/programs/create',
     getParentRoute: () => AuthenticatedBusinessRouteRoute,
   } as any)
+const AuthenticatedConsumerRewardsClaimIdClaimRoute =
+  AuthenticatedConsumerRewardsClaimIdClaimRouteImport.update({
+    id: '/rewards/$claimId/claim',
+    path: '/rewards/$claimId/claim',
+    getParentRoute: () => AuthenticatedConsumerRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRoute
+  '/demo-shop': typeof DemoShopRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/business': typeof AuthenticatedBusinessRouteRouteWithChildren
   '/consumer': typeof AuthenticatedConsumerRouteRouteWithChildren
   '/account': typeof AuthenticatedAccountRoute
+  '/upgrade': typeof AuthenticatedUpgradeRoute
   '/join/$slug': typeof JoinSlugRoute
   '/business/analytics': typeof AuthenticatedBusinessAnalyticsRoute
   '/business/dashboard': typeof AuthenticatedBusinessDashboardRoute
+  '/business/redemptions': typeof AuthenticatedBusinessRedemptionsRoute
   '/business/register': typeof AuthenticatedBusinessRegisterRoute
   '/business/settings': typeof AuthenticatedBusinessSettingsRoute
   '/consumer/cards': typeof AuthenticatedConsumerCardsRoute
@@ -186,18 +215,22 @@ export interface FileRoutesByFullPath {
   '/business/programs/create': typeof AuthenticatedBusinessProgramsCreateRoute
   '/business/programs': typeof AuthenticatedBusinessProgramsIndexRoute
   '/consumer/rewards': typeof AuthenticatedConsumerRewardsIndexRoute
+  '/consumer/rewards/$claimId/claim': typeof AuthenticatedConsumerRewardsClaimIdClaimRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app': typeof AppRoute
+  '/demo-shop': typeof DemoShopRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/business': typeof AuthenticatedBusinessRouteRouteWithChildren
   '/consumer': typeof AuthenticatedConsumerRouteRouteWithChildren
   '/account': typeof AuthenticatedAccountRoute
+  '/upgrade': typeof AuthenticatedUpgradeRoute
   '/join/$slug': typeof JoinSlugRoute
   '/business/analytics': typeof AuthenticatedBusinessAnalyticsRoute
   '/business/dashboard': typeof AuthenticatedBusinessDashboardRoute
+  '/business/redemptions': typeof AuthenticatedBusinessRedemptionsRoute
   '/business/register': typeof AuthenticatedBusinessRegisterRoute
   '/business/settings': typeof AuthenticatedBusinessSettingsRoute
   '/consumer/cards': typeof AuthenticatedConsumerCardsRoute
@@ -210,20 +243,24 @@ export interface FileRoutesByTo {
   '/business/programs/create': typeof AuthenticatedBusinessProgramsCreateRoute
   '/business/programs': typeof AuthenticatedBusinessProgramsIndexRoute
   '/consumer/rewards': typeof AuthenticatedConsumerRewardsIndexRoute
+  '/consumer/rewards/$claimId/claim': typeof AuthenticatedConsumerRewardsClaimIdClaimRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/app': typeof AppRoute
+  '/demo-shop': typeof DemoShopRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/_authenticated/business': typeof AuthenticatedBusinessRouteRouteWithChildren
   '/_authenticated/consumer': typeof AuthenticatedConsumerRouteRouteWithChildren
   '/_authenticated/account': typeof AuthenticatedAccountRoute
+  '/_authenticated/upgrade': typeof AuthenticatedUpgradeRoute
   '/join/$slug': typeof JoinSlugRoute
   '/_authenticated/business/analytics': typeof AuthenticatedBusinessAnalyticsRoute
   '/_authenticated/business/dashboard': typeof AuthenticatedBusinessDashboardRoute
+  '/_authenticated/business/redemptions': typeof AuthenticatedBusinessRedemptionsRoute
   '/_authenticated/business/register': typeof AuthenticatedBusinessRegisterRoute
   '/_authenticated/business/settings': typeof AuthenticatedBusinessSettingsRoute
   '/_authenticated/consumer/cards': typeof AuthenticatedConsumerCardsRoute
@@ -236,20 +273,24 @@ export interface FileRoutesById {
   '/_authenticated/business/programs/create': typeof AuthenticatedBusinessProgramsCreateRoute
   '/_authenticated/business/programs/': typeof AuthenticatedBusinessProgramsIndexRoute
   '/_authenticated/consumer/rewards/': typeof AuthenticatedConsumerRewardsIndexRoute
+  '/_authenticated/consumer/rewards/$claimId/claim': typeof AuthenticatedConsumerRewardsClaimIdClaimRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/app'
+    | '/demo-shop'
     | '/login'
     | '/signup'
     | '/business'
     | '/consumer'
     | '/account'
+    | '/upgrade'
     | '/join/$slug'
     | '/business/analytics'
     | '/business/dashboard'
+    | '/business/redemptions'
     | '/business/register'
     | '/business/settings'
     | '/consumer/cards'
@@ -262,18 +303,22 @@ export interface FileRouteTypes {
     | '/business/programs/create'
     | '/business/programs'
     | '/consumer/rewards'
+    | '/consumer/rewards/$claimId/claim'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/app'
+    | '/demo-shop'
     | '/login'
     | '/signup'
     | '/business'
     | '/consumer'
     | '/account'
+    | '/upgrade'
     | '/join/$slug'
     | '/business/analytics'
     | '/business/dashboard'
+    | '/business/redemptions'
     | '/business/register'
     | '/business/settings'
     | '/consumer/cards'
@@ -286,19 +331,23 @@ export interface FileRouteTypes {
     | '/business/programs/create'
     | '/business/programs'
     | '/consumer/rewards'
+    | '/consumer/rewards/$claimId/claim'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/app'
+    | '/demo-shop'
     | '/login'
     | '/signup'
     | '/_authenticated/business'
     | '/_authenticated/consumer'
     | '/_authenticated/account'
+    | '/_authenticated/upgrade'
     | '/join/$slug'
     | '/_authenticated/business/analytics'
     | '/_authenticated/business/dashboard'
+    | '/_authenticated/business/redemptions'
     | '/_authenticated/business/register'
     | '/_authenticated/business/settings'
     | '/_authenticated/consumer/cards'
@@ -311,12 +360,14 @@ export interface FileRouteTypes {
     | '/_authenticated/business/programs/create'
     | '/_authenticated/business/programs/'
     | '/_authenticated/consumer/rewards/'
+    | '/_authenticated/consumer/rewards/$claimId/claim'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AppRoute: typeof AppRoute
+  DemoShopRoute: typeof DemoShopRoute
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   JoinSlugRoute: typeof JoinSlugRoute
@@ -337,6 +388,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo-shop': {
+      id: '/demo-shop'
+      path: '/demo-shop'
+      fullPath: '/demo-shop'
+      preLoaderRoute: typeof DemoShopRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app': {
@@ -366,6 +424,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/join/$slug'
       preLoaderRoute: typeof JoinSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/upgrade': {
+      id: '/_authenticated/upgrade'
+      path: '/upgrade'
+      fullPath: '/upgrade'
+      preLoaderRoute: typeof AuthenticatedUpgradeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/account': {
       id: '/_authenticated/account'
@@ -451,6 +516,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBusinessRegisterRouteImport
       parentRoute: typeof AuthenticatedBusinessRouteRoute
     }
+    '/_authenticated/business/redemptions': {
+      id: '/_authenticated/business/redemptions'
+      path: '/redemptions'
+      fullPath: '/business/redemptions'
+      preLoaderRoute: typeof AuthenticatedBusinessRedemptionsRouteImport
+      parentRoute: typeof AuthenticatedBusinessRouteRoute
+    }
     '/_authenticated/business/dashboard': {
       id: '/_authenticated/business/dashboard'
       path: '/dashboard'
@@ -486,12 +558,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBusinessProgramsCreateRouteImport
       parentRoute: typeof AuthenticatedBusinessRouteRoute
     }
+    '/_authenticated/consumer/rewards/$claimId/claim': {
+      id: '/_authenticated/consumer/rewards/$claimId/claim'
+      path: '/rewards/$claimId/claim'
+      fullPath: '/consumer/rewards/$claimId/claim'
+      preLoaderRoute: typeof AuthenticatedConsumerRewardsClaimIdClaimRouteImport
+      parentRoute: typeof AuthenticatedConsumerRouteRoute
+    }
   }
 }
 
 interface AuthenticatedBusinessRouteRouteChildren {
   AuthenticatedBusinessAnalyticsRoute: typeof AuthenticatedBusinessAnalyticsRoute
   AuthenticatedBusinessDashboardRoute: typeof AuthenticatedBusinessDashboardRoute
+  AuthenticatedBusinessRedemptionsRoute: typeof AuthenticatedBusinessRedemptionsRoute
   AuthenticatedBusinessRegisterRoute: typeof AuthenticatedBusinessRegisterRoute
   AuthenticatedBusinessSettingsRoute: typeof AuthenticatedBusinessSettingsRoute
   AuthenticatedBusinessProgramsCreateRoute: typeof AuthenticatedBusinessProgramsCreateRoute
@@ -502,6 +582,8 @@ const AuthenticatedBusinessRouteRouteChildren: AuthenticatedBusinessRouteRouteCh
   {
     AuthenticatedBusinessAnalyticsRoute: AuthenticatedBusinessAnalyticsRoute,
     AuthenticatedBusinessDashboardRoute: AuthenticatedBusinessDashboardRoute,
+    AuthenticatedBusinessRedemptionsRoute:
+      AuthenticatedBusinessRedemptionsRoute,
     AuthenticatedBusinessRegisterRoute: AuthenticatedBusinessRegisterRoute,
     AuthenticatedBusinessSettingsRoute: AuthenticatedBusinessSettingsRoute,
     AuthenticatedBusinessProgramsCreateRoute:
@@ -523,6 +605,7 @@ interface AuthenticatedConsumerRouteRouteChildren {
   AuthenticatedConsumerOnboardingRoute: typeof AuthenticatedConsumerOnboardingRoute
   AuthenticatedConsumerSettingsRoute: typeof AuthenticatedConsumerSettingsRoute
   AuthenticatedConsumerRewardsIndexRoute: typeof AuthenticatedConsumerRewardsIndexRoute
+  AuthenticatedConsumerRewardsClaimIdClaimRoute: typeof AuthenticatedConsumerRewardsClaimIdClaimRoute
 }
 
 const AuthenticatedConsumerRouteRouteChildren: AuthenticatedConsumerRouteRouteChildren =
@@ -537,6 +620,8 @@ const AuthenticatedConsumerRouteRouteChildren: AuthenticatedConsumerRouteRouteCh
     AuthenticatedConsumerSettingsRoute: AuthenticatedConsumerSettingsRoute,
     AuthenticatedConsumerRewardsIndexRoute:
       AuthenticatedConsumerRewardsIndexRoute,
+    AuthenticatedConsumerRewardsClaimIdClaimRoute:
+      AuthenticatedConsumerRewardsClaimIdClaimRoute,
   }
 
 const AuthenticatedConsumerRouteRouteWithChildren =
@@ -548,12 +633,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBusinessRouteRoute: typeof AuthenticatedBusinessRouteRouteWithChildren
   AuthenticatedConsumerRouteRoute: typeof AuthenticatedConsumerRouteRouteWithChildren
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
+  AuthenticatedUpgradeRoute: typeof AuthenticatedUpgradeRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBusinessRouteRoute: AuthenticatedBusinessRouteRouteWithChildren,
   AuthenticatedConsumerRouteRoute: AuthenticatedConsumerRouteRouteWithChildren,
   AuthenticatedAccountRoute: AuthenticatedAccountRoute,
+  AuthenticatedUpgradeRoute: AuthenticatedUpgradeRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -563,6 +650,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AppRoute: AppRoute,
+  DemoShopRoute: DemoShopRoute,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   JoinSlugRoute: JoinSlugRoute,

@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useEffect } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { LogoIcon } from "@/components/LogoIcon";
+import { ShoppingBag, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
@@ -31,13 +33,17 @@ function LandingPage() {
       <header className="fixed top-0 left-0 right-0 z-50 py-6 bg-background/80 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-6">
           {/* Logo */}
-          <h1 className="text-3xl md:text-4xl font-bold text-[#F03D0C]">Laso</h1>
+          <LogoIcon
+            showWordmark
+            size={32}
+            wordmarkClassName="text-3xl md:text-4xl"
+          />
 
           {/* Right side - Theme Toggle and Sign In */}
           <div className="flex items-center gap-4">
             <ThemeToggle />
             <Link to="/login" search={{ redirect: "/app" }}>
-              <Button className="bg-transparent text-[#F03D0C] hover:bg-[#F03D0C] hover:text-white">
+              <Button className="bg-transparent text-(--brand-primary) hover:bg-(--brand-primary) hover:text-white">
                 Sign In
               </Button>
             </Link>
@@ -49,14 +55,20 @@ function LandingPage() {
       <section className="pt-32 pb-20 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-5xl md:text-7xl font-bold mb-6 text-foreground">
-            The last loyalty program<br />humanity will ever need
+            The last loyalty program
+            <br />
+            humanity will ever need
           </h2>
           <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Automatic loyalty rewards for your business. No apps, no cards, no hassle.
+            Automatic loyalty rewards for your business. No apps, no cards, no
+            hassle.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link to="/signup" search={{ mode: "business" }}>
-              <Button size="lg" className="bg-[#F03D0C] hover:bg-[#D03609] text-white px-8 h-14 text-lg">
+              <Button
+                size="lg"
+                className="bg-(--brand-primary) hover:bg-(--brand-primary-dark)-white px-8 h-14 text-lg"
+              >
                 Get Started Free
               </Button>
             </Link>
@@ -77,11 +89,12 @@ function LandingPage() {
               Customers link their credit cards via Plaid.
             </p>
             <div className="order-1 md:order-2">
-              <div className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-[4/3] flex items-center justify-center border border-border">
-                <div className="text-center p-8">
-                  <div className="text-4xl mb-2">💳</div>
-                  <p className="text-sm text-muted-foreground">Linked cards</p>
-                </div>
+              <div className="bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-4/3 overflow-hidden border border-border">
+                <img
+                  src="/landing-linked-cards.png"
+                  alt="Credit cards being connected via Plaid integration"
+                  className="w-full h-full object-cover"
+                />
               </div>
             </div>
           </div>
@@ -89,11 +102,12 @@ function LandingPage() {
           {/* We track transactions */}
           <div className="mb-12 grid md:grid-cols-2 gap-8 items-center">
             <div>
-              <div className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-[4/3] flex items-center justify-center border border-border">
-                <div className="text-center p-8">
-                  <div className="text-4xl mb-2">📊</div>
-                  <p className="text-sm text-muted-foreground">Transaction tracking</p>
-                </div>
+              <div className="bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-4/3 overflow-hidden border border-border">
+                <img
+                  src="/landing-analytics.png"
+                  alt="Analytics dashboard showing transaction tracking"
+                  className="w-full h-full object-cover"
+                />
               </div>
             </div>
             <p className="text-xl md:text-2xl">
@@ -107,11 +121,12 @@ function LandingPage() {
               Businesses create rewards based on visits or total spend.
             </p>
             <div className="order-1 md:order-2">
-              <div className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-[4/3] flex items-center justify-center border border-border">
-                <div className="text-center p-8">
-                  <div className="text-4xl mb-2">🎯</div>
-                  <p className="text-sm text-muted-foreground">Program setup</p>
-                </div>
+              <div className="bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-4/3 overflow-hidden border border-border">
+                <img
+                  src="/landing-program-setup.png"
+                  alt="Business reward program configuration interface"
+                  className="w-full h-full object-cover"
+                />
               </div>
             </div>
           </div>
@@ -119,29 +134,33 @@ function LandingPage() {
           {/* Notifications */}
           <div className="mb-12 grid md:grid-cols-2 gap-8 items-center">
             <div>
-              <div className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-[4/3] flex items-center justify-center border border-border">
-                <div className="text-center p-8">
-                  <div className="text-4xl mb-2">🔔</div>
-                  <p className="text-sm text-muted-foreground">Notifications</p>
-                </div>
+              <div className="bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-4/3 overflow-hidden border border-border">
+                <img
+                  src="/landing-notifications.png"
+                  alt="Smartphone displaying loyalty reward push notification"
+                  className="w-full h-full object-cover"
+                />
               </div>
             </div>
             <p className="text-xl md:text-2xl">
-              Customers get push notifications, email, or text when they earn a reward.
+              Customers get push notifications, email, or text when they earn a
+              reward.
             </p>
           </div>
 
           {/* Redemption */}
           <div className="mb-12 grid md:grid-cols-2 gap-8 items-center">
             <p className="text-xl md:text-2xl order-2 md:order-1">
-              Businesses verify rewards by scanning a QR code or entering a code.
+              Businesses verify rewards by scanning a QR code or entering a
+              code.
             </p>
             <div className="order-1 md:order-2">
-              <div className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-[4/3] flex items-center justify-center border border-border">
-                <div className="text-center p-8">
-                  <div className="text-4xl mb-2">📱</div>
-                  <p className="text-sm text-muted-foreground">QR redemption</p>
-                </div>
+              <div className="bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-4/3 overflow-hidden border border-border">
+                <img
+                  src="/landing-qr-scan.png"
+                  alt="QR code being scanned on smartphone for reward redemption"
+                  className="w-full h-full object-cover"
+                />
               </div>
             </div>
           </div>
@@ -149,15 +168,17 @@ function LandingPage() {
           {/* Network effect */}
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div>
-              <div className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-[4/3] flex items-center justify-center border border-border">
-                <div className="text-center p-8">
-                  <div className="text-4xl mb-2">🌐</div>
-                  <p className="text-sm text-muted-foreground">Network growth</p>
-                </div>
+              <div className="bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg aspect-4/3 overflow-hidden border border-border">
+                <img
+                  src="/landing-network.png"
+                  alt="Network visualization showing interconnected businesses and customers"
+                  className="w-full h-full object-cover"
+                />
               </div>
             </div>
             <p className="text-xl md:text-2xl">
-              Once in the network, customers are automatically enrolled at other stores.
+              Once in the network, customers are automatically enrolled at other
+              stores.
             </p>
           </div>
         </div>
@@ -173,29 +194,31 @@ function LandingPage() {
             {[
               {
                 title: "Zero Hardware Costs",
-                description: "No iPads, no scanners, no point-of-sale integrations. Works with your existing payment processor.",
+                description:
+                  "No iPads, no scanners, no point-of-sale integrations. Works with your existing payment processor.",
               },
               {
                 title: "Set It and Forget It",
-                description: "Create your program once. Everything else happens automatically in the background.",
+                description:
+                  "Create your program once. Everything else happens automatically in the background.",
               },
               {
                 title: "Automatic Customer Tracking",
-                description: "Know exactly who your best customers are without asking them to fill out forms.",
+                description:
+                  "Know exactly who your best customers are without asking them to fill out forms.",
               },
               {
                 title: "Network Effect",
-                description: "Your customers can discover you through Laso's network of participating businesses.",
+                description:
+                  "Your customers can discover you through Laso's network of participating businesses.",
               },
             ].map((benefit, idx) => (
               <Card key={idx} className="border-border">
                 <CardContent className="pt-6">
-                  <h4 className="text-xl font-semibold mb-3 text-[#F03D0C]">
+                  <h4 className="text-xl font-semibold mb-3 text-(--brand-primary)">
                     {benefit.title}
                   </h4>
-                  <p className="text-muted-foreground">
-                    {benefit.description}
-                  </p>
+                  <p className="text-muted-foreground">{benefit.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -204,16 +227,20 @@ function LandingPage() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-20 px-6 bg-[#F03D0C]">
+      <section className="py-20 px-6 bg-background">
         <div className="max-w-4xl mx-auto text-center">
-          <h3 className="text-4xl md:text-5xl font-bold mb-6 text-white">
+          <h3 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">
             Ready to grow your business?
           </h3>
-          <p className="text-xl text-white/90 mb-8">
-            Join hundreds of local businesses using Laso to increase customer loyalty.
+          <p className="text-xl text-muted-foreground mb-8">
+            Join hundreds of local businesses using Laso to increase customer
+            loyalty.
           </p>
           <Link to="/signup" search={{ mode: "business" }}>
-            <Button size="lg" className="bg-white text-[#F03D0C] hover:bg-white/90 px-12 h-14 text-lg">
+            <Button
+              size="lg"
+              className="bg-(--brand-primary) text-white hover:bg-(--brand-primary-dark) px-12 h-14 text-lg"
+            >
               Get Started Free
             </Button>
           </Link>
@@ -226,22 +253,33 @@ function LandingPage() {
           <h1>Laso - The Last Loyalty Program Humanity Will Ever Need</h1>
           <h2>Automatic Loyalty Rewards for Local Businesses</h2>
           <p>
-            Laso is the automatic loyalty platform for small businesses. No apps to download,
-            no punch cards to manage, no hardware to install. Create modern loyalty programs
-            that work automatically when customers pay with their linked cards.
+            Laso is the automatic loyalty platform for small businesses. No apps
+            to download, no punch cards to manage, no hardware to install.
+            Create modern loyalty programs that work automatically when
+            customers pay with their linked cards.
           </p>
           <h3>How Laso Works</h3>
           <ul>
-            <li>Create Your Program - Set up a loyalty program in under 5 minutes</li>
+            <li>
+              Create Your Program - Set up a loyalty program in under 5 minutes
+            </li>
             <li>Customers Shop Normally - They pay with their linked card</li>
-            <li>Rewards Happen Automatically - We match transactions and notify customers</li>
+            <li>
+              Rewards Happen Automatically - We match transactions and notify
+              customers
+            </li>
           </ul>
           <h3>Benefits for Businesses</h3>
           <ul>
-            <li>Zero Hardware Costs - No iPads, scanners, or POS integrations required</li>
+            <li>
+              Zero Hardware Costs - No iPads, scanners, or POS integrations
+              required
+            </li>
             <li>Set It and Forget It - Everything happens automatically</li>
             <li>Automatic Customer Tracking - Know your best customers</li>
-            <li>Network Effect - Customers discover you through our platform</li>
+            <li>
+              Network Effect - Customers discover you through our platform
+            </li>
           </ul>
         </section>
       </div>
@@ -263,6 +301,30 @@ function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Floating Demo Shop Button */}
+      <Link to="/demo-shop">
+        <div className="fixed bottom-6 right-6 z-50 group">
+          {/* Pulsing background glow */}
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full opacity-75 blur-lg group-hover:opacity-100 animate-pulse" />
+          
+          {/* Main button */}
+          <Button
+            size="lg"
+            className="relative bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-6 py-6 rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 flex items-center gap-2"
+          >
+            <ShoppingBag className="w-5 h-5" />
+            <span className="hidden sm:inline">Check out the demo shop!</span>
+            <span className="sm:hidden">Demo Shop</span>
+            <Sparkles className="w-4 h-4 animate-pulse" />
+          </Button>
+          
+          {/* Floating badge */}
+          <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg animate-bounce">
+            NEW
+          </div>
+        </div>
+      </Link>
     </div>
   );
 }

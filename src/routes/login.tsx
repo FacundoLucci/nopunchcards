@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-clients";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { LogoIcon } from "@/components/LogoIcon";
 
 export const Route = createFileRoute("/login")({
   // SSR disabled for auth flows
@@ -26,7 +27,6 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  const navigate = useNavigate();
   const search = Route.useSearch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -37,7 +37,7 @@ function LoginPage() {
     setLoading(true);
 
     try {
-      const { data, error } = await authClient.signIn.email({
+      const { error } = await authClient.signIn.email({
         email,
         password,
       });
@@ -65,14 +65,15 @@ function LoginPage() {
       </div>
 
       {/* Left Side - Branding (Desktop only) */}
-      <div className="hidden lg:flex lg:flex-1 bg-gradient-to-br from-orange-500 to-orange-600 dark:from-orange-600 dark:to-orange-700 items-center justify-center p-12">
+      <div className="hidden lg:flex lg:flex-1 bg-linear-to-br from-orange-500 to-orange-600 dark:from-orange-600 dark:to-orange-700 items-center justify-center p-12">
         <div className="max-w-md text-white space-y-6">
-          <h1 className="text-6xl font-bold text-center">
-            Laso
-          </h1>
-          <h2 className="text-4xl font-bold text-center">
-            Welcome Back
-          </h2>
+          <LogoIcon
+            size={42}
+            className="justify-center"
+            wordmarkClassName="text-white text-6xl"
+            iconClassName="ring-4 ring-white/30"
+          />
+          <h2 className="text-4xl font-bold text-center">Welcome Back</h2>
           <p className="text-xl text-center text-orange-50">
             Sign in to manage your loyalty rewards and discover local businesses
           </p>
@@ -81,21 +82,27 @@ function LoginPage() {
               <div className="mt-1">✓</div>
               <div>
                 <strong>Automatic Rewards</strong>
-                <p className="text-sm">Earn points with every purchase, no punch cards needed</p>
+                <p className="text-sm">
+                  Earn points with every purchase, no punch cards needed
+                </p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <div className="mt-1">✓</div>
               <div>
                 <strong>Support Local</strong>
-                <p className="text-sm">Discover and support independent businesses in your area</p>
+                <p className="text-sm">
+                  Discover and support independent businesses in your area
+                </p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <div className="mt-1">✓</div>
               <div>
                 <strong>One Account</strong>
-                <p className="text-sm">Track all your loyalty programs in one place</p>
+                <p className="text-sm">
+                  Track all your loyalty programs in one place
+                </p>
               </div>
             </div>
           </div>
@@ -106,9 +113,11 @@ function LoginPage() {
       <div className="flex-1 flex flex-col items-center justify-center p-6 bg-background">
         {/* Mobile Logo */}
         <div className="lg:hidden mb-8">
-          <h1 className="text-5xl font-bold text-center text-[#F03D0C]">
-            Laso
-          </h1>
+          <LogoIcon
+            size={42}
+            className="justify-center"
+            wordmarkClassName="text-[var(--brand-primary)] text-5xl"
+          />
         </div>
 
         <Card className="w-full max-w-md">
@@ -153,7 +162,10 @@ function LoginPage() {
             <div className="mt-4 pt-4 border-t">
               <p className="text-center text-sm text-muted-foreground">
                 Are you a business owner?{" "}
-                <a href="/signup?mode=business" className="text-primary hover:underline">
+                <a
+                  href="/signup?mode=business"
+                  className="text-primary hover:underline"
+                >
                   Sign up for business
                 </a>
               </p>

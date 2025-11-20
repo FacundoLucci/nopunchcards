@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "../../../../convex/_generated/api";
@@ -6,6 +6,8 @@ import { Suspense, useState, useMemo } from "react";
 import { CreditCard } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/consumer/cards")({
   // Client-side rendering for instant navigation
@@ -107,8 +109,16 @@ function CardsSection() {
 interface CreditCardProps {
   account: {
     _id: string;
-    institutionName?: string;
-    accountIds: string[];
+    institutionName: string;
+    institutionId: string;
+    accounts: Array<{
+      accountId: string;
+      mask?: string;
+      name: string;
+      officialName?: string;
+      type: string;
+      subtype?: string;
+    }>;
     status: "active" | "disconnected" | "error";
     lastSyncedAt?: number;
     createdAt: number;
@@ -231,7 +241,7 @@ function CreditCardComponent({
           <div className="flex items-start justify-between">
             <div className="min-w-0 flex-1">
               <p className="text-xs sm:text-sm font-medium opacity-90 mb-0.5 sm:mb-1 truncate">
-                {account.institutionName || "Bank Account"}
+                {account.institutionName}
               </p>
               <div className="flex items-center gap-1.5">
                 <div
@@ -243,12 +253,14 @@ function CreditCardComponent({
                       : "bg-gray-400"
                   }`}
                 />
-                <span className={`text-[10px] sm:text-xs ${statusColor} capitalize`}>
+                <span
+                  className={`text-[10px] sm:text-xs ${statusColor} capitalize`}
+                >
                   {account.status}
                 </span>
               </div>
             </div>
-            <CreditCard className="w-7 h-7 sm:w-10 sm:h-10 opacity-80 flex-shrink-0 ml-2" />
+            <CreditCard className="w-7 h-7 sm:w-10 sm:h-10 opacity-80 shrink-0 ml-2" />
           </div>
 
           {/* Middle Section - Card Number (masked) */}
@@ -258,13 +270,13 @@ function CreditCardComponent({
               <span>••••</span>
               <span>••••</span>
               <span className="font-semibold">
-                {account.accountIds[0]?.slice(-4) || "0000"}
+                {account.accounts[0]?.mask || "0000"}
               </span>
             </div>
-            {account.accountIds.length > 1 && (
+            {account.accounts.length > 1 && (
               <p className="text-[10px] sm:text-xs opacity-75">
-                +{account.accountIds.length - 1} more account
-                {account.accountIds.length > 2 ? "s" : ""}
+                +{account.accounts.length - 1} more account
+                {account.accounts.length > 2 ? "s" : ""}
               </p>
             )}
           </div>
@@ -272,11 +284,15 @@ function CreditCardComponent({
           {/* Bottom Section - Dates & Info */}
           <div className="flex items-end justify-between text-[10px] sm:text-xs md:text-sm gap-2">
             <div className="min-w-0 flex-1">
-              <p className="opacity-75 text-[9px] sm:text-[10px] mb-0.5 sm:mb-1">Last Synced</p>
+              <p className="opacity-75 text-[9px] sm:text-[10px] mb-0.5 sm:mb-1">
+                Last Synced
+              </p>
               <p className="font-medium truncate">{lastSyncText}</p>
             </div>
             <div className="text-right min-w-0 flex-1">
-              <p className="opacity-75 text-[9px] sm:text-[10px] mb-0.5 sm:mb-1">Linked</p>
+              <p className="opacity-75 text-[9px] sm:text-[10px] mb-0.5 sm:mb-1">
+                Linked
+              </p>
               <p className="font-medium truncate">
                 {new Date(account.createdAt).toLocaleDateString("en-US", {
                   month: "short",
@@ -396,7 +412,7 @@ interface TransactionItemProps {
     date: string;
     currentVisits?: number;
     totalVisits?: number;
-    status: "pending" | "matched" | "unmatched";
+    status: "pending" | "matched" | "unmatched" | "no_match";
   };
 }
 
@@ -458,3 +474,4 @@ function TransactionItem({ transaction }: TransactionItemProps) {
     </div>
   );
 }
+

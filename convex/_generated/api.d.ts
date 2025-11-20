@@ -8,6 +8,8 @@
  * @module
  */
 
+import type * as admin_fixInstitutionName from "../admin/fixInstitutionName.js";
+import type * as admin_migrations from "../admin/migrations.js";
 import type * as auth from "../auth.js";
 import type * as autumn from "../autumn.js";
 import type * as businesses_admin from "../businesses/admin.js";
@@ -16,8 +18,11 @@ import type * as businesses_mutations from "../businesses/mutations.js";
 import type * as businesses_public from "../businesses/public.js";
 import type * as businesses_queries from "../businesses/queries.js";
 import type * as consumer_accounts from "../consumer/accounts.js";
+import type * as consumer_mockTransaction from "../consumer/mockTransaction.js";
 import type * as consumer_queries from "../consumer/queries.js";
 import type * as crons from "../crons.js";
+import type * as debug_checkFacundoTransaction from "../debug/checkFacundoTransaction.js";
+import type * as debug_rematchTransaction from "../debug/rematchTransaction.js";
 import type * as geospatial from "../geospatial.js";
 import type * as http from "../http.js";
 import type * as matching_calculateRewards from "../matching/calculateRewards.js";
@@ -34,12 +39,16 @@ import type * as plaid_encryption from "../plaid/encryption.js";
 import type * as plaid_exchangeToken from "../plaid/exchangeToken.js";
 import type * as plaid_helpers from "../plaid/helpers.js";
 import type * as plaid_linkToken from "../plaid/linkToken.js";
+import type * as plaid_migrateAccounts from "../plaid/migrateAccounts.js";
 import type * as plaid_syncTransactions from "../plaid/syncTransactions.js";
 import type * as plaid_testWebhook from "../plaid/testWebhook.js";
 import type * as plaid_webhookVerification from "../plaid/webhookVerification.js";
 import type * as rewardPrograms_mutations from "../rewardPrograms/mutations.js";
 import type * as seedData from "../seedData.js";
 import type * as sendEmails from "../sendEmails.js";
+import type * as users_ensureFreePlan from "../users/ensureFreePlan.js";
+import type * as users_roleCheck from "../users/roleCheck.js";
+import type * as users_signup from "../users/signup.js";
 import type * as users from "../users.js";
 
 import type {
@@ -57,6 +66,8 @@ import type {
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  "admin/fixInstitutionName": typeof admin_fixInstitutionName;
+  "admin/migrations": typeof admin_migrations;
   auth: typeof auth;
   autumn: typeof autumn;
   "businesses/admin": typeof businesses_admin;
@@ -65,8 +76,11 @@ declare const fullApi: ApiFromModules<{
   "businesses/public": typeof businesses_public;
   "businesses/queries": typeof businesses_queries;
   "consumer/accounts": typeof consumer_accounts;
+  "consumer/mockTransaction": typeof consumer_mockTransaction;
   "consumer/queries": typeof consumer_queries;
   crons: typeof crons;
+  "debug/checkFacundoTransaction": typeof debug_checkFacundoTransaction;
+  "debug/rematchTransaction": typeof debug_rematchTransaction;
   geospatial: typeof geospatial;
   http: typeof http;
   "matching/calculateRewards": typeof matching_calculateRewards;
@@ -83,12 +97,16 @@ declare const fullApi: ApiFromModules<{
   "plaid/exchangeToken": typeof plaid_exchangeToken;
   "plaid/helpers": typeof plaid_helpers;
   "plaid/linkToken": typeof plaid_linkToken;
+  "plaid/migrateAccounts": typeof plaid_migrateAccounts;
   "plaid/syncTransactions": typeof plaid_syncTransactions;
   "plaid/testWebhook": typeof plaid_testWebhook;
   "plaid/webhookVerification": typeof plaid_webhookVerification;
   "rewardPrograms/mutations": typeof rewardPrograms_mutations;
   seedData: typeof seedData;
   sendEmails: typeof sendEmails;
+  "users/ensureFreePlan": typeof users_ensureFreePlan;
+  "users/roleCheck": typeof users_roleCheck;
+  "users/signup": typeof users_signup;
   users: typeof users;
 }>;
 declare const fullApiWithMounts: typeof fullApi;

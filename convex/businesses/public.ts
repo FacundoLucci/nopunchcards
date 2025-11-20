@@ -118,9 +118,9 @@ export const getStats = query({
     const uniqueCustomers = new Set(progressRecords.map((p) => p.userId)).size;
 
     // 2. Sum total rewards earned (completed progress records)
-    const totalRewards = progressRecords
-      .filter((p) => p.status === "completed")
-      .reduce((sum, p) => sum + p.totalEarned, 0);
+      const totalRewards = progressRecords
+        .filter((p) => p.status === "completed" || p.status === "redeemed")
+        .reduce((sum, p) => sum + p.totalEarned, 0);
 
     return {
       totalCustomers: uniqueCustomers,

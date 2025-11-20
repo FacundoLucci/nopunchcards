@@ -213,14 +213,19 @@ function SettingsContent() {
                         <div className="flex-1 min-w-0 space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <h4 className="font-semibold text-sm sm:text-base">
-                              {account.institutionName || "Bank Account"}
+                              {account.institutionName}
                             </h4>
                             {getStatusBadge(account.status)}
                           </div>
                           <p className="text-xs sm:text-sm text-muted-foreground">
-                            {account.accountIds.length} account
-                            {account.accountIds.length !== 1 ? "s" : ""} linked
+                            {account.accounts.length} account
+                            {account.accounts.length !== 1 ? "s" : ""} linked
                           </p>
+                          {account.accounts[0]?.mask && (
+                            <p className="text-xs text-muted-foreground">
+                              {account.accounts[0].name} (••••{account.accounts[0].mask})
+                            </p>
+                          )}
                           <p className="text-xs text-muted-foreground break-words">
                             Added {formatDate(account.createdAt)}
                             {account.lastSyncedAt && (

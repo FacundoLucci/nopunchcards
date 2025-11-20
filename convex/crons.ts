@@ -7,6 +7,7 @@ const crons = cronJobs();
 crons.interval(
   "process unmatched transactions",
   { minutes: 5 },
+  // @ts-ignore - Deep type nesting causes TS2589, but runtime is correct
   internal.matching.processNewTransactions.processNewTransactions,
   {}
 );

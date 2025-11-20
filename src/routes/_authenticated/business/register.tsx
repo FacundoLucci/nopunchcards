@@ -1,4 +1,8 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  useNavigate,
+  useRouteContext,
+} from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
@@ -21,8 +25,11 @@ export const Route = createFileRoute("/_authenticated/business/register")({
 
 function BusinessRegister() {
   const navigate = useNavigate();
+  const context = useRouteContext({ from: "__root__" });
   const createBusiness = useMutation(api.businesses.mutations.create);
-  const ensureProfile = useMutation(api.users.ensureProfile);
+  // TypeScript has trouble with deeply nested Convex API types
+  // @ts-expect-error - TS2589: Type instantiation is excessively deep
+  const ensureProfileMutation = useMutation(api.users.ensureProfile);
 
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
@@ -31,35 +38,48 @@ function BusinessRegister() {
   const [statementDescriptor, setStatementDescriptor] = useState("");
   const [profileReady, setProfileReady] = useState(false);
 
-  // Ensure user has business_owner profile when page loads
+  // Ensure profile exists with business_owner role
+  // This is the fallback if profile creation during signup failed
+  // We're on /business/register so we know the intent is business_owner
   useEffect(() => {
-    let mounted = true;
+    const ensureAuthAndProfile = async () => {
+      console.log("[Business Register] Ensuring business_owner profile exists");
 
-    const setupProfile = async () => {
+      // First, ensure Convex client has the auth token
       try {
-        const profileId = await ensureProfile({ role: "business_owner" });
-        console.log("Profile ensured:", profileId);
-        if (mounted && profileId) {
-          setProfileReady(true);
-        } else if (mounted && !profileId) {
-          toast.error(
-            "Failed to create profile - please refresh and try again"
-          );
+        const session = await authClient.getSession();
+        
+        if (session?.session?.token && context.convexClient) {
+          await context.convexClient.setAuth(async () => session.session.token);
+          console.log("[Business Register] Auth token set from Better Auth session");
+          // Small delay for auth to apply
+          await new Promise((resolve) => setTimeout(resolve, 300));
         }
-      } catch (error: any) {
-        console.error("Failed to create business owner profile:", error);
-        if (mounted) {
-          toast.error(error.message || "Failed to set up business account");
-        }
+      } catch (error) {
+        console.warn("[Business Register] Could not get session:", error);
       }
+
+      // Now try to create/verify profile
+      ensureProfileMutation({ role: "business_owner" })
+        .then((result) => {
+          console.log(
+            "[Business Register] Profile ready:",
+            result.profileId,
+            "role:",
+            result.role,
+            "wasCreated:",
+            result.wasCreated
+          );
+          setProfileReady(true);
+        })
+        .catch((error) => {
+          console.error("[Business Register] Failed to ensure profile:", error);
+          toast.error("Failed to set up business profile");
+        });
     };
 
-    setupProfile();
-
-    return () => {
-      mounted = false;
-    };
-  }, []); // Empty dependency array - only run once on mount
+    ensureAuthAndProfile();
+  }, [ensureProfileMutation, context.convexClient]);
 
   const categories = [
     "Coffee",

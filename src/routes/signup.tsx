@@ -2,9 +2,12 @@ import {
   createFileRoute,
   useNavigate,
   useSearch,
+  useRouteContext,
 } from "@tanstack/react-router";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-clients";
+import { useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,19 +20,27 @@ import {
 } from "@/components/ui/card";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { LogoIcon } from "@/components/LogoIcon";
 
 export const Route = createFileRoute("/signup")({
   // SSR disabled for auth flows
+  // Auth token sync enabled for production
   ssr: false,
   component: SignupPage,
 });
 
 function SignupPage() {
   const navigate = useNavigate();
+  const context = useRouteContext({ from: "__root__" });
   const searchParams = useSearch({ from: "/signup" }) as {
     ref?: string;
     mode?: "business" | "consumer";
   };
+
+  // TypeScript has trouble with deeply nested Convex API types
+  // @ts-ignore - TS2589: Type instantiation is excessively deep
+  const createProfile = useMutation(api.users.signup.createProfileAfterSignup);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -41,7 +52,10 @@ function SignupPage() {
     setLoading(true);
 
     try {
-      const { data, error } = await authClient.signUp.email({
+      const role = isBusiness ? "business_owner" : "consumer";
+
+      // Step 1: Create Better Auth account
+      const { error } = await authClient.signUp.email({
         email,
         password,
         name,
@@ -53,22 +67,66 @@ function SignupPage() {
         return;
       }
 
+      // Step 2: Get session from Better Auth
+      // Better Auth has already created the session, we need to get the token
+      console.log("[Signup] Getting session from Better Auth...");
+
+      try {
+        // Get the session from Better Auth
+        const session = await authClient.getSession();
+
+        if (session?.session?.token) {
+          // Update Convex client with the session token
+          await context.convexClient.setAuth(async () => session.session.token);
+          console.log("[Signup] Auth token set from Better Auth session");
+
+          // Wait a moment for Convex to apply the new auth
+          await new Promise((resolve) => setTimeout(resolve, 300));
+        } else {
+          console.warn("[Signup] No session token from Better Auth", session);
+        }
+      } catch (authError) {
+        console.error("[Signup] Failed to get session:", authError);
+      }
+
+      // Step 3: Create/verify profile with role
+      // Now that Convex has the auth token, this should work
+      console.log("[Signup] Creating profile with role:", role);
+
+      try {
+        const result = await createProfile({ role });
+        console.log(
+          "[Signup] Profile created:",
+          result.profileId,
+          "wasCreated:",
+          result.wasCreated
+        );
+      } catch (err: any) {
+        // If profile creation still fails, it will be auto-created on first app load
+        // This is a fallback safety mechanism
+        console.warn(
+          "[Signup] Profile creation failed, will auto-create on first load:",
+          err.message
+        );
+      }
+
       toast.success("Account created! Welcome to Laso!");
 
-      // Note: Profile will be created automatically when user first accesses
-      // protected routes. This avoids race conditions with auth session sync.
-
-      // If there's a referral param, redirect to that business page
+      // Step 3: Redirect to appropriate onboarding/registration
+      // The path itself indicates the intended role - no need for search params
       if (searchParams.ref) {
         navigate({ to: `/join/${searchParams.ref}` });
       } else if (isBusiness) {
         // Business signup: redirect to business registration
+        // Path contains "business" → infers business_owner role
         navigate({ to: "/business/register" });
       } else {
         // Consumer signup: redirect to consumer onboarding
+        // Path contains "consumer" → infers consumer role
         navigate({ to: "/consumer/onboarding" });
       }
     } catch (error) {
+      console.error("[Signup] Unexpected error:", error);
       toast.error("Something went wrong");
       setLoading(false);
     }
@@ -82,11 +140,15 @@ function SignupPage() {
       </div>
 
       {/* Left Side - Branding (Desktop only) */}
-      <div className="hidden lg:flex lg:flex-1 bg-gradient-to-br from-orange-500 to-orange-600 dark:from-orange-600 dark:to-orange-700 items-center justify-center p-12">
+      <div className="hidden lg:flex lg:flex-1 bg-linear-to-br from-brand-primary to-brand-primary-dark dark:from-brand-primary-dark dark:to-brand-primary items-center justify-center p-12">
         <div className="max-w-md text-white space-y-6">
-          <h1 className="text-6xl font-bold text-center">
-            Laso
-          </h1>
+          <LogoIcon
+            showIcon={false}
+            showWordmark
+            size={82}
+            className="justify-center"
+            wordmarkClassName="text-white text-8xl tracking-normal"
+          />
           <h2 className="text-4xl font-bold text-center">
             {isBusiness ? "Grow Your Business" : "Join Laso"}
           </h2>
@@ -102,21 +164,27 @@ function SignupPage() {
                   <div className="mt-1">✓</div>
                   <div>
                     <strong>Easy Setup</strong>
-                    <p className="text-sm">Create your loyalty program in minutes</p>
+                    <p className="text-sm">
+                      Create your loyalty program in minutes
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="mt-1">✓</div>
                   <div>
                     <strong>Automatic Tracking</strong>
-                    <p className="text-sm">No more punch cards or apps to maintain</p>
+                    <p className="text-sm">
+                      No more punch cards or apps to maintain
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="mt-1">✓</div>
                   <div>
                     <strong>Happy Customers</strong>
-                    <p className="text-sm">Reward loyalty and drive repeat business</p>
+                    <p className="text-sm">
+                      Reward loyalty and drive repeat business
+                    </p>
                   </div>
                 </div>
               </>
@@ -126,21 +194,27 @@ function SignupPage() {
                   <div className="mt-1">✓</div>
                   <div>
                     <strong>Automatic Rewards</strong>
-                    <p className="text-sm">Earn points with every purchase, no punch cards needed</p>
+                    <p className="text-sm">
+                      Earn points with every purchase, no punch cards needed
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="mt-1">✓</div>
                   <div>
                     <strong>Support Local</strong>
-                    <p className="text-sm">Discover and support independent businesses in your area</p>
+                    <p className="text-sm">
+                      Discover and support independent businesses in your area
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="mt-1">✓</div>
                   <div>
                     <strong>One Account</strong>
-                    <p className="text-sm">Track all your loyalty programs in one place</p>
+                    <p className="text-sm">
+                      Track all your loyalty programs in one place
+                    </p>
                   </div>
                 </div>
               </>
@@ -153,15 +227,19 @@ function SignupPage() {
       <div className="flex-1 flex flex-col items-center justify-center p-6 bg-background">
         {/* Mobile Logo */}
         <div className="lg:hidden mb-8">
-          <h1 className="text-5xl font-bold text-center text-[#F03D0C]">
-            Laso
-          </h1>
+          <LogoIcon
+            showIcon
+            showWordmark
+            size={42}
+            className="justify-center"
+            wordmarkClassName="text-[var(--brand-primary)] text-5xl"
+          />
         </div>
 
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl">
-              {isBusiness ? "Business Owner Sign Up" : "Create Account"}
+              {isBusiness ? "Create Business Account" : "Create Account"}
             </CardTitle>
             <CardDescription>
               {searchParams.ref
@@ -223,7 +301,12 @@ function SignupPage() {
                     Not a business owner?{" "}
                     <button
                       type="button"
-                      onClick={() => navigate({ to: "/signup", search: { mode: "consumer" } })}
+                      onClick={() =>
+                        navigate({
+                          to: "/signup",
+                          search: { mode: "consumer" },
+                        })
+                      }
                       className="text-primary hover:underline"
                     >
                       Sign up as a customer
@@ -234,7 +317,12 @@ function SignupPage() {
                     Are you a business owner?{" "}
                     <button
                       type="button"
-                      onClick={() => navigate({ to: "/signup", search: { mode: "business" } })}
+                      onClick={() =>
+                        navigate({
+                          to: "/signup",
+                          search: { mode: "business" },
+                        })
+                      }
                       className="text-primary hover:underline"
                     >
                       Sign up for business

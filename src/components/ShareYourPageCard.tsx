@@ -1,18 +1,19 @@
 import { Card, CardContent, CardHeader } from "./ui/card";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
-import { Instagram, Facebook, Twitter, Share2 } from "lucide-react";
+import { Instagram, Facebook, Twitter } from "lucide-react";
 
 interface ShareYourPageCardProps {
   slug: string;
 }
 
 export function ShareYourPageCard({ slug }: ShareYourPageCardProps) {
-  const link = `laso.app/join/${slug}`;
+  const link = `https://lasoloyalty.com/join/${slug}`;
+  const displayLink = link.replace(/^https?:\/\//, "");
 
   const copyLink = async () => {
     try {
-      await navigator.clipboard.writeText(`https://${link}`);
+      await navigator.clipboard.writeText(link);
       toast.success("Link copied! Share with your customers");
     } catch (error) {
       toast.error("Failed to copy link");
@@ -21,7 +22,7 @@ export function ShareYourPageCard({ slug }: ShareYourPageCardProps) {
 
   const shareToSocial = (platform: "instagram" | "facebook" | "x") => {
     const text = "Earn rewards at my business!";
-    const url = `https://${link}`;
+    const url = link;
 
     switch (platform) {
       case "instagram":
@@ -49,23 +50,24 @@ export function ShareYourPageCard({ slug }: ShareYourPageCardProps) {
   };
 
   return (
-    <Card className="bg-linear-to-br from-secondary to-muted border-border">
+    <Card className="bg-linear-to-br from-primary to-black border-border pt-4 gap-3 ">
       <CardHeader>
         <div className="flex items-start justify-between">
           <div>
-            <h3 className="text-lg font-semibold mb-1">Share Your Page</h3>
+            <h3 className="font-sans text-lg font-bold text-primary-foreground">
+              Share Your Page
+            </h3>
             <p className="text-sm text-muted-foreground">
               Promote your rewards on social media
             </p>
           </div>
-          <Share2 className="w-6 h-6 text-muted-foreground" />
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Copyable link */}
         <div className="bg-background rounded-lg p-3 flex items-center gap-3">
           <code className="flex-1 text-sm text-foreground truncate">
-            {link}
+            {displayLink}
           </code>
           <Button onClick={copyLink} size="sm" variant="default">
             Copy

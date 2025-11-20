@@ -24,6 +24,13 @@ export const clearAllData = internalMutation({
     }
     console.log(`Deleted ${rewardProgress.length} reward progress records`);
 
+    // Delete all rewardClaims
+    const rewardClaims = await ctx.db.query("rewardClaims").collect();
+    for (const claim of rewardClaims) {
+      await ctx.db.delete(claim._id);
+    }
+    console.log(`Deleted ${rewardClaims.length} reward claim records`);
+
     // Delete all rewardPrograms
     const rewardPrograms = await ctx.db.query("rewardPrograms").collect();
     for (const program of rewardPrograms) {
@@ -341,8 +348,26 @@ export const createDemoData = internalMutation({
         userId: consumerId,
         plaidItemId: `demo_item_${consumerId}`,
         plaidAccessTokenCiphertext: "demo_encrypted_token",
-        accountIds: [`demo_account_${consumerId}_1`, `demo_account_${consumerId}_2`],
+        accounts: [
+          {
+            accountId: `demo_account_${consumerId}_1`,
+            mask: "1234",
+            name: "Demo Checking",
+            officialName: "Demo Bank Checking Account",
+            type: "depository",
+            subtype: "checking",
+          },
+          {
+            accountId: `demo_account_${consumerId}_2`,
+            mask: "5678",
+            name: "Demo Credit Card",
+            officialName: "Demo Bank Credit Card",
+            type: "credit",
+            subtype: "credit card",
+          },
+        ],
         status: "active" as const,
+        institutionId: "ins_demo",
         institutionName: "Demo Bank",
         lastSyncedAt: now - Math.random() * 7 * 24 * 60 * 60 * 1000,
         createdAt: now - Math.random() * 60 * 24 * 60 * 60 * 1000,
@@ -470,6 +495,13 @@ export const resetWithDemoData = internalMutation({
       await ctx.db.delete(progress._id);
     }
     console.log(`Deleted ${rewardProgress.length} reward progress records`);
+
+    // Delete all rewardClaims
+    const rewardClaims = await ctx.db.query("rewardClaims").collect();
+    for (const claim of rewardClaims) {
+      await ctx.db.delete(claim._id);
+    }
+    console.log(`Deleted ${rewardClaims.length} reward claim records`);
 
     // Delete all rewardPrograms
     const rewardPrograms = await ctx.db.query("rewardPrograms").collect();
@@ -770,8 +802,26 @@ export const resetWithDemoData = internalMutation({
         userId: consumerId,
         plaidItemId: `demo_item_${consumerId}`,
         plaidAccessTokenCiphertext: "demo_encrypted_token",
-        accountIds: [`demo_account_${consumerId}_1`, `demo_account_${consumerId}_2`],
+        accounts: [
+          {
+            accountId: `demo_account_${consumerId}_1`,
+            mask: "1234",
+            name: "Demo Checking",
+            officialName: "Demo Bank Checking Account",
+            type: "depository",
+            subtype: "checking",
+          },
+          {
+            accountId: `demo_account_${consumerId}_2`,
+            mask: "5678",
+            name: "Demo Credit Card",
+            officialName: "Demo Bank Credit Card",
+            type: "credit",
+            subtype: "credit card",
+          },
+        ],
         status: "active" as const,
+        institutionId: "ins_demo",
         institutionName: "Demo Bank",
         lastSyncedAt: now - Math.random() * 7 * 24 * 60 * 60 * 1000,
         createdAt: now - Math.random() * 60 * 24 * 60 * 60 * 1000,

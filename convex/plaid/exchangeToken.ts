@@ -2,7 +2,7 @@
 import { action } from "../_generated/server";
 import { internal } from "../_generated/api";
 import { v } from "convex/values";
-import { Configuration, PlaidApi, PlaidEnvironments } from "plaid";
+import { Configuration, PlaidApi, PlaidEnvironments, CountryCode } from "plaid";
 import { encrypt } from "./encryption";
 import { authComponent } from "../auth";
 
@@ -42,28 +42,54 @@ export const exchangePublicToken = action({
     const accountsResponse = await plaidClient.accountsGet({
       access_token: accessToken,
     });
-    const accounts = accountsResponse.data.accounts;
-    const accountIds = accounts.map((a) => a.account_id);
-    const institutionName = accountsResponse.data.item.institution_id || "Unknown";
+    const plaidAccounts = accountsResponse.data.accounts;
+    const institutionId = accountsResponse.data.item.institution_id || null;
 
-    // 5. Store encrypted token + metadata in plaidAccounts table
+    // 5. Get institution name from Plaid /institutions/get_by_id
+    let institutionName = "Bank Account";
+    if (institutionId) {
+      try {
+        const institutionResponse = await plaidClient.institutionsGetById({
+          institution_id: institutionId,
+          country_codes: [CountryCode.Us], // Adjust based on your needs
+        });
+        institutionName = institutionResponse.data.institution.name;
+      } catch (error) {
+        console.error("Failed to fetch institution name:", error);
+        // Fall back to using the institution ID if the API call fails
+        institutionName = institutionId;
+      }
+    }
+
+    // 6. Extract detailed account information
+    const accounts = plaidAccounts.map((account) => ({
+      accountId: account.account_id,
+      mask: account.mask || undefined,
+      name: account.name,
+      officialName: account.official_name || undefined,
+      type: account.type,
+      subtype: account.subtype || undefined,
+    }));
+
+    // 7. Store encrypted token + metadata in plaidAccounts table
     await ctx.runMutation(internal.plaid.helpers.savePlaidAccount, {
       userId,
       plaidItemId,
       plaidAccessTokenCiphertext: encryptedToken,
-      accountIds,
+      accounts,
+      institutionId: institutionId || "unknown",
       institutionName,
     });
 
-    // 6. Mark onboarding as complete (user has linked their card)
+    // 8. Mark onboarding as complete (user has linked their card)
     await ctx.runMutation(internal.onboarding.mutations.markCardLinked, {});
 
-    // 7. Schedule initial transaction sync (run immediately with runAfter(0))
+    // 9. Schedule initial transaction sync (run immediately with runAfter(0))
     await ctx.scheduler.runAfter(0, internal.plaid.syncTransactions.syncTransactions, {
       plaidItemId,
     });
 
-    // 8. Return itemId for client-side confirmation
+    // 10. Return itemId for client-side confirmation
     return { itemId: plaidItemId };
   },
 });
