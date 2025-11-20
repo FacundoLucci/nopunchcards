@@ -31,11 +31,12 @@ function BusinessLayout() {
   const isAnalytics = !!matchRoute({ to: "/business/analytics" });
   const isSettings = !!matchRoute({ to: "/business/settings" });
   const isProgramsCreate = !!matchRoute({ to: "/business/programs/create" });
+  const isProgramsEdit = !!matchRoute({ to: "/business/programs/$programId/edit" });
   const isRegister = !!matchRoute({ to: "/business/register" });
   const isRedemptions = !!matchRoute({ to: "/business/redemptions" });
 
   const showHeader = isDashboard || isPrograms || isAnalytics || isSettings;
-  const showNav = !isProgramsCreate && !isRegister && !isRedemptions; // Hide nav on programs/create, register, and redemptions
+  const showNav = !isProgramsCreate && !isProgramsEdit && !isRegister && !isRedemptions; // Hide nav on programs/create, programs/edit, register, and redemptions
   
   // Don't apply RoleGuard on register page - that's where we CREATE the business profile
   const shouldCheckRole = !isRegister;

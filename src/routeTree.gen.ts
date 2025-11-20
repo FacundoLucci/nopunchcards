@@ -36,6 +36,7 @@ import { Route as AuthenticatedConsumerRewardsIndexRouteImport } from './routes/
 import { Route as AuthenticatedBusinessProgramsIndexRouteImport } from './routes/_authenticated/business/programs/index'
 import { Route as AuthenticatedBusinessProgramsCreateRouteImport } from './routes/_authenticated/business/programs/create'
 import { Route as AuthenticatedConsumerRewardsClaimIdClaimRouteImport } from './routes/_authenticated/consumer/rewards/$claimId/claim'
+import { Route as AuthenticatedBusinessProgramsProgramIdEditRouteImport } from './routes/_authenticated/business/programs/$programId/edit'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -188,6 +189,12 @@ const AuthenticatedConsumerRewardsClaimIdClaimRoute =
     path: '/rewards/$claimId/claim',
     getParentRoute: () => AuthenticatedConsumerRouteRoute,
   } as any)
+const AuthenticatedBusinessProgramsProgramIdEditRoute =
+  AuthenticatedBusinessProgramsProgramIdEditRouteImport.update({
+    id: '/programs/$programId/edit',
+    path: '/programs/$programId/edit',
+    getParentRoute: () => AuthenticatedBusinessRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -215,6 +222,7 @@ export interface FileRoutesByFullPath {
   '/business/programs/create': typeof AuthenticatedBusinessProgramsCreateRoute
   '/business/programs': typeof AuthenticatedBusinessProgramsIndexRoute
   '/consumer/rewards': typeof AuthenticatedConsumerRewardsIndexRoute
+  '/business/programs/$programId/edit': typeof AuthenticatedBusinessProgramsProgramIdEditRoute
   '/consumer/rewards/$claimId/claim': typeof AuthenticatedConsumerRewardsClaimIdClaimRoute
 }
 export interface FileRoutesByTo {
@@ -243,6 +251,7 @@ export interface FileRoutesByTo {
   '/business/programs/create': typeof AuthenticatedBusinessProgramsCreateRoute
   '/business/programs': typeof AuthenticatedBusinessProgramsIndexRoute
   '/consumer/rewards': typeof AuthenticatedConsumerRewardsIndexRoute
+  '/business/programs/$programId/edit': typeof AuthenticatedBusinessProgramsProgramIdEditRoute
   '/consumer/rewards/$claimId/claim': typeof AuthenticatedConsumerRewardsClaimIdClaimRoute
 }
 export interface FileRoutesById {
@@ -273,6 +282,7 @@ export interface FileRoutesById {
   '/_authenticated/business/programs/create': typeof AuthenticatedBusinessProgramsCreateRoute
   '/_authenticated/business/programs/': typeof AuthenticatedBusinessProgramsIndexRoute
   '/_authenticated/consumer/rewards/': typeof AuthenticatedConsumerRewardsIndexRoute
+  '/_authenticated/business/programs/$programId/edit': typeof AuthenticatedBusinessProgramsProgramIdEditRoute
   '/_authenticated/consumer/rewards/$claimId/claim': typeof AuthenticatedConsumerRewardsClaimIdClaimRoute
 }
 export interface FileRouteTypes {
@@ -303,6 +313,7 @@ export interface FileRouteTypes {
     | '/business/programs/create'
     | '/business/programs'
     | '/consumer/rewards'
+    | '/business/programs/$programId/edit'
     | '/consumer/rewards/$claimId/claim'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -331,6 +342,7 @@ export interface FileRouteTypes {
     | '/business/programs/create'
     | '/business/programs'
     | '/consumer/rewards'
+    | '/business/programs/$programId/edit'
     | '/consumer/rewards/$claimId/claim'
   id:
     | '__root__'
@@ -360,6 +372,7 @@ export interface FileRouteTypes {
     | '/_authenticated/business/programs/create'
     | '/_authenticated/business/programs/'
     | '/_authenticated/consumer/rewards/'
+    | '/_authenticated/business/programs/$programId/edit'
     | '/_authenticated/consumer/rewards/$claimId/claim'
   fileRoutesById: FileRoutesById
 }
@@ -565,6 +578,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedConsumerRewardsClaimIdClaimRouteImport
       parentRoute: typeof AuthenticatedConsumerRouteRoute
     }
+    '/_authenticated/business/programs/$programId/edit': {
+      id: '/_authenticated/business/programs/$programId/edit'
+      path: '/programs/$programId/edit'
+      fullPath: '/business/programs/$programId/edit'
+      preLoaderRoute: typeof AuthenticatedBusinessProgramsProgramIdEditRouteImport
+      parentRoute: typeof AuthenticatedBusinessRouteRoute
+    }
   }
 }
 
@@ -576,6 +596,7 @@ interface AuthenticatedBusinessRouteRouteChildren {
   AuthenticatedBusinessSettingsRoute: typeof AuthenticatedBusinessSettingsRoute
   AuthenticatedBusinessProgramsCreateRoute: typeof AuthenticatedBusinessProgramsCreateRoute
   AuthenticatedBusinessProgramsIndexRoute: typeof AuthenticatedBusinessProgramsIndexRoute
+  AuthenticatedBusinessProgramsProgramIdEditRoute: typeof AuthenticatedBusinessProgramsProgramIdEditRoute
 }
 
 const AuthenticatedBusinessRouteRouteChildren: AuthenticatedBusinessRouteRouteChildren =
@@ -590,6 +611,8 @@ const AuthenticatedBusinessRouteRouteChildren: AuthenticatedBusinessRouteRouteCh
       AuthenticatedBusinessProgramsCreateRoute,
     AuthenticatedBusinessProgramsIndexRoute:
       AuthenticatedBusinessProgramsIndexRoute,
+    AuthenticatedBusinessProgramsProgramIdEditRoute:
+      AuthenticatedBusinessProgramsProgramIdEditRoute,
   }
 
 const AuthenticatedBusinessRouteRouteWithChildren =
