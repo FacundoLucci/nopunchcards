@@ -72,7 +72,8 @@ export const exchangePublicToken = action({
     }));
 
     // 7. Store encrypted token + metadata in plaidAccounts table
-    await ctx.runMutation(internal.plaid.helpers.savePlaidAccount, {
+    // Uses updateAccountWithMigration to prevent duplicates when re-linking same account
+    await ctx.runMutation(internal.plaid.helpers.updateAccountWithMigration, {
       userId,
       plaidItemId,
       plaidAccessTokenCiphertext: encryptedToken,

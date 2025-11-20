@@ -22,11 +22,11 @@ export const getAccountByItemId = internalQuery({
       .query("plaidAccounts")
       .withIndex("by_plaidItemId", (q) => q.eq("plaidItemId", args.plaidItemId))
       .first();
-    
+
     if (!account) {
       return null;
     }
-    
+
     return {
       _id: account._id,
       _creationTime: account._creationTime,
@@ -52,7 +52,7 @@ export const getAllAccounts = internalQuery({
   ),
   handler: async (ctx, args) => {
     const accounts = await ctx.db.query("plaidAccounts").collect();
-    return accounts.map(acc => ({
+    return accounts.map((acc) => ({
       _id: acc._id,
       plaidAccessTokenCiphertext: acc.plaidAccessTokenCiphertext,
       plaidItemId: acc.plaidItemId,
@@ -97,12 +97,69 @@ export const savePlaidAccount = internalMutation({
   },
 });
 
+/**
+ * Update an existing Plaid account or create a new one if it doesn't exist.
+ * This prevents duplicate records when a user re-links the same bank account.
+ *
+ * Identifies existing accounts by plaidItemId and updates them with new:
+ * - Access token (after re-authentication)
+ * - Account list (in case new accounts were added)
+ * - Institution metadata
+ * - Resets status to "active" if previously disconnected
+ */
 export const updateAccountWithMigration = internalMutation({
-  args: v.any(),
-  returns: v.null(),
+  args: {
+    userId: v.string(),
+    plaidItemId: v.string(),
+    plaidAccessTokenCiphertext: v.string(),
+    accounts: v.array(
+      v.object({
+        accountId: v.string(),
+        mask: v.optional(v.string()),
+        name: v.string(),
+        officialName: v.optional(v.string()),
+        type: v.string(),
+        subtype: v.optional(v.string()),
+      })
+    ),
+    institutionId: v.string(),
+    institutionName: v.string(),
+  },
+  returns: v.id("plaidAccounts"),
   handler: async (ctx, args) => {
-    // TODO: Implement
-    return null;
+    // Check if account already exists for this plaidItemId
+    const existingAccount = await ctx.db
+      .query("plaidAccounts")
+      .withIndex("by_plaidItemId", (q) => q.eq("plaidItemId", args.plaidItemId))
+      .first();
+
+    if (existingAccount) {
+      // Update existing account (re-linking scenario)
+      await ctx.db.patch(existingAccount._id, {
+        plaidAccessTokenCiphertext: args.plaidAccessTokenCiphertext,
+        accounts: args.accounts,
+        institutionId: args.institutionId,
+        institutionName: args.institutionName,
+        status: "active", // Reset to active in case it was disconnected
+        // Keep original createdAt, don't update it
+      });
+
+      return existingAccount._id;
+    } else {
+      // Create new account (first time linking)
+      const accountId = await ctx.db.insert("plaidAccounts", {
+        userId: args.userId,
+        plaidItemId: args.plaidItemId,
+        plaidAccessTokenCiphertext: args.plaidAccessTokenCiphertext,
+        accounts: args.accounts,
+        institutionId: args.institutionId,
+        institutionName: args.institutionName,
+        status: "active",
+        createdAt: Date.now(),
+      });
+
+      return accountId;
+    }
   },
 });
 
@@ -116,12 +173,21 @@ export const getTransactionByPlaidId = internalQuery({
     v.null()
   ),
   handler: async (ctx, args) => {
-    return await ctx.db
+    const transaction = await ctx.db
       .query("transactions")
-      .withIndex("by_plaidTransactionId", (q) => 
+      .withIndex("by_plaidTransactionId", (q) =>
         q.eq("plaidTransactionId", args.plaidTransactionId)
       )
       .first();
+
+    if (!transaction) {
+      return null;
+    }
+
+    return {
+      _id: transaction._id,
+      _creationTime: transaction._creationTime,
+    };
   },
 });
 
