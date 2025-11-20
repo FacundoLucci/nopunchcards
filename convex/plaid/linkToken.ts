@@ -37,10 +37,32 @@ export const createLinkToken = action({
       products: [Products.Transactions],
       country_codes: [CountryCode.Us],
       language: "en",
-      webhook: `${process.env.SITE_URL}/api/plaid/webhook`,
+      webhook: `${process.env.CONVEX_URL}/api/plaid/webhook`,
     });
 
     return { linkToken: response.data.link_token };
+  },
+});
+
+// Test function to verify webhook URL (no auth required)
+export const testLinkTokenConfig = action({
+  args: {},
+  returns: v.object({ 
+    webhookUrl: v.string(),
+    convexUrl: v.string(),
+  }),
+  handler: async (ctx) => {
+    const convexUrl = process.env.CONVEX_URL || "NOT_SET";
+    const webhookUrl = `${convexUrl}/api/plaid/webhook`;
+    
+    console.log("Testing Link Token Configuration:");
+    console.log("CONVEX_URL:", convexUrl);
+    console.log("Webhook URL:", webhookUrl);
+    
+    return { 
+      webhookUrl,
+      convexUrl,
+    };
   },
 });
 

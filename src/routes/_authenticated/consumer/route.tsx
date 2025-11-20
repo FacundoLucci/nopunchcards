@@ -67,8 +67,10 @@ function ConsumerLayout() {
           try {
             await exchangeToken({ publicToken });
             toast.success("Card linked successfully!");
+            setLinking(false);
           } catch (error) {
             toast.error("Failed to link card");
+            setLinking(false);
           }
         },
         onExit: () => {

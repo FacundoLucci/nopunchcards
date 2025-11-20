@@ -5,14 +5,15 @@ export async function verifyPlaidWebhook(
   keyId: string
 ): Promise<boolean> {
   try {
-    // 1. Extract signature from header (v1= part)
-    const signatureMatch = signatureHeader.match(/v1=([^,]+)/);
-    if (!signatureMatch) {
-      throw new Error("Invalid signature header format");
+    // The Plaid-Verification header is a JWS (header.payload.signature)
+    const parts = signatureHeader.split(".");
+    if (parts.length !== 3) {
+      throw new Error("Invalid JWS format");
     }
-    const signatureBase64 = signatureMatch[1];
-
-    // 2. Fetch Plaid's public key from their API
+    
+    const [headerB64, payloadB64, signatureB64] = parts;
+    
+    // 1. Fetch Plaid's public key from their API
     const plaidEnv = process.env.PLAID_ENV!;
     const basePath =
       plaidEnv === "sandbox"
@@ -37,50 +38,96 @@ export async function verifyPlaidWebhook(
     }
 
     const keyData = await keyResponse.json();
-    const pemKey = keyData.key.key;
+    
+    if (!keyData.key) {
+      console.error("Invalid key data structure from Plaid");
+      return false;
+    }
 
-    // 3. Convert PEM public key to CryptoKey using Web Crypto API
-    // Remove PEM headers and decode base64
-    const pemHeader = "-----BEGIN PUBLIC KEY-----";
-    const pemFooter = "-----END PUBLIC KEY-----";
-    const pemContents = pemKey
-      .replace(pemHeader, "")
-      .replace(pemFooter, "")
-      .replace(/\s/g, "");
+    // Plaid returns a JWK (JSON Web Key), not PEM
+    const jwk = keyData.key;
 
-    // Base64 decode
-    const binaryDer = Uint8Array.from(atob(pemContents), (c) => c.charCodeAt(0));
-
-    // Import as RSASSA-PKCS1-v1_5 key with SHA-256
+    // 3. Import Key (ES256 uses P-256 curve)
     const publicKey = await crypto.subtle.importKey(
-      "spki",
-      binaryDer,
+      "jwk",
+      jwk,
       {
-        name: "RSASSA-PKCS1-v1_5",
-        hash: "SHA-256",
+        name: "ECDSA",
+        namedCurve: "P-256",
       },
       false,
       ["verify"]
     );
 
-    // 4. Convert signature from base64 to ArrayBuffer
-    const signatureBytes = Uint8Array.from(atob(signatureBase64), (c) =>
+    // 4. Verify Signature
+    // The secured input is "header.payload" (ASCII/UTF-8 bytes)
+    // The signature is base64url encoded
+    
+    // Convert signature from base64url to ArrayBuffer
+    // Replace base64url chars with base64 chars
+    const base64Signature = signatureB64
+      .replace(/-/g, "+")
+      .replace(/_/g, "/");
+    
+    // Add padding if needed
+    const pad = base64Signature.length % 4;
+    const paddedSignature = pad
+      ? base64Signature + "=".repeat(4 - pad)
+      : base64Signature;
+
+    const signatureBytes = Uint8Array.from(atob(paddedSignature), (c) =>
       c.charCodeAt(0)
     );
 
-    // 5. Convert body text to ArrayBuffer
     const encoder = new TextEncoder();
-    const bodyBytes = encoder.encode(bodyText);
+    const securedInput = `${headerB64}.${payloadB64}`;
+    const dataBytes = encoder.encode(securedInput);
 
-    // 6. Verify signature using Web Crypto API
-    const isValid = await crypto.subtle.verify(
-      "RSASSA-PKCS1-v1_5",
+    const isValidSignature = await crypto.subtle.verify(
+      {
+        name: "ECDSA",
+        hash: { name: "SHA-256" },
+      },
       publicKey,
       signatureBytes,
-      bodyBytes
+      dataBytes
     );
 
-    return isValid;
+    if (!isValidSignature) {
+      console.error("JWS signature verification failed");
+      return false;
+    }
+
+    // 5. Validate Body Hash
+    // Decode payload to get request_body_sha256
+    const payload = JSON.parse(atob(payloadB64));
+    
+    // Calculate SHA-256 of the request body
+    const bodyHashBuffer = await crypto.subtle.digest(
+      "SHA-256",
+      encoder.encode(bodyText)
+    );
+    const bodyHashArray = Array.from(new Uint8Array(bodyHashBuffer));
+    const bodyHashHex = bodyHashArray
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    if (bodyHashHex !== payload.request_body_sha256) {
+      console.error("Body hash mismatch", {
+        expected: payload.request_body_sha256,
+        actual: bodyHashHex
+      });
+      return false;
+    }
+
+    // 6. Check timestamp (prevent replay attacks) - usually 5 minute window
+    const now = Math.floor(Date.now() / 1000);
+    if (now - payload.iat > 300) {
+      console.error("Webhook timestamp too old");
+      return false;
+    }
+
+    return true;
   } catch (error) {
     console.error("Webhook verification error:", error);
     return false;

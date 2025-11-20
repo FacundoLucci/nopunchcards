@@ -105,8 +105,10 @@ function SettingsContent() {
           try {
             await exchangeToken({ publicToken });
             toast.success("Card linked successfully!");
+            setLinkingNewCard(false);
           } catch (error) {
             toast.error("Failed to link card");
+            setLinkingNewCard(false);
           }
         },
         onExit: () => {

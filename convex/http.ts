@@ -17,19 +17,29 @@ http.route({
   handler: httpAction(async (ctx, request) => {
     // 1. Get Plaid-Verification header containing JWS signature
     const plaidVerification = request.headers.get("Plaid-Verification");
+    
     if (!plaidVerification) {
       console.error("Missing Plaid-Verification header");
       return new Response("Unauthorized: Missing signature", { status: 401 });
     }
 
-    // 2. Extract keyId from signature header
-    //    Header format: "t=1234567890,v1=<signature>,kid=<key_id>"
-    const keyIdMatch = plaidVerification.match(/kid=([^,]+)/);
-    if (!keyIdMatch) {
-      console.error("Invalid Plaid-Verification header format");
+    // 2. Extract keyId from signature header (JWS format)
+    //    Header is a JWS: header.payload.signature
+    //    We need to decode the header part to get the 'kid'
+    let keyId: string;
+    try {
+      const [headerEncoded] = plaidVerification.split(".");
+      const header = JSON.parse(atob(headerEncoded));
+      keyId = header.kid;
+    } catch (error) {
+      console.error("Failed to parse Plaid-Verification header", error);
       return new Response("Invalid signature format", { status: 401 });
     }
-    const keyId = keyIdMatch[1];
+
+    if (!keyId) {
+      console.error("No kid found in Plaid-Verification header");
+      return new Response("Invalid signature format", { status: 401 });
+    }
 
     // 3. Read request body as text (needed for signature verification)
     const bodyText = await request.text();

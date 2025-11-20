@@ -4,8 +4,16 @@
       "command": "uvx",
       "args": ["auto-favicon"],
       "env": {}
+    },
+    "plaid": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-plaid",
+        "--client-id",
+        "67528ce1c45170001aa885f9",
+        "--secret",
+        "5618db9c54a02af60976065ba33da4"
+      ]
     }
   }
 }
-
-
