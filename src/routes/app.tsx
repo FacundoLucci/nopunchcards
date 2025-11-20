@@ -1,4 +1,4 @@
-// Last updated: 2025-11-17 - Client-side role-based redirect with loader
+// Last updated: 2025-11-20 - Fixed auth race condition with retry mechanism
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { fetchSession } from "@convex-dev/better-auth/react-start";
@@ -36,6 +36,7 @@ function AppRedirect() {
   // @ts-expect-error - TS2589: Type instantiation is excessively deep
   const ensureProfileMutation = useMutation(api.users.ensureProfile);
   const [isCreatingProfile, setIsCreatingProfile] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     if (profile === undefined) {
@@ -44,9 +45,19 @@ function AppRedirect() {
     }
 
     if (profile === null && !isCreatingProfile) {
-      // No profile found - create default consumer profile
+      // No profile found - but this might be due to auth not being ready yet
+      // Wait a bit longer before creating a default profile
+      if (retryCount < 3) {
+        console.log("[/app] No profile found, retrying...", retryCount + 1);
+        const timeout = setTimeout(() => {
+          setRetryCount(retryCount + 1);
+        }, 500);
+        return () => clearTimeout(timeout);
+      }
+
+      // After retries, create default consumer profile
       // /app doesn't indicate intent, so default to consumer
-      console.log("[/app] No profile found - creating consumer profile");
+      console.log("[/app] No profile found after retries - creating consumer profile");
       setIsCreatingProfile(true);
 
       ensureProfileMutation({ role: "consumer" })
@@ -62,17 +73,21 @@ function AppRedirect() {
         })
         .catch((error) => {
           console.error("[/app] Failed to create profile:", error);
-          // Fallback: go to consumer onboarding
-          navigate({
-            to: "/consumer/onboarding",
-            search: { role: "consumer" },
-            replace: true,
-          });
+          // If ensureProfile failed, the profile might actually exist
+          // Just wait for the query to update instead of forcing a redirect
+          console.log("[/app] Waiting for profile query to update...");
+          setIsCreatingProfile(false);
+          setRetryCount(0); // Reset to allow query to retry
         });
       return;
     }
 
     if (profile) {
+      // Reset retry count when profile is found
+      if (retryCount > 0) {
+        setRetryCount(0);
+      }
+
       // Redirect based on role
       if (profile.role === "business_owner" || profile.role === "admin") {
         console.log("[/app] Business owner - going to dashboard");
@@ -82,7 +97,7 @@ function AppRedirect() {
         navigate({ to: "/consumer/home", replace: true });
       }
     }
-  }, [profile, navigate, ensureProfileMutation, isCreatingProfile]);
+  }, [profile, navigate, ensureProfileMutation, isCreatingProfile, retryCount]);
 
   // Show loading state while determining where to redirect
   return (
