@@ -3,14 +3,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "concurrently --kill-others-on-fail \"pnpm:dev:convex\" \"pnpm:dev:vite\"",
+    "dev": "bash scripts/pre-dev.sh && concurrently --kill-others-on-fail \"pnpm:dev:convex\" \"pnpm:dev:vite\"",
     "dev:convex": "convex dev",
     "dev:atmn": "npx atmn push",
     "dev:vite": "vite dev --port 3000",
     "build": "vite build",
     "serve": "vite preview",
     "test": "vitest run",
-    "preview": "pnpm run build && vite preview"
+    "preview": "pnpm run build && vite preview",
+    "check:plaid": "bash scripts/verify-plaid-env.sh"
   },
   "dependencies": {
     "@convex-dev/better-auth": "^0.9.7",
