@@ -10,9 +10,9 @@ export async function verifyPlaidWebhook(
     if (parts.length !== 3) {
       throw new Error("Invalid JWS format");
     }
-    
+
     const [headerB64, payloadB64, signatureB64] = parts;
-    
+
     // 1. Fetch Plaid's public key from their API
     const plaidEnv = process.env.PLAID_ENV!;
     const basePath =
@@ -22,15 +22,18 @@ export async function verifyPlaidWebhook(
         ? "https://development.plaid.com"
         : "https://production.plaid.com";
 
-    const keyResponse = await fetch(`${basePath}/webhook_verification_key/get`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "PLAID-CLIENT-ID": process.env.PLAID_CLIENT_ID!,
-        "PLAID-SECRET": process.env.PLAID_SECRET!,
-      },
-      body: JSON.stringify({ key_id: keyId }),
-    });
+    const keyResponse = await fetch(
+      `${basePath}/webhook_verification_key/get`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "PLAID-CLIENT-ID": process.env.PLAID_CLIENT_ID!,
+          "PLAID-SECRET": process.env.PLAID_SECRET!,
+        },
+        body: JSON.stringify({ key_id: keyId }),
+      }
+    );
 
     if (!keyResponse.ok) {
       console.error("Failed to fetch Plaid verification key");
@@ -38,7 +41,7 @@ export async function verifyPlaidWebhook(
     }
 
     const keyData = await keyResponse.json();
-    
+
     if (!keyData.key) {
       console.error("Invalid key data structure from Plaid");
       return false;
@@ -62,13 +65,11 @@ export async function verifyPlaidWebhook(
     // 4. Verify Signature
     // The secured input is "header.payload" (ASCII/UTF-8 bytes)
     // The signature is base64url encoded
-    
+
     // Convert signature from base64url to ArrayBuffer
     // Replace base64url chars with base64 chars
-    const base64Signature = signatureB64
-      .replace(/-/g, "+")
-      .replace(/_/g, "/");
-    
+    const base64Signature = signatureB64.replace(/-/g, "+").replace(/_/g, "/");
+
     // Add padding if needed
     const pad = base64Signature.length % 4;
     const paddedSignature = pad
@@ -101,7 +102,7 @@ export async function verifyPlaidWebhook(
     // 5. Validate Body Hash
     // Decode payload to get request_body_sha256
     const payload = JSON.parse(atob(payloadB64));
-    
+
     // Calculate SHA-256 of the request body
     const bodyHashBuffer = await crypto.subtle.digest(
       "SHA-256",
@@ -115,7 +116,7 @@ export async function verifyPlaidWebhook(
     if (bodyHashHex !== payload.request_body_sha256) {
       console.error("Body hash mismatch", {
         expected: payload.request_body_sha256,
-        actual: bodyHashHex
+        actual: bodyHashHex,
       });
       return false;
     }
@@ -133,4 +134,3 @@ export async function verifyPlaidWebhook(
     return false;
   }
 }
-
