@@ -4,19 +4,30 @@ import { v } from "convex/values";
 // Get business by slug (public - no auth required)
 export const getBySlug = query({
   args: { slug: v.string() },
-  returns: v.union(
-    v.null(),
-    v.object({
-      _id: v.id("businesses"),
-      name: v.string(),
-      slug: v.string(),
-      description: v.optional(v.string()),
-      category: v.string(),
-      address: v.optional(v.string()),
-      logoUrl: v.optional(v.string()),
-      status: v.string(),
-    })
-  ),
+    returns: v.union(
+      v.null(),
+      v.object({
+        _id: v.id("businesses"),
+        name: v.string(),
+        slug: v.string(),
+        description: v.optional(v.string()),
+        category: v.string(),
+        address: v.optional(v.string()),
+        website: v.optional(v.string()),
+        logoUrl: v.optional(v.string()),
+        brandColors: v.optional(
+          v.object({
+            primary: v.string(),
+            secondary: v.optional(v.string()),
+            accent: v.optional(v.string()),
+          })
+        ),
+        brandSummary: v.optional(v.string()),
+        googleRating: v.optional(v.number()),
+        googleReviewCount: v.optional(v.number()),
+        status: v.string(),
+      })
+    ),
   handler: async (ctx, args) => {
     // 1. Look up business by slug using by_slug index
     const business = await ctx.db
@@ -31,16 +42,21 @@ export const getBySlug = query({
 
     // 3. Return public fields (including status so frontend can show verification badge)
     // Note: Unverified businesses can be viewed but won't match transactions
-    return {
-      _id: business._id,
-      name: business.name,
-      slug: business.slug,
-      description: business.description,
-      category: business.category,
-      address: business.address,
-      logoUrl: business.logoUrl,
-      status: business.status,
-    };
+      return {
+        _id: business._id,
+        name: business.name,
+        slug: business.slug,
+        description: business.description,
+        category: business.category,
+        address: business.address,
+        website: business.website,
+        logoUrl: business.logoUrl,
+        brandColors: business.brandColors,
+        brandSummary: business.brandSummary,
+        googleRating: business.googleRating,
+        googleReviewCount: business.googleReviewCount,
+        status: business.status,
+      };
   },
 });
 

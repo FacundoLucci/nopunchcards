@@ -28,23 +28,35 @@ export default defineSchema({
     .index("by_userId", ["userId"])
     .index("by_role", ["role"]),
 
-  businesses: defineTable({
-    ownerId: v.string(), // Better Auth user.id
-    name: v.string(),
-    slug: v.string(), // Unique URL identifier for public page
-    description: v.optional(v.string()),
-    category: v.string(),
-    address: v.optional(v.string()),
-    location: v.optional(v.object({ lat: v.number(), lng: v.number() })),
-    logoUrl: v.optional(v.string()),
-    status: v.union(v.literal("verified"), v.literal("unverified")),
-    mccCodes: v.optional(v.array(v.string())),
-    statementDescriptors: v.optional(v.array(v.string())), // How business appears on card statements (e.g., ["SQ*JOES", "JOES COFFEE"])
-    createdAt: v.number(),
-  })
-    .index("by_ownerId", ["ownerId"])
-    .index("by_status", ["status"])
-    .index("by_slug", ["slug"]),
+    businesses: defineTable({
+      ownerId: v.string(), // Better Auth user.id
+      name: v.string(),
+      slug: v.string(), // Unique URL identifier for public page
+      description: v.optional(v.string()),
+      category: v.string(),
+      address: v.optional(v.string()),
+      website: v.optional(v.string()),
+      location: v.optional(v.object({ lat: v.number(), lng: v.number() })),
+      logoUrl: v.optional(v.string()),
+      brandColors: v.optional(
+        v.object({
+          primary: v.string(),
+          secondary: v.optional(v.string()),
+          accent: v.optional(v.string()),
+        })
+      ),
+      brandSummary: v.optional(v.string()),
+      googlePlaceId: v.optional(v.string()),
+      googleRating: v.optional(v.number()),
+      googleReviewCount: v.optional(v.number()),
+      status: v.union(v.literal("verified"), v.literal("unverified")),
+      mccCodes: v.optional(v.array(v.string())),
+      statementDescriptors: v.optional(v.array(v.string())), // How business appears on card statements (e.g., ["SQ*JOES", "JOES COFFEE"])
+      createdAt: v.number(),
+    })
+      .index("by_ownerId", ["ownerId"])
+      .index("by_status", ["status"])
+      .index("by_slug", ["slug"]),
 
   plaidAccounts: defineTable({
     userId: v.string(), // Better Auth user.id

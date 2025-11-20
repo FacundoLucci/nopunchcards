@@ -16,9 +16,21 @@ export const getMyBusinesses = query({
       createdAt: v.number(),
       description: v.optional(v.string()),
       address: v.optional(v.string()),
+      website: v.optional(v.string()),
       logoUrl: v.optional(v.string()),
+      brandColors: v.optional(
+        v.object({
+          primary: v.string(),
+          secondary: v.optional(v.string()),
+          accent: v.optional(v.string()),
+        })
+      ),
+      brandSummary: v.optional(v.string()),
       location: v.optional(v.object({ lat: v.number(), lng: v.number() })),
       mccCodes: v.optional(v.array(v.string())),
+      googlePlaceId: v.optional(v.string()),
+      googleRating: v.optional(v.number()),
+      googleReviewCount: v.optional(v.number()),
       statementDescriptors: v.optional(v.array(v.string())),
     })
   ),
