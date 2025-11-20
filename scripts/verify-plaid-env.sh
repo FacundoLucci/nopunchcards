@@ -20,6 +20,14 @@ if ! command -v npx &> /dev/null; then
     exit 1
 fi
 
+# Check if Convex is authenticated (with timeout to prevent hangs)
+if ! timeout 5 npx convex env list &>/dev/null; then
+    echo -e "${YELLOW}⚠️  Convex not authenticated yet.${NC}"
+    echo "Please run 'npx convex dev' first to authenticate, then run 'pnpm check:plaid'."
+    echo ""
+    exit 1
+fi
+
 # Function to check environment variable
 check_env_var() {
     local var_name=$1

@@ -57,10 +57,10 @@ npx convex env list | grep PLAID
 ```
 
 You should see:
-```
+```bash
 PLAID_ENV=sandbox
-PLAID_CLIENT_ID=67528ce1c45170001aa885f9
-PLAID_SECRET=5618db9c54a02af60976065ba33da4
+PLAID_CLIENT_ID=<your-sandbox-client-id>
+PLAID_SECRET=<your-sandbox-client-secret>
 ```
 
 ### 2. Set Sandbox Mode (If Not Already Set)
@@ -77,9 +77,13 @@ npx convex env get PLAID_ENV
 
 ### 3. Ensure You Have Sandbox Credentials
 
-Your Plaid dashboard should provide:
-- **Client ID**: `67528ce1c45170001aa885f9` (already configured)
-- **Sandbox Secret**: `5618db9c54a02af60976065ba33da4` (already configured)
+Your Plaid dashboard should provide sandbox credentials. Set them in Convex:
+
+```bash
+npx convex env set PLAID_CLIENT_ID "your-sandbox-client-id"
+npx convex env set PLAID_SECRET "your-sandbox-secret"
+npx convex env set PLAID_ENV "sandbox"
+```
 
 These credentials are available in your [Plaid Dashboard](https://dashboard.plaid.com/developers/keys).
 
@@ -112,9 +116,11 @@ These appear in the Plaid Link flow when running in sandbox mode.
 ### Development (Current)
 ```bash
 PLAID_ENV=sandbox
-PLAID_CLIENT_ID=67528ce1c45170001aa885f9
-PLAID_SECRET=5618db9c54a02af60976065ba33da4
+PLAID_CLIENT_ID=<your-sandbox-client-id>
+PLAID_SECRET=<your-sandbox-client-secret>
 ```
+
+> **Note**: Get your own sandbox credentials from the [Plaid Dashboard](https://dashboard.plaid.com/developers/keys).
 
 ### Production (When Ready)
 ```bash

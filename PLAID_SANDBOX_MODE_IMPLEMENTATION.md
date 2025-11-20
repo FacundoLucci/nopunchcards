@@ -49,9 +49,11 @@ Your project is already correctly configured for sandbox mode:
 
 ```bash
 PLAID_ENV=sandbox
-PLAID_CLIENT_ID=67528ce1c45170001aa885f9
-PLAID_SECRET=5618db9c54a02af60976065ba33da4
+PLAID_CLIENT_ID=<your-sandbox-client-id>
+PLAID_SECRET=<your-sandbox-client-secret>
 ```
+
+> **Note**: These are example placeholders. Your actual credentials are stored securely in Convex and can be viewed with `npx convex env list`.
 
 These environment variables are stored in **Convex** (not local `.env` files) and are read by all Plaid API clients via:
 
@@ -66,12 +68,12 @@ basePath: PlaidEnvironments[process.env.PLAID_ENV!]
 1. **Convex Environment Variables**
    - Plaid settings stored securely in Convex deployment
    - Accessed via `process.env.PLAID_ENV`, etc.
-   - Managed with `npx convex env set/get` commands
+   - Managed with `npx convex env set` and `npx convex env get` commands
 
 2. **Plaid Client Initialization**
    - All Plaid files read `PLAID_ENV` from environment
    - `PlaidEnvironments[process.env.PLAID_ENV!]` maps to correct API endpoint
-   - Sandbox mode → `https://sandbox.plaid.com`
+   - Sandbox mode uses `https://sandbox.plaid.com`
 
 3. **Files Using Plaid Environment**
    - `convex/plaid/linkToken.ts`
@@ -141,7 +143,7 @@ When ready for real banking connections:
    npx convex env set PLAID_SECRET "prod-secret" --prod
    ```
 
-See `PLAID_SANDBOX_SETUP.md` for detailed production migration steps.
+See [PLAID_SANDBOX_SETUP.md](./PLAID_SANDBOX_SETUP.md) for detailed production migration steps.
 
 ## Troubleshooting
 

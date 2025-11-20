@@ -21,13 +21,13 @@ See **QUICKSTART.md** for step-by-step setup instructions.
 pnpm install
 
 # Start development server (starts both Convex and Vite)
+# Automatically verifies Plaid sandbox configuration
 pnpm dev
-
-# Verify Plaid is configured for sandbox mode
-pnpm check:plaid
 ```
 
 Visit http://localhost:3000
+
+**Note**: On first run, you may need to authenticate with Convex. After Convex starts, you can verify Plaid configuration with `pnpm check:plaid`.
 
 ### Plaid Test Credentials (Sandbox Mode)
 - Username: `user_good`
