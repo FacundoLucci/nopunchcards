@@ -20,21 +20,38 @@ See **QUICKSTART.md** for step-by-step setup instructions.
 # Install dependencies
 pnpm install
 
-# Start Convex backend (terminal 1)
-pnpm dlx convex dev
-
-# Start frontend (terminal 2)
+# Start development server (starts both Convex and Vite)
 pnpm dev
+
+# Verify Plaid is configured for sandbox mode
+pnpm check:plaid
 ```
 
 Visit http://localhost:3000
 
+### Plaid Test Credentials (Sandbox Mode)
+- Username: `user_good`
+- Password: `pass_good`
+- 2FA Code: `1234`
+
 ## Documentation
 
+### Getting Started
 - **QUICKSTART.md** - Step-by-step getting started guide
+- **ENV_SETUP.md** - Environment variables setup
+
+### Development
+- **PLAID_SANDBOX_SETUP.md** - Plaid sandbox mode configuration
+- **PLAID_SANDBOX_MODE_IMPLEMENTATION.md** - Plaid setup summary
+
+### Implementation
 - **IMPLEMENTATION_SUMMARY.md** - Complete implementation details
 - **loyalty-platform-mvp.playbook.md** - Full MVP specification
 - **loyalty-platform-design.md** - Design system & user flows
+
+### Production
+- **PRODUCTION_ENV_SETUP.md** - Production environment setup
+- **PLAID_PRODUCTION_CHECKLIST.md** - Plaid production readiness
 
 ## Building For Production
 

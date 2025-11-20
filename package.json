@@ -10,7 +10,8 @@
     "build": "vite build",
     "serve": "vite preview",
     "test": "vitest run",
-    "preview": "pnpm run build && vite preview"
+    "preview": "pnpm run build && vite preview",
+    "check:plaid": "bash scripts/verify-plaid-env.sh"
   },
   "dependencies": {
     "@convex-dev/better-auth": "^0.9.7",
