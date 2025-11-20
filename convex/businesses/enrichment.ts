@@ -190,32 +190,40 @@ async function fetchGooglePlaceData(url: string): Promise<GooglePlaceDetails | n
     throw new Error("GOOGLE_PLACES_API_KEY is not configured");
   }
 
-  const domainName = new URL(url).hostname.replace(/^www\./, "");
+    const domainName = new URL(url).hostname.replace(/^www\./, "");
 
-  const findResponse = await fetch(
-    `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(
-      domainName
-    )}&inputtype=textquery&fields=place_id,name,formatted_address,types`,
-    {
-      headers: { "Content-Type": "application/json" },
+    const findResponse = await fetch(
+      `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(
+        domainName
+      )}&inputtype=textquery&fields=place_id,name,formatted_address,types&key=${apiKey}`,
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+    if (!findResponse.ok) {
+      const text = await findResponse.text();
+      throw new Error(`Google Places find error: ${findResponse.status} ${text}`);
     }
-  );
-  const findJson = await findResponse.json();
+    const findJson = await findResponse.json();
 
   const candidate = findJson.candidates?.[0];
   if (!candidate?.place_id) {
     return null;
   }
 
-  const detailsResponse = await fetch(
-    `https://maps.googleapis.com/maps/api/place/details/json?place_id=${
-      candidate.place_id
-    }&fields=name,formatted_address,website,international_phone_number,rating,user_ratings_total,types,geometry,photos`,
-    {
-      headers: { "Content-Type": "application/json" },
+    const detailsResponse = await fetch(
+      `https://maps.googleapis.com/maps/api/place/details/json?place_id=${
+        candidate.place_id
+      }&fields=name,formatted_address,website,international_phone_number,rating,user_ratings_total,types,geometry,photos&key=${apiKey}`,
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+    if (!detailsResponse.ok) {
+      const text = await detailsResponse.text();
+      throw new Error(`Google Places details error: ${detailsResponse.status} ${text}`);
     }
-  );
-  const detailsJson = await detailsResponse.json();
+    const detailsJson = await detailsResponse.json();
   const details = detailsJson.result;
   if (!details) {
     return null;
@@ -247,8 +255,16 @@ async function fetchGooglePlaceData(url: string): Promise<GooglePlaceDetails | n
 
 function normalizeWebsite(raw: string): string {
   const trimmed = raw.trim();
+  if (!trimmed) {
+    throw new Error("Website URL is required");
+  }
   const prefixed = /^(https?):\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-  const url = new URL(prefixed);
+  let url: URL;
+  try {
+    url = new URL(prefixed);
+  } catch {
+    throw new Error("Invalid website URL");
+  }
   url.hash = "";
   if (!url.pathname || url.pathname === "/") {
     url.pathname = "";
@@ -264,8 +280,10 @@ function buildSuggestion(
   detail?: string
 ) {
   if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
   return {
-    value: value.trim(),
+    value: trimmed,
     source,
     confidence,
     detail,
