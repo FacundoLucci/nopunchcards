@@ -38,13 +38,25 @@ function mapClaimForResponse(claim: Doc<"rewardClaims">) {
   };
 }
 
+const brandColorsValidator = v.object({
+  primary: v.string(),
+  secondary: v.optional(v.string()),
+  accent: v.optional(v.string()),
+});
+
 export const create = mutation({
   args: {
     name: v.string(),
     category: v.string(),
     description: v.optional(v.string()),
     address: v.optional(v.string()),
+    website: v.optional(v.string()),
     logoUrl: v.optional(v.string()),
+    brandColors: v.optional(brandColorsValidator),
+    brandSummary: v.optional(v.string()),
+    googlePlaceId: v.optional(v.string()),
+    googleRating: v.optional(v.number()),
+    googleReviewCount: v.optional(v.number()),
     statementDescriptors: v.optional(v.array(v.string())),
   },
   returns: v.object({
@@ -69,6 +81,12 @@ export const create = mutation({
       description: args.description,
       address: args.address,
       logoUrl: args.logoUrl,
+      website: args.website,
+      brandColors: args.brandColors,
+      brandSummary: args.brandSummary,
+      googlePlaceId: args.googlePlaceId,
+      googleRating: args.googleRating,
+      googleReviewCount: args.googleReviewCount,
       statementDescriptors: cleanedDescriptors,
       status: "unverified",
       createdAt: Date.now(),
@@ -89,6 +107,12 @@ export const update = mutation({
     description: v.optional(v.string()),
     address: v.optional(v.string()),
     logoUrl: v.optional(v.string()),
+    website: v.optional(v.string()),
+    brandColors: v.optional(brandColorsValidator),
+    brandSummary: v.optional(v.string()),
+    googlePlaceId: v.optional(v.string()),
+    googleRating: v.optional(v.number()),
+    googleReviewCount: v.optional(v.number()),
     slug: v.optional(v.string()),
     statementDescriptors: v.optional(v.array(v.string())),
   },
@@ -147,9 +171,15 @@ export const getByOwner = mutation({
       createdAt: v.number(),
       description: v.optional(v.string()),
       address: v.optional(v.string()),
+      website: v.optional(v.string()),
       logoUrl: v.optional(v.string()),
+      brandColors: v.optional(brandColorsValidator),
+      brandSummary: v.optional(v.string()),
       location: v.optional(v.object({ lat: v.number(), lng: v.number() })),
       mccCodes: v.optional(v.array(v.string())),
+      googlePlaceId: v.optional(v.string()),
+      googleRating: v.optional(v.number()),
+      googleReviewCount: v.optional(v.number()),
       statementDescriptors: v.optional(v.array(v.string())),
     })
   ),
